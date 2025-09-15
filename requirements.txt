@@ -1,0 +1,62 @@
+Django~=5.2.6
+python-decouple~=3.8
+sentry-sdk~=2.38.0
+
+# Django et extensions de base
+Django==4.2.7
+djangorestframework==3.14.0
+django-extensions==3.2.3
+django-cors-headers==4.3.1
+
+# Base de données PostgreSQL
+psycopg2-binary==2.9.7
+django-environ==0.11.2
+python-decouple==3.8
+
+# Authentification JWT
+djangorestframework-simplejwt==5.3.0
+
+# Cache et sessions Redis
+django-redis==5.4.0
+redis==5.0.1
+
+# Tâches asynchrones avec Celery
+celery[redis]==5.3.4
+django-celery-beat==2.5.0
+django-celery-results==2.5.1
+
+# WebSockets avec Channels
+channels==4.0.0
+channels-redis==4.1.0
+
+# Documentation API
+drf-spectacular==0.26.5
+
+# Traitement d'images
+Pillow==10.0.1
+
+# Utilitaires
+python-slugify==8.0.1
+python-dateutil==2.8.2
+
+# Validation et parsing
+jsonschema==4.19.2
+pyyaml==6.0.1
+
+# Monitoring et logging
+sentry-sdk[django]==1.38.0
+
+# Templates et génération de code
+Jinja2==3.1.2
+
+# Paiements Stripe
+stripe==7.7.0
+
+# Requests HTTP
+requests==2.31.0
+
+# Timezone
+pytz==2023.3
+
+# UUID
+uuid==1.30
