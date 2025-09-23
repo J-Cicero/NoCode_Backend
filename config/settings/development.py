@@ -2,6 +2,7 @@
 Configuration pour l'environnement de développement
 """
 from .base import *
+from datetime import timedelta
 
 # Debug activé en développement
 DEBUG = True
@@ -24,6 +25,46 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # CORS permissif en développement
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-api-key',
+    'stripe-signature',
+]
+
+# CSRF - Configuration permissive pour les tests API
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
+
+# Session cookies
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_HTTPONLY = False
+
+# JWT - Tokens plus longs en développement
+SIMPLE_JWT.update({
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),  # 1 heure au lieu de 15 minutes
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),  # 30 jours
+})
+
+# Middlewares de développement pour faciliter les tests Postman
+MIDDLEWARE.insert(0, 'apps.foundation.middleware.dev_middleware.DevCORSMiddleware')
+MIDDLEWARE.insert(1, 'apps.foundation.middleware.dev_middleware.DevCSRFExemptMiddleware')
+MIDDLEWARE.append('apps.foundation.middleware.dev_middleware.DevRequestLoggingMiddleware')
 
 # Configuration Celery pour dev
 CELERY_TASK_ALWAYS_EAGER = config('CELERY_ALWAYS_EAGER', default=False, cast=bool)

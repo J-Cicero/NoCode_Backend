@@ -1,0 +1,505 @@
+{
+  "info": {
+    "name": "Foundation API - NoCode Platform",
+    "description": "Collection complète pour tester l'API du module Foundation",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "org_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Ajouter automatiquement le token d'authentification",
+          "if (pm.environment.get('access_token')) {",
+          "    pm.request.headers.add({",
+          "        key: 'Authorization',",
+          "        value: 'Bearer ' + pm.environment.get('access_token')",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Login Client",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.tokens) {",
+                  "        pm.environment.set('access_token', response.tokens.access);",
+                  "        pm.environment.set('refresh_token', response.tokens.refresh);",
+                  "        pm.environment.set('user_id', response.user.id);",
+                  "        console.log('Tokens sauvegardés avec succès');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"client@test.dev\",\n    \"password\": \"TestPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "Login Entreprise",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.tokens) {",
+                  "        pm.environment.set('access_token', response.tokens.access);",
+                  "        pm.environment.set('refresh_token', response.tokens.refresh);",
+                  "        pm.environment.set('user_id', response.user.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"entreprise@test.dev\",\n    \"password\": \"TestPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login", ""]
+            }
+          }
+        },
+        {
+          "name": "Register Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"nouveau.client@test.dev\",\n    \"password\": \"TestPass123!\",\n    \"user_type\": \"CLIENT\",\n    \"profile_data\": {\n        \"first_name\": \"Marie\",\n        \"last_name\": \"Dupont\",\n        \"phone\": \"+33123456789\",\n        \"date_of_birth\": \"1985-05-15\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Register Entreprise",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"nouvelle.entreprise@test.dev\",\n    \"password\": \"TestPass123!\",\n    \"user_type\": \"ENTREPRISE\",\n    \"profile_data\": {\n        \"company_name\": \"Nouvelle Entreprise SAS\",\n        \"siret\": \"12345678901234\",\n        \"legal_form\": \"SAS\",\n        \"address\": \"456 Avenue Test\",\n        \"postal_code\": \"69000\",\n        \"city\": \"Lyon\",\n        \"country\": \"France\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register", ""]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.tokens && response.tokens.access) {",
+                  "        pm.environment.set('access_token', response.tokens.access);",
+                  "        console.log('Token rafraîchi avec succès');",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏢 Organizations",
+      "item": [
+        {
+          "name": "List Organizations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/organizations/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Organization",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.environment.set('org_id', response.id);",
+                  "        console.log('Organisation créée avec ID:', response.id);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Mon Organisation Test\",\n    \"description\": \"Organisation créée via Postman\",\n    \"organization_type\": \"COMPANY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/organizations/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Organization Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/organizations/{{org_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", ""]
+            }
+          }
+        },
+        {
+          "name": "Update Organization",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"description\": \"Description mise à jour via Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/organizations/{{org_id}}/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Members",
+      "item": [
+        {
+          "name": "List Organization Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/organizations/{{org_id}}/members/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", "members", ""]
+            }
+          }
+        },
+        {
+          "name": "Invite Member",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"invite@example.com\",\n    \"role\": \"MEMBER\",\n    \"message\": \"Rejoignez notre organisation !\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/organizations/{{org_id}}/invite/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", "invite", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💳 Billing",
+      "item": [
+        {
+          "name": "Get Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/organizations/{{org_id}}/subscription/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", "subscription", ""]
+            }
+          }
+        },
+        {
+          "name": "Create Subscription",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"plan_name\": \"Premium\",\n    \"plan_price\": \"29.99\",\n    \"billing_cycle\": \"MONTHLY\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/organizations/{{org_id}}/subscription/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", "subscription", ""]
+            }
+          }
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/organizations/{{org_id}}/subscription/cancel/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", "subscription", "cancel", ""]
+            }
+          }
+        },
+        {
+          "name": "List Invoices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/organizations/{{org_id}}/invoices/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "organizations", "{{org_id}}", "invoices", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "✅ Verification",
+      "item": [
+        {
+          "name": "Start Verification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"request_type\": \"KYB_FULL\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/verification/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "verification", ""]
+            }
+          }
+        },
+        {
+          "name": "Get Verification Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/verification/1/status/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "verification", "1", "status", ""]
+            }
+          }
+        },
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "document_type",
+                  "value": "KBIS",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/verification/1/documents/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "verification", "1", "documents", ""]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 Utilities",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health", ""]
+            }
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/users/profile/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile", ""]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
