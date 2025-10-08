@@ -1,0 +1,20 @@
+INFO 2025-09-30 08:15:00,357 autoreload 134753 133688323702784 Watching for file changes with StatReloader
+INFO 2025-09-30 08:20:47,293 autoreload 134903 139773037232128 Watching for file changes with StatReloader
+INFO 2025-09-30 08:21:49,734 autoreload 134903 139773037232128 /home/jude/code/NoCode/apps/foundation/models/organization.py changed, reloading.
+INFO 2025-09-30 08:21:51,972 autoreload 134960 134637465743360 Watching for file changes with StatReloader
+INFO 2025-09-30 08:22:08,307 autoreload 134960 134637465743360 /home/jude/code/NoCode/apps/foundation/models/organization.py changed, reloading.
+INFO 2025-09-30 08:22:14,505 autoreload 135044 132285635997696 Watching for file changes with StatReloader
+INFO 2025-09-30 08:23:51,483 autoreload 135044 132285635997696 /home/jude/code/NoCode/apps/foundation/models/organization.py changed, reloading.
+INFO 2025-09-30 08:23:53,474 autoreload 135264 137346697560064 Watching for file changes with StatReloader
+INFO 2025-09-30 08:55:18,965 autoreload 137290 132221334249472 Watching for file changes with StatReloader
+INFO 2025-09-30 08:58:05,814 autoreload 137437 128282319294464 Watching for file changes with StatReloader
+INFO 2025-09-30 08:59:46,804 autoreload 137483 134443624927232 Watching for file changes with StatReloader
+INFO 2025-09-30 09:08:54,439 autoreload 137988 138846443204608 Watching for file changes with StatReloader
+INFO 2025-09-30 09:09:26,441 autoreload 138006 132197732777984 Watching for file changes with StatReloader
+INFO 2025-09-30 09:20:05,012 autoreload 138006 132197732777984 /home/jude/code/NoCode/apps/foundation/urls.py changed, reloading.
+INFO 2025-09-30 09:20:06,088 autoreload 138316 138966665932800 Watching for file changes with StatReloader
+INFO 2025-09-30 20:32:29,625 autoreload 22357 127324784455680 Watching for file changes with StatReloader
+INFO 2025-10-07 17:40:36,022 autoreload 6452 132896296284160 Watching for file changes with StatReloader
+INFO 2025-10-07 17:45:45,027 autoreload 7246 135494808956928 Watching for file changes with StatReloader
+INFO 2025-10-07 17:48:02,056 autoreload 7447 126694310260736 Watching for file changes with StatReloader
+INFO 2025-10-07 18:01:23,243 autoreload 7246 135494808956928 /home/jude/code/NoCode/config/settings/base.py changed, reloading.

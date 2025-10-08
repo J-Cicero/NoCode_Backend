@@ -687,7 +687,7 @@ class OrganizationService(BaseService):
             message = f"""
             Bonjour,
             
-            {invitation.invited_by.full_name} vous invite à rejoindre l'organisation "{invitation.organization.name}" sur la plateforme Usanidi.
+            {invitation.invited_by.full_name} vous invite à rejoindre l'organisation "{invitation.organization.name}" sur la plateforme NoCode.
             
             Rôle proposé: {invitation.get_role_display()}
             
@@ -701,13 +701,13 @@ class OrganizationService(BaseService):
             Si vous n'avez pas de compte, vous devrez d'abord vous inscrire.
             
             Cordialement,
-            L'équipe Usanidi
+            L'équipe NoCode
             """
             
             send_mail(
                 subject=subject,
                 message=message,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@usanidi.com'),
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@nocode.com'),
                 recipient_list=[invitation.email],
                 fail_silently=False,
             )

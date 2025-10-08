@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Script de déploiement pour la plateforme Usanidi NoCode
+Script de déploiement pour la plateforme NoCode
 """
 import os
 import sys
@@ -78,7 +78,7 @@ def backup_database():
     """Sauvegarder la base de données"""
     print("💾 Sauvegarde de la base de données...")
 
-    db_name = os.environ.get('DB_NAME', 'usanidi_platform')
+    db_name = os.environ.get('DB_NAME', 'nocode_platform')
     db_user = os.environ.get('DB_USER', 'postgres')
     timestamp = subprocess.check_output(['date', '+%Y%m%d_%H%M%S']).decode().strip()
 
@@ -112,7 +112,7 @@ def check_health():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Script de déploiement Usanidi")
+    parser = argparse.ArgumentParser(description="Script de déploiement NoCode")
     parser.add_argument('action', choices=[
         'dev', 'prod', 'backup', 'health'
     ], help='Action à exécuter')

@@ -37,8 +37,6 @@ from .user import (
 from .organization import (
     Organization,
     OrganizationMember,
-    OrganizationInvitation,
-    OrganizationSettings,
 )
 
 # Système d'abonnements
@@ -89,8 +87,7 @@ __all__ = [
     # Organisations
     'Organization',
     'OrganizationMember',
-    'OrganizationInvitation',
-    'OrganizationSettings',
+
     
     # Abonnements
     'TypeAbonnement',

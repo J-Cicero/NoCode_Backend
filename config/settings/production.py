@@ -12,7 +12,7 @@ DEBUG = False
 # Hosts autorisés strictement définis
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
-    default='usanidi.com,www.usanidi.com,api.usanidi.com',
+    default='nocode.com,www.nocode.com,api.nocode.com',
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 
@@ -115,7 +115,7 @@ EMAIL_HOST_PASSWORD = config('SENDGRID_API_KEY', default='')
 
 # Configuration des admins pour les emails d'erreur
 ADMINS = [
-    ('Admin', config('ADMIN_EMAIL', default='admin@usanidi.com')),
+    ('Admin', config('ADMIN_EMAIL', default='admin@nocode.com')),
 ]
 MANAGERS = ADMINS
 
@@ -150,19 +150,19 @@ WHITENOISE_AUTOREFRESH = False
 # Configuration CORS stricte pour production
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='https://usanidi.com,https://www.usanidi.com',
+    default='https://nocode.com,https://www.nocode.com',
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 CORS_ALLOW_CREDENTIALS = True
 
 # Configuration spécifique production
-USANIDI_CONFIG.update({
+NOCODE_CONFIG.update({
     'AUTO_MIGRATE_GENERATED_APPS': False,
     'ENABLE_CODE_GENERATION_DEBUG': False,
     'ENABLE_WEBSOCKET_DEBUG': False,
-    'DOCKER_REGISTRY': config('DOCKER_REGISTRY', default='registry.usanidi.com'),
-    'KUBERNETES_NAMESPACE': config('KUBERNETES_NAMESPACE', default='usanidi-prod'),
-    'DEFAULT_SUBDOMAIN': config('DEFAULT_SUBDOMAIN', default='app.usanidi.com'),
+    'DOCKER_REGISTRY': config('DOCKER_REGISTRY', default='registry.nocode.com'),
+    'KUBERNETES_NAMESPACE': config('KUBERNETES_NAMESPACE', default='nocode-prod'),
+    'DEFAULT_SUBDOMAIN': config('DEFAULT_SUBDOMAIN', default='app.nocode.com'),
 })
 
 # Configuration optimisée des sessions

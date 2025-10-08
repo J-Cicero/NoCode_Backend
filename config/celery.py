@@ -1,5 +1,5 @@
 """
-Configuration Celery pour la plateforme Usanidi NoCode
+Configuration Celery pour la plateforme NoCode
 """
 import os
 from celery import Celery
@@ -10,7 +10,7 @@ from django.conf import settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
 
 # Créer l'instance Celery
-app = Celery('usanidi_platform')
+app = Celery('nocode_platform')
 
 # Configuration à partir des settings Django
 app.config_from_object('django.conf:settings', namespace='CELERY')

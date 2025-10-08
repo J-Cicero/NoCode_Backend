@@ -90,7 +90,7 @@ SIMPLE_JWT.update({
 })
 
 # Configuration spécifique test
-USANIDI_CONFIG.update({
+NOCODE_CONFIG.update({
     'MAX_TABLES_PER_PROJECT': 5,
     'MAX_FIELDS_PER_TABLE': 10,
     'MAX_PROJECTS_PER_ORG': 3,

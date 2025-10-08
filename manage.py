@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Script de gestion Django pour la plateforme Usanidi NoCode
+Script de gestion Django pour la plateforme NoCode
 """
 import os
 import sys
