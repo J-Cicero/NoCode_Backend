@@ -5,13 +5,10 @@ from django.db.utils import ProgrammingError
 logger = logging.getLogger(__name__)
 
 class SchemaManager:
-    """
-    Gestionnaire de schémas PostgreSQL pour l'isolation des données par projet
-    """
     
     @staticmethod
     def _execute_sql(sql, params=None):
-        """Exécute une requête SQL brute"""
+
         with connection.cursor() as cursor:
             try:
                 cursor.execute(sql, params or [])
@@ -21,9 +18,14 @@ class SchemaManager:
                 raise
     
     def create_project_schema(self, project_id):
-        ""
+        """
         Crée un nouveau schéma pour un projet
-        Retourne le nom du schéma créé
+
+        Args:
+            project_id: ID du projet
+
+        Returns:
+            str: Le nom du schéma créé
         """
         schema_name = f"project_{project_id}"
         
@@ -64,16 +66,8 @@ class SchemaManager:
         
         return schema_name
     
-    def create_dynamic_table(self, schema_name, table_name, columns):
-        """
-        Crée une nouvelle table dynamique dans le schéma spécifié
-        
-        Args:
-            schema_name: Nom du schéma cible
-            table_name: Nom de la table à créer
-            columns: Liste de tuples (nom_colonne, type_colonne, options)
-                    Ex: [('title', 'VARCHAR(255)', 'NOT NULL'), ('content', 'TEXT', '')]
-        """
+    def create_table(self, schema_name, table_name, columns):
+
         if not all(isinstance(col, (list, tuple)) and len(col) >= 2 for col in columns):
             raise ValueError("Les colonnes doivent être des tuples (nom, type, [options])")
         

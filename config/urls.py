@@ -17,12 +17,15 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # Documentation API
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/schema/', SpectacularAPIView.as_view(api_version='1.0.0'), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 
     # API Foundation
     path('api/v1/foundation/', include('apps.foundation.urls')),
+    
+    # API Studio
+    path('api/v1/studio/', include('apps.studio.urls')),
 
     # Health check
     path('health/', include([
