@@ -7,10 +7,6 @@ from django.conf import settings
 
 
 class DevCORSMiddleware:
-    """
-    Middleware CORS permissif pour le développement.
-    Permet les requêtes depuis Postman et autres outils de test.
-    """
     
     def __init__(self, get_response):
         self.get_response = get_response
@@ -37,13 +33,9 @@ class DevCORSMiddleware:
 
 
 class DevCSRFExemptMiddleware:
-    """
-    Middleware pour exempter certains endpoints du CSRF en développement.
-    """
     
     def __init__(self, get_response):
         self.get_response = get_response
-        # Endpoints exemptés du CSRF en développement
         self.exempt_paths = [
             '/api/auth/',
             '/api/organizations/',
@@ -53,7 +45,6 @@ class DevCSRFExemptMiddleware:
         ]
     
     def __call__(self, request):
-        # Exempter du CSRF en développement pour les API
         if settings.DEBUG and any(request.path.startswith(path) for path in self.exempt_paths):
             setattr(request, '_dont_enforce_csrf_checks', True)
         
@@ -61,17 +52,13 @@ class DevCSRFExemptMiddleware:
 
 
 class DevAuthBypassMiddleware:
-    """
-    Middleware pour faciliter les tests d'authentification en développement.
-    Permet d'utiliser un token de test simple.
-    """
     
     def __init__(self, get_response):
         self.get_response = get_response
         self.test_token = 'dev-test-token-123'
     
     def __call__(self, request):
-        # En développement, permettre un token de test simple
+
         if settings.DEBUG:
             auth_header = request.META.get('HTTP_AUTHORIZATION', '')
             if auth_header == f'Bearer {self.test_token}':
@@ -94,10 +81,6 @@ class DevAuthBypassMiddleware:
 
 
 class DevRequestLoggingMiddleware:
-    """
-    Middleware pour logger les requêtes en développement.
-    Aide à déboguer les problèmes avec Postman.
-    """
     
     def __init__(self, get_response):
         self.get_response = get_response

@@ -14,9 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 class ServiceException(Exception):
-    """
-    Exception de base pour tous les services métier.
-    """
     def __init__(self, message: str, error_code: str = None, details: Dict = None):
         self.message = message
         self.error_code = error_code or 'SERVICE_ERROR'
@@ -86,7 +83,6 @@ class ServiceResult:
         return cls(success=False, data=data, errors=errors)
     
     def to_dict(self):
-        """Convertit le résultat en dictionnaire."""
         return {
             'success': self.success,
             'data': self.data,
@@ -98,10 +94,6 @@ class ServiceResult:
 
 
 class BaseService:
-    """
-    Classe de base pour tous les services métier.
-    Fournit une structure commune et des fonctionnalités partagées.
-    """
     
     def __init__(self, user: User = None, organization=None):
         self.user = user
@@ -110,18 +102,13 @@ class BaseService:
         self._context = {}
     
     def set_context(self, **kwargs):
-        """Définit le contexte d'exécution du service."""
         self._context.update(kwargs)
     
     def get_context(self, key: str, default=None):
-        """Récupère une valeur du contexte."""
         return self._context.get(key, default)
     
     def validate_permissions(self, required_permissions: List[str] = None):
-        """
-        Valide les permissions requises pour exécuter le service.
-        À surcharger dans les services enfants.
-        """
+
         if not self.user:
             raise PermissionException("Utilisateur non authentifié")
         
@@ -130,44 +117,28 @@ class BaseService:
             pass
     
     def validate_input(self, data: Dict) -> Dict:
-        """
-        Valide les données d'entrée du service.
-        À surcharger dans les services enfants.
-        """
+
         return data
     
     def pre_execute(self, *args, **kwargs):
-        """
-        Hook exécuté avant l'exécution principale du service.
-        À surcharger dans les services enfants.
-        """
         pass
     
     def post_execute(self, result: ServiceResult, *args, **kwargs):
-        """
-        Hook exécuté après l'exécution principale du service.
-        À surcharger dans les services enfants.
-        """
+
         pass
     
     def execute(self, *args, **kwargs) -> ServiceResult:
-        """
-        Méthode principale d'exécution du service.
-        À surcharger dans les services enfants.
-        """
+
         raise NotImplementedError("La méthode execute() doit être implémentée")
     
     def run(self, *args, **kwargs) -> ServiceResult:
-        """
-        Point d'entrée principal du service avec gestion d'erreurs et logging.
-        """
+
         start_time = timezone.now()
         service_name = self.__class__.__name__
         
         try:
             self.logger.info(f"Démarrage du service {service_name}")
             
-            # Validation des permissions
             self.validate_permissions()
             
             # Hook pré-exécution

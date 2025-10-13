@@ -11,7 +11,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.contrib.auth import get_user_model
 from ..services.auth_service import AuthService
 from ..serializers import (
-    UserCreateSerializer, ClientCreateSerializer, EntrepriseCreateSerializer,
+    UserCreateSerializer, ClientCreateSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     PasswordChangeSerializer, EmailVerificationSerializer
 )
@@ -67,27 +67,6 @@ class RegisterClientView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RegisterEntrepriseView(APIView):
-    """Vue pour l'inscription des entreprises."""
-    
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        serializer = EntrepriseCreateSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            # Utiliser AuthService pour l'inscription
-            auth_service = AuthService()
-            result = auth_service.register_entreprise(serializer.validated_data)
-            
-            if result.success:
-                return Response(result.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response({
-                    'error': result.error_message
-                }, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutView(APIView):

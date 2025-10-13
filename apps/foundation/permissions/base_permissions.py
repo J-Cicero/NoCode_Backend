@@ -4,30 +4,23 @@ Définit les classes de permissions réutilisables pour sécuriser les APIs.
 """
 from rest_framework import permissions
 from django.contrib.auth import get_user_model
-from ..models import Organization, OrganizationMember, Entreprise
+from ..models import Organization, OrganizationMember
 
 
 User = get_user_model()
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
-    """
-    Permission personnalisée pour permettre seulement aux propriétaires d'un objet de le modifier.
-    """
+
     
     def has_object_permission(self, request, view, obj):
-        # Permissions de lecture pour tous les utilisateurs authentifiés
         if request.method in permissions.SAFE_METHODS:
             return True
         
-        # Permissions d'écriture seulement pour le propriétaire
         return obj.owner == request.user if hasattr(obj, 'owner') else obj.user == request.user
 
 
 class IsOrganizationMember(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'un utilisateur est membre d'une organisation.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -50,9 +43,6 @@ class IsOrganizationMember(permissions.BasePermission):
 
 
 class IsOrganizationOwner(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'un utilisateur est propriétaire d'une organisation.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -70,9 +60,6 @@ class IsOrganizationOwner(permissions.BasePermission):
 
 
 class IsOrganizationAdmin(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'un utilisateur est admin ou propriétaire d'une organisation.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -105,10 +92,6 @@ class IsOrganizationAdmin(permissions.BasePermission):
 
 
 class CanManageBilling(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'un utilisateur peut gérer la facturation d'une organisation.
-    """
-    
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
@@ -139,9 +122,6 @@ class CanManageBilling(permissions.BasePermission):
 
 
 class IsEntrepriseOwner(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'un utilisateur est propriétaire d'une entreprise.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -164,10 +144,7 @@ class IsEntrepriseOwner(permissions.BasePermission):
 
 
 class IsStaffOrOwner(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'un utilisateur est staff ou propriétaire de l'objet.
-    """
-    
+
     def has_permission(self, request, view):
         return request.user.is_authenticated
     
@@ -185,10 +162,6 @@ class IsStaffOrOwner(permissions.BasePermission):
 
 
 class IsVerifiedEntreprise(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'une entreprise est vérifiée.
-    """
-    
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
@@ -204,9 +177,7 @@ class IsVerifiedEntreprise(permissions.BasePermission):
 
 
 class HasActiveSubscription(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'une organisation a un abonnement actif.
-    """
+
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -231,9 +202,6 @@ class HasActiveSubscription(permissions.BasePermission):
 
 
 class CanInviteMembers(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'un utilisateur peut inviter des membres.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -284,10 +252,7 @@ class CanInviteMembers(permissions.BasePermission):
 
 
 class IsOwnerOrStaff(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'un utilisateur est propriétaire ou staff.
-    """
-    
+
     def has_permission(self, request, view):
         return request.user.is_authenticated
     
@@ -306,9 +271,6 @@ class IsOwnerOrStaff(permissions.BasePermission):
 
 
 class CanAccessUserData(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'un utilisateur peut accéder aux données d'un autre utilisateur.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -327,9 +289,7 @@ class CanAccessUserData(permissions.BasePermission):
 
 
 class HasSubscriptionLimit(permissions.BasePermission):
-    """
-    Permission pour vérifier les limites d'abonnement.
-    """
+
     
     def __init__(self, limit_type, usage_field=None):
         self.limit_type = limit_type
@@ -367,9 +327,6 @@ class HasSubscriptionLimit(permissions.BasePermission):
 
 
 class DynamicPermission(permissions.BasePermission):
-    """
-    Permission dynamique basée sur les rôles et permissions des membres.
-    """
     
     def __init__(self, required_permission):
         self.required_permission = required_permission

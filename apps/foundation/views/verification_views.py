@@ -13,7 +13,7 @@ from ..services.verification_service import VerificationService
 from ..serializers import (
     DocumentVerificationSerializer, DocumentUploadCreateSerializer
 )
-from ..models import Entreprise, DocumentVerification, DocumentUpload
+from ..models import DocumentVerification, DocumentUpload, Organization
 
 
 User = get_user_model()

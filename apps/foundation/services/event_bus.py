@@ -19,9 +19,6 @@ logger = logging.getLogger(__name__)
 
 
 class Event(models.Model):
-    """
-    Modèle pour stocker les événements dans la base de données.
-    """
     EVENT_STATUS_CHOICES = [
         ('PENDING', 'En attente'),
         ('PROCESSING', 'En cours de traitement'),
@@ -129,9 +126,7 @@ class Event(models.Model):
 
 
 class EventListener:
-    """
-    Classe de base pour les écouteurs d'événements.
-    """
+
     def __init__(self, event_name: str, handler: Callable, priority: int = 0):
         self.event_name = event_name
         self.handler = handler
@@ -210,9 +205,7 @@ class EventRegistry:
 
 
 class EventBus:
-    """
-    Bus d'événements principal pour la communication inter-modules.
-    """
+
     _registry = EventRegistry()
     _enabled = True
     
@@ -259,20 +252,7 @@ class EventBus:
     def publish(cls, event_name: str, event_data: Dict = None, 
                 user: User = None, source_module: str = None,
                 content_object: Any = None, async_processing: bool = False) -> Optional[Event]:
-        """
-        Publie un événement.
-        
-        Args:
-            event_name: Nom de l'événement
-            event_data: Données de l'événement
-            user: Utilisateur associé
-            source_module: Module source
-            content_object: Objet Django associé
-            async_processing: Si True, traite l'événement de manière asynchrone
-        
-        Returns:
-            L'objet Event créé si async_processing=True, None sinon
-        """
+
         if not cls._enabled:
             logger.debug(f"EventBus désactivé, événement {event_name} ignoré")
             return None
@@ -323,10 +303,7 @@ class EventBus:
     
     @classmethod
     def process_pending_events(cls, limit: int = 100):
-        """
-        Traite les événements en attente (pour traitement asynchrone).
-        Utilisé par les tâches Celery.
-        """
+
         if not cls._enabled:
             return
         
@@ -413,15 +390,7 @@ class EventBus:
 
 # Décorateur pour faciliter l'enregistrement d'écouteurs
 def event_listener(event_name: str, priority: int = 0):
-    """
-    Décorateur pour enregistrer automatiquement une fonction comme écouteur d'événement.
-    
-    Usage:
-        @event_listener('user.created')
-        def handle_user_created(event_data):
-            # Traiter l'événement
-            return True
-    """
+
     def decorator(func):
         EventBus.subscribe(event_name, func, priority)
         return func

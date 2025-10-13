@@ -22,16 +22,11 @@ User = get_user_model()
 
 
 class BillingService(BaseService):
-    """
-    Service de gestion de la facturation.
-    Gère toute la logique métier liée aux abonnements et paiements.
-    """
     
     def __init__(self, user: User = None, organization: Organization = None):
         super().__init__(user, organization)
     
     def validate_permissions(self, required_permissions: List[str] = None):
-        """Valide les permissions pour les opérations de facturation."""
         super().validate_permissions(required_permissions)
         
         if required_permissions:
@@ -40,7 +35,6 @@ class BillingService(BaseService):
                     raise PermissionException("Permission de gestion de facturation requise")
     
     def can_manage_billing(self) -> bool:
-        """Vérifie si l'utilisateur peut gérer la facturation."""
         if not self.user or not self.organization:
             return False
         
@@ -55,9 +49,6 @@ class BillingService(BaseService):
             return False
     
     def get_available_plans(self, user_type: str = None) -> ServiceResult:
-        """
-        Récupère les plans d'abonnement disponibles.
-        """
         try:
             queryset = TypeAbonnement.objects.filter(is_active=True)
             

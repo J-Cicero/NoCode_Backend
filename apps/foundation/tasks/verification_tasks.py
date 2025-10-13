@@ -5,7 +5,7 @@ import logging
 from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta
-from ..models import DocumentVerification, DocumentUpload, Entreprise
+from ..models import DocumentVerification, DocumentUpload, Organization
 from ..services.verification_service import VerificationService
 from ..services.event_bus import EventBus
 from .email_tasks import send_billing_notification

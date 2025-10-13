@@ -1,11 +1,7 @@
 from django.db import models
-from django.db import connection
-from django.conf import settings
+
 from django.contrib.postgres.fields import JSONField
-from django.db import transaction
 from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from apps.foundation.models import Organization
 import logging
 
@@ -13,9 +9,7 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 class Project(models.Model):
-    """
-    Modèle représentant un projet NoCode
-    """
+
     name = models.CharField(max_length=255)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='projects')
     schema_name = models.CharField(max_length=63, unique=True)  # PostgreSQL a une limite de 63 caractères
@@ -33,9 +27,7 @@ class Project(models.Model):
 
 
 class DataSchema(models.Model):
-    """
-    Modèle pour stocker la structure des tables de données
-    """
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='schemas')
     table_name = models.SlugField(max_length=63)  # Nom technique de la table
     display_name = models.CharField(max_length=255)  # Nom d'affichage
@@ -54,9 +46,7 @@ class DataSchema(models.Model):
 
 
 class Page(models.Model):
-    """
-    Modèle pour les pages du builder
-    """
+
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='pages')
     name = models.CharField(max_length=255)
     route = models.CharField(max_length=255, help_text="Chemin de l'URL (ex: 'home', 'about')")
@@ -72,7 +62,6 @@ class Page(models.Model):
         verbose_name_plural = 'Pages'
 
     def save(self, *args, **kwargs):
-        # S'assurer qu'une seule page est marquée comme page d'accueil par projet
         if self.is_home:
             Page.objects.filter(project=self.project, is_home=True).exclude(pk=self.pk).update(is_home=False)
         super().save(*args, **kwargs)

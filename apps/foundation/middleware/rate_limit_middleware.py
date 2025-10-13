@@ -16,22 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 class RateLimitMiddleware(MiddlewareMixin):
-    """
-    Middleware pour la limitation de débit des requêtes.
-    Limite le nombre de requêtes par utilisateur/IP sur une période donnée.
-    """
-    
+
     def __init__(self, get_response):
         self.get_response = get_response
         
-        # Configuration par défaut
         self.default_limits = getattr(settings, 'RATE_LIMIT_DEFAULTS', {
             'requests_per_minute': 60,
             'requests_per_hour': 1000,
             'requests_per_day': 10000,
         })
         
-        # Limites spécifiques par endpoint
         self.endpoint_limits = getattr(settings, 'RATE_LIMIT_ENDPOINTS', {
             '/api/auth/login/': {
                 'requests_per_minute': 5,
@@ -51,7 +45,6 @@ class RateLimitMiddleware(MiddlewareMixin):
             },
         })
         
-        # Endpoints exemptés
         self.exempt_paths = getattr(settings, 'RATE_LIMIT_EXEMPT_PATHS', [
             '/api/health/',
             '/api/docs/',
@@ -62,24 +55,17 @@ class RateLimitMiddleware(MiddlewareMixin):
         super().__init__(get_response)
     
     def process_request(self, request):
-        """
-        Vérifie les limites de débit pour la requête.
-        """
-        # Ignorer les chemins exemptés
+
         if self._should_skip_rate_limit(request):
             return None
         
-        # Ignorer les requêtes OPTIONS
         if request.method == 'OPTIONS':
             return None
         
         try:
-            # Identifier l'utilisateur/IP
             identifier = self._get_request_identifier(request)
             
-            # Vérifier les limites
             if self._is_rate_limited(request, identifier):
-                # Enregistrer la tentative de dépassement
                 self._log_rate_limit_exceeded(request, identifier)
                 
                 return JsonResponse({
@@ -87,19 +73,15 @@ class RateLimitMiddleware(MiddlewareMixin):
                     'retry_after': 60  # secondes
                 }, status=429)
             
-            # Enregistrer la requête
             self._record_request(request, identifier)
             
         except Exception as e:
             logger.error(f"Erreur dans le middleware de limitation de débit: {e}")
-            # En cas d'erreur, on laisse passer pour éviter de bloquer le service
-        
+
         return None
     
     def _should_skip_rate_limit(self, request):
-        """
-        Détermine si la limitation de débit doit être ignorée.
-        """
+
         path = request.path
         
         # Vérifier les chemins exemptés
@@ -114,9 +96,7 @@ class RateLimitMiddleware(MiddlewareMixin):
         return False
     
     def _get_request_identifier(self, request):
-        """
-        Génère un identifiant unique pour la requête (utilisateur ou IP).
-        """
+
         # Utiliser l'ID utilisateur si authentifié
         if hasattr(request, 'user') and request.user.is_authenticated:
             return f"user:{request.user.id}"
@@ -126,9 +106,7 @@ class RateLimitMiddleware(MiddlewareMixin):
         return f"ip:{ip}"
     
     def _is_rate_limited(self, request, identifier):
-        """
-        Vérifie si la requête dépasse les limites de débit.
-        """
+
         path = request.path
         
         # Récupérer les limites pour cet endpoint
@@ -142,10 +120,7 @@ class RateLimitMiddleware(MiddlewareMixin):
         return False
     
     def _get_limits_for_path(self, path):
-        """
-        Récupère les limites configurées pour un chemin donné.
-        """
-        # Vérifier les limites spécifiques d'endpoint
+
         for endpoint_path, endpoint_limits in self.endpoint_limits.items():
             if path.startswith(endpoint_path):
                 return endpoint_limits
@@ -154,32 +129,23 @@ class RateLimitMiddleware(MiddlewareMixin):
         return self.default_limits
     
     def _check_limit_exceeded(self, identifier, path, period, max_requests):
-        """
-        Vérifie si une limite spécifique est dépassée.
-        """
-        # Générer la clé de cache
+
         cache_key = f"rate_limit:{identifier}:{path}:{period}"
         
-        # Récupérer le compteur actuel
         current_count = cache.get(cache_key, 0)
         
         return current_count >= max_requests
     
     def _record_request(self, request, identifier):
-        """
-        Enregistre une requête dans les compteurs de débit.
-        """
+
         path = request.path
         limits = self._get_limits_for_path(path)
-        
-        # Enregistrer pour chaque période
+
         for period, max_requests in limits.items():
             cache_key = f"rate_limit:{identifier}:{path}:{period}"
             
-            # Déterminer la durée de la période en secondes
             period_seconds = self._get_period_seconds(period)
             
-            # Incrémenter le compteur
             try:
                 current_count = cache.get(cache_key, 0)
                 cache.set(cache_key, current_count + 1, period_seconds)
@@ -187,9 +153,6 @@ class RateLimitMiddleware(MiddlewareMixin):
                 logger.error(f"Erreur lors de l'enregistrement du débit: {e}")
     
     def _get_period_seconds(self, period):
-        """
-        Convertit une période en secondes.
-        """
         period_map = {
             'requests_per_minute': 60,
             'requests_per_hour': 3600,
@@ -198,9 +161,7 @@ class RateLimitMiddleware(MiddlewareMixin):
         return period_map.get(period, 3600)
     
     def _log_rate_limit_exceeded(self, request, identifier):
-        """
-        Enregistre un dépassement de limite de débit.
-        """
+
         log_data = {
             'identifier': identifier,
             'path': request.path,
@@ -214,9 +175,7 @@ class RateLimitMiddleware(MiddlewareMixin):
         EventBus.publish('rate_limit.exceeded', log_data)
     
     def _get_client_ip(self, request):
-        """
-        Récupère l'adresse IP du client.
-        """
+
         x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
             ip = x_forwarded_for.split(',')[0]
@@ -226,30 +185,21 @@ class RateLimitMiddleware(MiddlewareMixin):
 
 
 class AdaptiveRateLimitMiddleware(MiddlewareMixin):
-    """
-    Middleware de limitation de débit adaptatif.
-    Ajuste les limites en fonction du comportement de l'utilisateur.
-    """
     
     def __init__(self, get_response):
         self.get_response = get_response
         super().__init__(get_response)
     
     def process_request(self, request):
-        """
-        Applique une limitation de débit adaptatif.
-        """
+
         if not hasattr(request, 'user') or not request.user.is_authenticated:
             return None
         
         try:
-            # Récupérer le score de confiance de l'utilisateur
             trust_score = self._get_user_trust_score(request.user)
-            
-            # Ajuster les limites en fonction du score
+
             adjusted_limits = self._adjust_limits_by_trust(trust_score)
             
-            # Appliquer les limites ajustées
             request._adaptive_rate_limits = adjusted_limits
             
         except Exception as e:
@@ -258,12 +208,8 @@ class AdaptiveRateLimitMiddleware(MiddlewareMixin):
         return None
     
     def _get_user_trust_score(self, user):
-        """
-        Calcule un score de confiance pour l'utilisateur.
-        """
         score = 50  # Score de base
         
-        # Facteurs positifs
         if user.is_verified:
             score += 20
         
@@ -277,16 +223,11 @@ class AdaptiveRateLimitMiddleware(MiddlewareMixin):
             score += 10
         if account_age_days > 365:
             score += 10
-        
-        # Activité récente sans incidents
-        # (ici on pourrait vérifier l'historique des incidents de sécurité)
-        
+
         return min(100, max(0, score))
     
     def _adjust_limits_by_trust(self, trust_score):
-        """
-        Ajuste les limites en fonction du score de confiance.
-        """
+
         # Plus le score est élevé, plus les limites sont généreuses
         multiplier = 1 + (trust_score / 100)
         
@@ -303,24 +244,16 @@ class AdaptiveRateLimitMiddleware(MiddlewareMixin):
 
 
 class BurstRateLimitMiddleware(MiddlewareMixin):
-    """
-    Middleware pour gérer les pics de trafic (burst).
-    Permet des pics courts mais limite la moyenne sur une période plus longue.
-    """
     
     def __init__(self, get_response):
         self.get_response = get_response
-        
-        # Configuration du token bucket
+
         self.bucket_size = getattr(settings, 'RATE_LIMIT_BUCKET_SIZE', 100)
         self.refill_rate = getattr(settings, 'RATE_LIMIT_REFILL_RATE', 10)  # tokens par seconde
         
         super().__init__(get_response)
     
     def process_request(self, request):
-        """
-        Applique l'algorithme du token bucket pour la limitation de débit.
-        """
         if self._should_skip_burst_limit(request):
             return None
         
@@ -339,15 +272,11 @@ class BurstRateLimitMiddleware(MiddlewareMixin):
         return None
     
     def _should_skip_burst_limit(self, request):
-        """
-        Détermine si la limitation burst doit être ignorée.
-        """
+
         return request.method == 'OPTIONS' or request.path.startswith('/static/')
     
     def _consume_token(self, identifier):
-        """
-        Consomme un token du bucket. Retourne True si disponible.
-        """
+
         cache_key = f"burst_bucket:{identifier}"
         
         # Récupérer l'état actuel du bucket
@@ -378,9 +307,7 @@ class BurstRateLimitMiddleware(MiddlewareMixin):
         return False
     
     def _get_request_identifier(self, request):
-        """
-        Génère un identifiant pour la requête.
-        """
+
         if hasattr(request, 'user') and request.user.is_authenticated:
             return f"user:{request.user.id}"
         

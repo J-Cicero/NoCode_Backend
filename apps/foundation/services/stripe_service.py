@@ -27,10 +27,7 @@ User = get_user_model()
 
 
 class StripeService(BaseService):
-    """
-    Service d'intégration avec Stripe.
-    Gère toutes les interactions avec l'API Stripe.
-    """
+
     
     def __init__(self, user: User = None, organization: Organization = None):
         super().__init__(user, organization)
@@ -110,9 +107,7 @@ class StripeService(BaseService):
             return ServiceResult.error_result("Erreur lors de la création du client")
     
     def create_payment_method(self, customer_id: str, payment_method_data: Dict) -> ServiceResult:
-        """
-        Crée et attache un moyen de paiement à un client Stripe.
-        """
+
         try:
             if not self._check_stripe_availability():
                 return ServiceResult.error_result("Service Stripe non disponible")
@@ -169,9 +164,6 @@ class StripeService(BaseService):
     
     def create_subscription(self, customer_id: str, price_id: str, 
                           payment_method_id: str = None) -> ServiceResult:
-        """
-        Crée un abonnement Stripe.
-        """
         try:
             if not self._check_stripe_availability():
                 return ServiceResult.error_result("Service Stripe non disponible")

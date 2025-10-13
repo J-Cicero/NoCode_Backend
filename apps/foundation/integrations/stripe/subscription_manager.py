@@ -1,11 +1,8 @@
-"""
-Gestionnaire d'abonnements Stripe.
-Gère les abonnements récurrents et les plans.
-"""
+
 import logging
 import stripe
 from django.conf import settings
-from ...models import Abonnement, TypeAbonnement, Organization
+from ...models import Abonnement, TypeAbonnement
 from ...services.event_bus import EventBus
 
 logger = logging.getLogger(__name__)

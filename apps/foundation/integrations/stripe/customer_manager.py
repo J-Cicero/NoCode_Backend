@@ -1,28 +1,18 @@
-"""
-Gestionnaire de clients Stripe.
-Gère les clients Stripe et leur synchronisation avec les organisations.
-"""
+
 import logging
 import stripe
 from django.conf import settings
-from ...models import Organization, User
 from ...services.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
 
 class StripeCustomerManager:
-    """
-    Gestionnaire de clients Stripe.
-    """
     
     def __init__(self):
         stripe.api_key = settings.STRIPE_SECRET_KEY
     
     def create_customer(self, organization, user=None):
-        """
-        Crée un client Stripe pour une organisation.
-        """
         try:
             customer_params = {
                 'name': organization.name,
@@ -59,9 +49,6 @@ class StripeCustomerManager:
             }
     
     def update_customer(self, organization, **update_fields):
-        """
-        Met à jour un client Stripe.
-        """
         try:
             if not organization.stripe_customer_id:
                 return {
@@ -112,9 +99,6 @@ class StripeCustomerManager:
             }
     
     def get_customer_payment_methods(self, organization, type='card'):
-        """
-        Récupère les moyens de paiement d'un client.
-        """
         try:
             if not organization.stripe_customer_id:
                 return {
@@ -140,9 +124,6 @@ class StripeCustomerManager:
             }
     
     def get_customer_invoices(self, organization, limit=10):
-        """
-        Récupère les factures d'un client.
-        """
         try:
             if not organization.stripe_customer_id:
                 return {

@@ -30,7 +30,6 @@ from .mixins import (
 from .user import (
     User,
     Client,
-    Entreprise,
 )
 
 # Système d'organisations (multi-tenancy)
@@ -60,6 +59,11 @@ from .verification import (
     DocumentUpload,
 )
 
+# Système de logs d'activité
+from .activityLog import (
+    ActivityLog,
+)
+
 # Liste de tous les modèles pour faciliter les imports
 __all__ = [
     # Base et mixins
@@ -83,7 +87,6 @@ __all__ = [
     # Utilisateurs
     'User',
     'Client',
-    'Entreprise',
     
     # Organisations
     'Organization',
@@ -104,4 +107,7 @@ __all__ = [
     # Vérification
     'DocumentVerification',
     'DocumentUpload',
+    
+    # Logs d'activité
+    'ActivityLog',
 ]

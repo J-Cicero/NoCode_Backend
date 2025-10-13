@@ -12,19 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 class TenantMiddleware(MiddlewareMixin):
-    """
-    Middleware pour la gestion multi-tenant basée sur les organisations.
-    Isole les données par organisation et injecte le contexte tenant.
-    """
+
     
     def __init__(self, get_response):
         self.get_response = get_response
         super().__init__(get_response)
     
     def process_request(self, request):
-        """
-        Traite la requête pour déterminer et injecter le contexte tenant.
-        """
+
         # Ignorer les requêtes qui n'ont pas besoin de contexte tenant
         if self._should_skip_tenant(request):
             return None
@@ -116,9 +111,7 @@ class TenantMiddleware(MiddlewareMixin):
         return False
     
     def _determine_current_organization(self, request):
-        """
-        Détermine l'organisation courante à partir de la requête.
-        """
+
         # 1. Vérifier l'en-tête X-Organization-ID
         org_id = request.META.get('HTTP_X_ORGANIZATION_ID')
         if org_id:
@@ -158,9 +151,7 @@ class TenantMiddleware(MiddlewareMixin):
         return None
     
     def _is_user_member(self, user, organization):
-        """
-        Vérifie si un utilisateur est membre d'une organisation.
-        """
+
         return OrganizationMember.objects.filter(
             organization=organization,
             user=user,
@@ -168,9 +159,7 @@ class TenantMiddleware(MiddlewareMixin):
         ).exists()
     
     def _get_default_organization(self, user):
-        """
-        Récupère l'organisation par défaut d'un utilisateur.
-        """
+
         # Récupérer la première organisation où l'utilisateur est propriétaire
         owned_org = Organization.objects.filter(owner=user).first()
         if owned_org:
@@ -185,13 +174,10 @@ class TenantMiddleware(MiddlewareMixin):
         return member.organization if member else None
     
     def _check_organization_subscription(self, request, organization):
-        """
-        Vérifie l'abonnement de l'organisation et ajoute les informations au contexte.
-        """
+
         try:
             from ..models import Abonnement
             
-            # Récupérer l'abonnement actif
             subscription = Abonnement.objects.filter(
                 organization=organization,
                 status='ACTIF'
@@ -214,19 +200,13 @@ class TenantMiddleware(MiddlewareMixin):
 
 
 class TenantIsolationMiddleware(MiddlewareMixin):
-    """
-    Middleware pour l'isolation des données par tenant.
-    Filtre automatiquement les requêtes de base de données par organisation.
-    """
     
     def __init__(self, get_response):
         self.get_response = get_response
         super().__init__(get_response)
     
     def process_request(self, request):
-        """
-        Configure l'isolation des données pour le tenant courant.
-        """
+
         # Ignorer si pas de contexte tenant
         if not hasattr(request, 'current_organization'):
             return None
@@ -245,9 +225,7 @@ class TenantIsolationMiddleware(MiddlewareMixin):
         return None
     
     def process_response(self, request, response):
-        """
-        Nettoie le contexte tenant après la requête.
-        """
+
         try:
             if hasattr(self, '_local'):
                 self._local.current_organization = None
@@ -258,18 +236,14 @@ class TenantIsolationMiddleware(MiddlewareMixin):
 
 
 class OrganizationSwitchMiddleware(MiddlewareMixin):
-    """
-    Middleware pour gérer le changement d'organisation.
-    """
+
     
     def __init__(self, get_response):
         self.get_response = get_response
         super().__init__(get_response)
     
     def process_request(self, request):
-        """
-        Gère les requêtes de changement d'organisation.
-        """
+
         # Vérifier si c'est une requête de changement d'organisation
         if request.path == '/api/organizations/switch/' and request.method == 'POST':
             return self._handle_organization_switch(request)
@@ -277,9 +251,7 @@ class OrganizationSwitchMiddleware(MiddlewareMixin):
         return None
     
     def _handle_organization_switch(self, request):
-        """
-        Traite une requête de changement d'organisation.
-        """
+
         if not request.user.is_authenticated:
             return JsonResponse({
                 'error': 'Authentification requise'
@@ -295,7 +267,6 @@ class OrganizationSwitchMiddleware(MiddlewareMixin):
                     'error': 'ID d\'organisation requis'
                 }, status=400)
             
-            # Vérifier que l'utilisateur est membre de cette organisation
             try:
                 organization = Organization.objects.get(id=org_id)
                 member = OrganizationMember.objects.get(
@@ -304,7 +275,6 @@ class OrganizationSwitchMiddleware(MiddlewareMixin):
                     status='ACTIVE'
                 )
                 
-                # Publier un événement de changement d'organisation
                 from ..services.event_bus import EventBus
                 EventBus.publish('organization.switched', {
                     'user_id': request.user.id,

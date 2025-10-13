@@ -14,7 +14,7 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .base_service import BaseService, ServiceResult, ValidationException, BusinessLogicException
 from .event_bus import EventBus, FoundationEvents
-from ..models import User, Client, Entreprise, Organization, OrganizationMember
+from ..models import User, Client, Organization, OrganizationMember
 import re
 
 

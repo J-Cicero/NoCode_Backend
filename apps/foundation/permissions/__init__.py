@@ -1,7 +1,4 @@
-"""
-Centralisation des imports des permissions du module Foundation.
-Facilite l'importation des permissions dans les autres modules.
-"""
+
 
 # Base permissions
 from .base_permissions import (
@@ -20,6 +17,10 @@ from .base_permissions import (
     HasSubscriptionLimit,
     DynamicPermission,
 )
+
+# Aliases pour compatibilité
+IsOrgMember = IsOrganizationMember
+IsOrgAdmin = IsOrganizationAdmin
 
 # Organization permissions
 from .organization_permissions import (
@@ -76,6 +77,10 @@ __all__ = [
     'CanAccessUserData',
     'HasSubscriptionLimit',
     'DynamicPermission',
+    
+    # Aliases
+    'IsOrgMember',
+    'IsOrgAdmin',
     
     # Organization permissions
     'OrganizationPermission',

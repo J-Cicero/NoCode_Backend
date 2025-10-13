@@ -1,7 +1,3 @@
-"""
-Intégration Stripe pour le module Foundation.
-Gère les paiements, abonnements et webhooks Stripe.
-"""
 
 from .webhook_handlers import StripeWebhookHandler
 from .payment_processor import StripePaymentProcessor

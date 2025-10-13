@@ -16,9 +16,7 @@ User = get_user_model()
 
 
 class MoyenDePaiement(BaseModel, StatusMixin, MetadataMixin):
-    """
-    Moyens de paiement enregistrés par les utilisateurs.
-    """
+
     TYPE_CHOICES = [
         ('CARTE_CREDIT', 'Carte de crédit'),
         ('PAYPAL', 'PayPal'),
@@ -33,7 +31,6 @@ class MoyenDePaiement(BaseModel, StatusMixin, MetadataMixin):
         ('SUSPENDED', 'Suspendu'),
     ]
     
-    # Propriétaire du moyen de paiement
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -41,14 +38,13 @@ class MoyenDePaiement(BaseModel, StatusMixin, MetadataMixin):
         verbose_name="Utilisateur"
     )
     
-    # Type de moyen de paiement
     type = models.CharField(
         max_length=50,
         choices=TYPE_CHOICES,
         verbose_name="Type de paiement"
     )
     
-    # Statut
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -56,28 +52,24 @@ class MoyenDePaiement(BaseModel, StatusMixin, MetadataMixin):
         verbose_name="Statut"
     )
     
-    # Token du provider (Stripe, PayPal, etc.)
     provider_token = models.CharField(
         max_length=255,
         verbose_name="Token du fournisseur",
         help_text="Token sécurisé du fournisseur de paiement"
     )
     
-    # Détails du moyen de paiement (JSON)
     details = models.JSONField(
         default=dict,
         verbose_name="Détails",
         help_text="Informations sur le moyen de paiement (4 derniers chiffres, etc.)"
     )
     
-    # Informations d'expiration
     expires_at = models.DateTimeField(
         null=True,
         blank=True,
         verbose_name="Expire le"
     )
     
-    # Moyen de paiement par défaut
     is_default = models.BooleanField(
         default=False,
         verbose_name="Moyen de paiement par défaut"
@@ -101,7 +93,6 @@ class MoyenDePaiement(BaseModel, StatusMixin, MetadataMixin):
         return f"{self.get_type_display()} - ****{details}"
     
     def save(self, *args, **kwargs):
-        """Override save pour gérer le moyen de paiement par défaut."""
         if self.is_default:
             # S'assurer qu'il n'y a qu'un seul moyen de paiement par défaut
             MoyenDePaiement.objects.filter(
@@ -113,26 +104,21 @@ class MoyenDePaiement(BaseModel, StatusMixin, MetadataMixin):
     
     @property
     def is_expired(self):
-        """Vérifie si le moyen de paiement a expiré."""
         if self.expires_at:
             return timezone.now() > self.expires_at
         return False
     
     @property
     def is_valid(self):
-        """Vérifie si le moyen de paiement est valide."""
         return self.status == 'ACTIVE' and not self.is_expired
     
     def mark_as_used(self):
-        """Marque le moyen de paiement comme utilisé."""
         self.last_used_at = timezone.now()
         self.save(update_fields=['last_used_at'])
 
 
 class Paiement(BaseModel, StatusMixin, MetadataMixin):
-    """
-    Transactions de paiement effectuées sur la plateforme.
-    """
+
     STATUS_CHOICES = [
         ('SUCCES', 'Succès'),
         ('ECHEC', 'Échec'),
@@ -149,7 +135,6 @@ class Paiement(BaseModel, StatusMixin, MetadataMixin):
         ('REFUND', 'Remboursement'),
     ]
     
-    # Lien vers l'abonnement
     abonnement = models.ForeignKey(
         'foundation.Abonnement',
         on_delete=models.CASCADE,
@@ -157,7 +142,6 @@ class Paiement(BaseModel, StatusMixin, MetadataMixin):
         verbose_name="Abonnement"
     )
     
-    # Moyen de paiement utilisé
     moyen_de_paiement_utilise = models.ForeignKey(
         MoyenDePaiement,
         on_delete=models.SET_NULL,
@@ -167,17 +151,16 @@ class Paiement(BaseModel, StatusMixin, MetadataMixin):
         verbose_name="Moyen de paiement utilisé"
     )
     
-    # Informations du paiement
     montant = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(Decimal('0.00'))],
-        verbose_name="Montant (€)"
+        verbose_name="Montant (fcfa)"
     )
     
     devise = models.CharField(
         max_length=3,
-        default='EUR',
+        default='fcfa',
         verbose_name="Devise"
     )
     
@@ -335,9 +318,7 @@ class Paiement(BaseModel, StatusMixin, MetadataMixin):
 
 
 class Facture(BaseModel, StatusMixin, MetadataMixin):
-    """
-    Factures générées pour les organisations.
-    """
+
     STATUS_CHOICES = [
         ('BROUILLON', 'Brouillon'),
         ('ENVOYEE', 'Envoyée'),

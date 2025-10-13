@@ -17,9 +17,7 @@ logger = logging.getLogger(__name__)
 @method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(require_POST, name='dispatch')
 class StripeWebhookView(View):
-    """
-    Vue pour traiter les webhooks Stripe.
-    """
+
     
     def __init__(self):
         super().__init__()

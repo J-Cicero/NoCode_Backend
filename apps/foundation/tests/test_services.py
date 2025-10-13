@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
 from ..models import (
-    Client, Entreprise, Organization, OrganizationMember, 
+    Client, Organization, OrganizationMember, 
     Abonnement, DocumentVerification
 )
 from ..services.auth_service import AuthService
@@ -51,26 +51,6 @@ class AuthServiceTestCase(TestCase):
             # Vérifier qu'un événement a été publié
             mock_publish.assert_called()
     
-    def test_register_entreprise_user(self):
-        """Test d'inscription d'un utilisateur entreprise."""
-        entreprise_data = self.user_data.copy()
-        entreprise_data['user_type'] = 'ENTREPRISE'
-        
-        with patch.object(EventBus, 'publish') as mock_publish:
-            result = self.auth_service.register_user(
-                entreprise_data,
-                profile_data={
-                    'company_name': 'Test Company',
-                    'siret': '73282932000074',
-                    'legal_form': 'SAS'
-                }
-            )
-            
-            self.assertTrue(result['success'])
-            self.assertEqual(result['user'].user_type, 'ENTREPRISE')
-            
-            # Vérifier que le profil entreprise a été créé
-            self.assertTrue(hasattr(result['user'], 'entreprise'))
     
     def test_authenticate_user_success(self):
         """Test d'authentification réussie."""
@@ -296,106 +276,6 @@ class BillingServiceTestCase(TestCase):
             self.assertEqual(abonnement.status, 'ANNULE')
 
 
-class VerificationServiceTestCase(TestCase):
-    """Tests pour VerificationService."""
-    
-    def setUp(self):
-        self.verification_service = VerificationService()
-        self.user = User.objects.create_user(
-            email='entreprise@example.com',
-            password='testpass123',
-            user_type='ENTREPRISE'
-        )
-        self.entreprise = Entreprise.objects.create(
-            user=self.user,
-            company_name='Test Company',
-            siret='73282932000074'
-        )
-    
-    def test_start_verification_process(self):
-        """Test de démarrage du processus de vérification."""
-        with patch.object(EventBus, 'publish') as mock_publish:
-            result = self.verification_service.start_verification(
-                self.entreprise.id,
-                'KYB_FULL'
-            )
-            
-            self.assertTrue(result['success'])
-            self.assertIn('verification_request', result)
-            self.assertEqual(
-                result['verification_request'].request_type,
-                'KYB_FULL'
-            )
-            self.assertEqual(
-                result['verification_request'].status,
-                'PENDING'
-            )
-    
-    def test_submit_verification_document(self):
-        """Test de soumission de document de vérification."""
-        verification = DocumentVerification.objects.create(
-            entreprise=self.entreprise,
-            type_verification='KYB_COMPLET'
-        )
-        
-        # Mock du fichier
-        mock_file = Mock()
-        mock_file.name = 'kbis.pdf'
-        mock_file.size = 1024
-        
-        with patch.object(EventBus, 'publish') as mock_publish:
-            result = self.verification_service.submit_document(
-                verification.id,
-                'KBIS',
-                mock_file
-            )
-            
-            self.assertTrue(result['success'])
-            self.assertIn('document', result)
-    
-    def test_approve_verification(self):
-        """Test d'approbation de vérification."""
-        verification = DocumentVerification.objects.create(
-            entreprise=self.entreprise,
-            type_verification='KYB_COMPLET',
-            status='EN_COURS'
-        )
-        
-        with patch.object(EventBus, 'publish') as mock_publish:
-            result = self.verification_service.approve_verification(
-                verification.id,
-                'Verification approved'
-            )
-            
-            self.assertTrue(result['success'])
-            
-            # Vérifier que la vérification a été approuvée
-            verification.refresh_from_db()
-            self.assertEqual(verification.status, 'APPROUVE')
-            
-            # Vérifier que l'entreprise est maintenant vérifiée
-            self.entreprise.refresh_from_db()
-            self.assertTrue(self.entreprise.is_verified)
-    
-    def test_reject_verification(self):
-        """Test de rejet de vérification."""
-        verification = DocumentVerification.objects.create(
-            entreprise=self.entreprise,
-            type_verification='KYB_COMPLET',
-            status='EN_COURS'
-        )
-        
-        with patch.object(EventBus, 'publish') as mock_publish:
-            result = self.verification_service.reject_verification(
-                verification.id,
-                'Documents incomplets'
-            )
-            
-            self.assertTrue(result['success'])
-            
-            # Vérifier que la vérification a été rejetée
-            verification.refresh_from_db()
-            self.assertEqual(verification.status, 'REJETE')
 
 
 class EventBusTestCase(TestCase):

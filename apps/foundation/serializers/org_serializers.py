@@ -6,8 +6,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from ..models import (
-    Organization, OrganizationMember, OrganizationInvitation,
-    OrganizationSettings
+    Organization, OrganizationMember, OrganizationInvitation
 )
 from .user_serializers import UserBaseSerializer
 
@@ -70,11 +69,8 @@ class OrganizationDetailSerializer(OrganizationBaseSerializer):
     
     def get_settings(self, obj):
         """Récupère les paramètres de l'organisation."""
-        try:
-            settings = obj.settings
-            return OrganizationSettingsSerializer(settings).data
-        except OrganizationSettings.DoesNotExist:
-            return None
+        # Les paramètres d'organisation seront implémentés plus tard
+        return {}
 
 
 class OrganizationCreateSerializer(serializers.ModelSerializer):
@@ -274,20 +270,6 @@ class OrganizationInvitationAcceptSerializer(serializers.Serializer):
             raise serializers.ValidationError('Invitation invalide ou expirée.')
 
 
-class OrganizationSettingsSerializer(serializers.ModelSerializer):
-    """Serializer pour les paramètres d'organisation."""
-    
-    class Meta:
-        model = OrganizationSettings
-        fields = [
-            'id', 'allow_member_invites', 'require_invitation_approval',
-            'default_member_role', 'max_projects_per_member',
-            'enable_audit_log', 'data_retention_days',
-            'allowed_domains', 'security_settings',
-            'notification_settings', 'integration_settings',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class OrganizationStatsSerializer(serializers.Serializer):

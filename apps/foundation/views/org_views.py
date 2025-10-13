@@ -13,7 +13,7 @@ from ..serializers import (
     OrganizationCreateSerializer, OrganizationUpdateSerializer,
     OrganizationDetailSerializer, OrganizationListSerializer,
     OrganizationMemberSerializer, OrganizationInvitationCreateSerializer,
-    OrganizationInvitationAcceptSerializer, OrganizationSettingsSerializer,
+    OrganizationInvitationAcceptSerializer,
     OrganizationTransferOwnershipSerializer, OrganizationStatsSerializer
 )
 from ..models import Organization, OrganizationMember, OrganizationInvitation
@@ -23,46 +23,42 @@ User = get_user_model()
 
 
 class OrganizationListCreateView(APIView):
-    """Vue pour lister et créer des organisations."""
-    
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         """Liste les organisations de l'utilisateur."""
         org_service = OrganizationService(user=request.user)
         result = org_service.get_user_organizations()
-        
+
         if result.success:
             return Response(result.data, status=status.HTTP_200_OK)
         else:
             return Response({
                 'error': result.error_message
             }, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def post(self, request):
         """Crée une nouvelle organisation."""
         serializer = OrganizationCreateSerializer(
             data=request.data,
             context={'request': request}
         )
-        
+
         if serializer.is_valid():
             org_service = OrganizationService(user=request.user)
             result = org_service.create_organization(serializer.validated_data)
-            
+
             if result.success:
                 return Response(result.data, status=status.HTTP_201_CREATED)
             else:
                 return Response({
                     'error': result.error_message
                 }, status=status.HTTP_400_BAD_REQUEST)
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class OrganizationDetailView(APIView):
-    """Vue pour les détails d'une organisation."""
-    
     permission_classes = [IsAuthenticated]
     
     def get(self, request, org_id):
@@ -126,8 +122,6 @@ class OrganizationMembersView(APIView):
 
 
 class OrganizationMemberDetailView(APIView):
-    """Vue pour un membre spécifique d'une organisation."""
-    
     permission_classes = [IsAuthenticated]
     
     def put(self, request, org_id, member_id):

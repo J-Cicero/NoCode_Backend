@@ -10,9 +10,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 
 
 class TimestampMixin(models.Model):
-    """
-    Mixin pour ajouter des timestamps automatiques.
-    """
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
 
@@ -21,9 +18,7 @@ class TimestampMixin(models.Model):
 
 
 class SoftDeleteMixin(models.Model):
-    """
-    Mixin pour ajouter la fonctionnalité de suppression logique.
-    """
+
     is_deleted = models.BooleanField(default=False, verbose_name="Supprimé")
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name="Supprimé le")
 
@@ -31,27 +26,22 @@ class SoftDeleteMixin(models.Model):
         abstract = True
 
     def soft_delete(self):
-        """Suppression logique de l'objet."""
         self.is_deleted = True
         self.deleted_at = timezone.now()
         self.save(update_fields=['is_deleted', 'deleted_at'])
 
     def restore(self):
-        """Restauration d'un objet supprimé logiquement."""
         self.is_deleted = False
         self.deleted_at = None
         self.save(update_fields=['is_deleted', 'deleted_at'])
 
     @property
     def is_active(self):
-        """Retourne True si l'objet n'est pas supprimé."""
         return not self.is_deleted
 
 
 class StatusMixin(models.Model):
-    """
-    Mixin pour ajouter un système de statut avec historique.
-    """
+
     STATUS_CHOICES = [
         ('ACTIVE', 'Actif'),
         ('INACTIVE', 'Inactif'),
@@ -83,7 +73,6 @@ class StatusMixin(models.Model):
         abstract = True
 
     def change_status(self, new_status, changed_by=None):
-        """Change le statut et enregistre l'historique."""
         if self.status != new_status:
             self.status = new_status
             self.status_changed_at = timezone.now()
@@ -92,14 +81,11 @@ class StatusMixin(models.Model):
 
     @property
     def is_active(self):
-        """Retourne True si le statut est actif."""
         return self.status == 'ACTIVE'
 
 
 class AuditMixin(models.Model):
-    """
-    Mixin pour ajouter des informations d'audit (qui a créé/modifié).
-    """
+
     created_by = models.ForeignKey(
         'foundation.User',
         on_delete=models.SET_NULL,
@@ -121,15 +107,12 @@ class AuditMixin(models.Model):
         abstract = True
 
     def save(self, *args, **kwargs):
-        """Override save pour automatiquement définir updated_by."""
         # Note: Dans un vrai projet, on récupérerait l'utilisateur du contexte/request
         super().save(*args, **kwargs)
 
 
 class PermissionMixin(models.Model):
-    """
-    Mixin pour ajouter des permissions personnalisées sous forme JSON.
-    """
+
     permissions = models.JSONField(
         default=dict,
         blank=True,
@@ -141,25 +124,20 @@ class PermissionMixin(models.Model):
         abstract = True
 
     def has_permission(self, permission_key):
-        """Vérifie si une permission spécifique est accordée."""
         return self.permissions.get(permission_key, False)
 
     def grant_permission(self, permission_key, value=True):
-        """Accorde une permission spécifique."""
         self.permissions[permission_key] = value
         self.save(update_fields=['permissions'])
 
     def revoke_permission(self, permission_key):
-        """Révoque une permission spécifique."""
         if permission_key in self.permissions:
             del self.permissions[permission_key]
             self.save(update_fields=['permissions'])
 
 
 class MetadataMixin(models.Model):
-    """
-    Mixin pour ajouter des métadonnées flexibles sous forme JSON.
-    """
+
     metadata = models.JSONField(
         default=dict,
         blank=True,
@@ -171,24 +149,19 @@ class MetadataMixin(models.Model):
         abstract = True
 
     def get_metadata(self, key, default=None):
-        """Récupère une valeur des métadonnées."""
         return self.metadata.get(key, default)
 
     def set_metadata(self, key, value):
-        """Définit une valeur dans les métadonnées."""
         self.metadata[key] = value
         self.save(update_fields=['metadata'])
 
     def update_metadata(self, data):
-        """Met à jour plusieurs valeurs dans les métadonnées."""
         self.metadata.update(data)
         self.save(update_fields=['metadata'])
 
 
 class SlugMixin(models.Model):
-    """
-    Mixin pour ajouter un slug automatique basé sur un champ name.
-    """
+
     slug = models.SlugField(
         max_length=255,
         unique=True,
@@ -200,7 +173,6 @@ class SlugMixin(models.Model):
         abstract = True
 
     def save(self, *args, **kwargs):
-        """Override save pour générer automatiquement le slug."""
         if not self.slug and hasattr(self, 'name'):
             from django.utils.text import slugify
             base_slug = slugify(self.name)
@@ -218,9 +190,7 @@ class SlugMixin(models.Model):
 
 
 class OrderingMixin(models.Model):
-    """
-    Mixin pour ajouter un système d'ordre/tri.
-    """
+
     order = models.PositiveIntegerField(
         default=0,
         verbose_name="Ordre",
@@ -232,7 +202,6 @@ class OrderingMixin(models.Model):
         ordering = ['order', 'id']
 
     def move_up(self):
-        """Déplace l'élément vers le haut dans l'ordre."""
         previous = self.__class__.objects.filter(
             order__lt=self.order
         ).order_by('-order').first()
@@ -243,7 +212,6 @@ class OrderingMixin(models.Model):
             previous.save(update_fields=['order'])
 
     def move_down(self):
-        """Déplace l'élément vers le bas dans l'ordre."""
         next_item = self.__class__.objects.filter(
             order__gt=self.order
         ).order_by('order').first()
@@ -255,16 +223,14 @@ class OrderingMixin(models.Model):
 
 
 class ActivityLogMixin(models.Model):
-    """
-    Mixin pour enregistrer automatiquement les activités sur un modèle.
-    """
+
     class Meta:
         abstract = True
 
     def log_activity(self, action, user=None, details=None):
         """Enregistre une activité sur cet objet."""
-        from .activity import ActivityLog
-        
+        from .activityLog import ActivityLog
+
         ActivityLog.objects.create(
             content_type=ContentType.objects.get_for_model(self),
             object_id=self.pk,
@@ -274,7 +240,6 @@ class ActivityLogMixin(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        """Override save pour enregistrer l'activité."""
         is_new = self.pk is None
         super().save(*args, **kwargs)
         
@@ -283,6 +248,5 @@ class ActivityLogMixin(models.Model):
         self.log_activity(action)
 
     def delete(self, *args, **kwargs):
-        """Override delete pour enregistrer l'activité."""
         self.log_activity('deleted')
         super().delete(*args, **kwargs)

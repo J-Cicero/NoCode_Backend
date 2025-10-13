@@ -4,7 +4,7 @@ Gère les permissions liées au processus KYB et à l'upload de documents.
 """
 from rest_framework import permissions
 from django.contrib.auth import get_user_model
-from ..models import Entreprise, DocumentVerification, DocumentUpload
+from ..models import DocumentVerification, DocumentUpload, Organization
 
 
 User = get_user_model()

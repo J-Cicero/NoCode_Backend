@@ -18,11 +18,7 @@ User = get_user_model()
 
 
 class Organization(BaseModel):
-    """
-    Modèle Organisation - Entité tenant pour le multi-tenancy.
-    Chaque organisation représente un workspace isolé.
-    """
-    # Informations de base
+
     name = models.CharField(
         max_length=255,
         verbose_name="Nom de l'organisation"
@@ -40,12 +36,30 @@ class Organization(BaseModel):
         verbose_name="Description"
     )
     
-    # Propriétaire de l'organisation
     owner = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='owned_organizations',
         verbose_name="Propriétaire"
+    )
+    
+    # Champ de sécurité pour l'activation
+    is_active = models.BooleanField(
+        default=False,  # FALSE par défaut pour les organisations
+        verbose_name="Organisation active",
+        help_text="Les organisations doivent être validées avant d'être activées"
+    )
+    
+    # Champs de vérification
+    is_verified = models.BooleanField(
+        default=False,
+        verbose_name="Organisation vérifiée"
+    )
+    
+    verified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Date de vérification"
     )
     
     class Meta:
@@ -72,12 +86,72 @@ class Organization(BaseModel):
             self.slug = slug
         
         super().save(*args, **kwargs)
+    
+    def activate(self, admin_user=None):
+        """Active l'organisation après validation."""
+        self.is_active = True
+        self.save(update_fields=['is_active'])
+        
+        # Log de l'activation
+        if admin_user:
+            from .activity import ActivityLog
+            ActivityLog.objects.create(
+                user=admin_user,
+                action='organization_activated',
+                content_object=self,
+                details={'organization_id': self.id, 'organization_name': self.name}
+            )
+    
+    def deactivate(self, admin_user=None, reason=''):
+        """Désactive l'organisation."""
+        self.is_active = False
+        self.save(update_fields=['is_active'])
+        
+        # Log de la désactivation
+        if admin_user:
+            from .activity import ActivityLog
+            ActivityLog.objects.create(
+                user=admin_user,
+                action='organization_deactivated',
+                content_object=self,
+                details={'organization_id': self.id, 'organization_name': self.name, 'reason': reason}
+            )
+    
+    def verify(self, admin_user=None):
+        """Marque l'organisation comme vérifiée ET l'active."""
+        self.is_verified = True
+        self.verified_at = timezone.now()
+        self.is_active = True  # Activation automatique après vérification
+        self.save(update_fields=['is_verified', 'verified_at', 'is_active'])
+        
+        # Log de la vérification
+        if admin_user:
+            from .activity import ActivityLog
+            ActivityLog.objects.create(
+                user=admin_user,
+                action='organization_verified',
+                content_object=self,
+                details={'organization_id': self.id, 'organization_name': self.name}
+            )
+    
+    @property
+    def can_operate(self):
+        """Vérifie si l'organisation peut fonctionner (active ET vérifiée)."""
+        return self.is_active and self.is_verified
+    
+    @property
+    def status_display(self):
+        """Retourne le statut lisible de l'organisation."""
+        if not self.is_active:
+            return "Inactive"
+        elif not self.is_verified:
+            return "En attente de vérification"
+        else:
+            return "Active et vérifiée"
 
 
 class OrganizationMember(BaseModel):
-    """
-    Relation User-Organization avec rôles et permissions.
-    """
+
     ROLE_CHOICES = [
         ('OWNER', 'Propriétaire'),
         ('ADMIN', 'Administrateur'),
@@ -106,7 +180,6 @@ class OrganizationMember(BaseModel):
         verbose_name="Rôle"
     )
     
-    # Date d'adhésion
     joined_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Rejoint le"
@@ -124,9 +197,7 @@ class OrganizationMember(BaseModel):
 
 
 class OrganizationInvitation(BaseModel):
-    """
-    Modèle pour gérer les invitations à rejoindre une organisation.
-    """
+
     STATUS_CHOICES = [
         ('PENDING', 'En attente'),
         ('ACCEPTED', 'Acceptée'),
@@ -196,14 +267,12 @@ class OrganizationInvitation(BaseModel):
     
     @property
     def is_expired(self):
-        """Vérifie si l'invitation a expiré."""
         return self.status == 'EXPIRED' or (
             self.status == 'PENDING' and 
             timezone.now() > self.expires_at
         )
     
     def send_invitation_email(self, request=None):
-        """Envoie l'email d'invitation."""
         context = {
             'organization': self.organization,
             'invitation': self,
@@ -226,7 +295,6 @@ class OrganizationInvitation(BaseModel):
         )
     
     def accept(self, user):
-        """Accepte l'invitation pour un utilisateur."""
         if self.status != 'PENDING':
             raise ValueError("Cette invitation n'est plus valide.")
             
@@ -242,23 +310,19 @@ class OrganizationInvitation(BaseModel):
             role=self.role
         )
         
-        # Met à jour le statut de l'invitation
         self.status = 'ACCEPTED'
         self.accepted_at = timezone.now()
         self.save(update_fields=['status', 'accepted_at', 'updated_at'])
     
     def revoke(self):
-        """Révoque l'invitation."""
         if self.status == 'PENDING':
             self.status = 'REVOKED'
             self.save(update_fields=['status', 'updated_at'])
     
     def save(self, *args, **kwargs):
-        # Met à jour automatiquement le statut si l'invitation a expiré
         if self.status == 'PENDING' and self.is_expired:
             self.status = 'EXPIRED'
         
-        # Génère un nouveau token si c'est une nouvelle invitation
         if not self.pk and not self.token:
             self.token = uuid.uuid4()
             

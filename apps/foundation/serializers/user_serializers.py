@@ -1,12 +1,12 @@
 """
 Serializers pour les modèles utilisateur du module Foundation.
-Gère la sérialisation des User, Client, et Entreprise pour les APIs.
+Gère la sérialisation des User et Client pour les APIs.
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from ..models import Client, Entreprise
+from ..models import Client
 
 
 User = get_user_model()
@@ -179,8 +179,7 @@ class ClientCreateSerializer(serializers.ModelSerializer):
 
 
 class ClientUpdateSerializer(serializers.ModelSerializer):
-    """Serializer pour la mise à jour des clients."""
-    
+
     class Meta:
         model = Client
         fields = [
@@ -190,145 +189,20 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
         ]
 
 
-class EntrepriseSerializer(serializers.ModelSerializer):
-    """Serializer pour les entreprises."""
-    
-    user = UserBaseSerializer(read_only=True)
-    is_verified = serializers.BooleanField(read_only=True)
-    
-    class Meta:
-        model = Entreprise
-        fields = [
-            'id', 'user', 'nom', 'siret', 'forme_juridique', 'secteur_activite',
-            'taille_entreprise', 'chiffre_affaires_annuel', 'nombre_employes',
-            'adresse_siege_social', 'ville_siege', 'code_postal_siege',
-            'pays_siege', 'telephone_entreprise', 'site_web',
-            'description_activite', 'date_creation_entreprise',
-            'capital_social', 'numero_tva_intracommunautaire',
-            'verification_status', 'verified_at', 'is_verified',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = [
-            'id', 'verification_status', 'verified_at', 'is_verified',
-            'created_at', 'updated_at'
-        ]
-
-
-class EntrepriseCreateSerializer(serializers.ModelSerializer):
-    """Serializer pour la création d'entreprises."""
-    
-    # Données utilisateur
-    email = serializers.EmailField(write_only=True)
-    password = serializers.CharField(write_only=True, validators=[validate_password])
-    password_confirm = serializers.CharField(write_only=True)
-    first_name = serializers.CharField(write_only=True)
-    last_name = serializers.CharField(write_only=True)
-    numero_telephone = serializers.CharField(write_only=True, required=False)
-    langue_preferee = serializers.CharField(write_only=True, required=False, default='fr')
-    
-    class Meta:
-        model = Entreprise
-        fields = [
-            # Champs utilisateur
-            'email', 'password', 'password_confirm', 'first_name', 'last_name',
-            'numero_telephone', 'langue_preferee',
-            # Champs entreprise
-            'nom', 'siret', 'forme_juridique', 'secteur_activite',
-            'taille_entreprise', 'chiffre_affaires_annuel', 'nombre_employes',
-            'adresse_siege_social', 'ville_siege', 'code_postal_siege',
-            'pays_siege', 'telephone_entreprise', 'site_web',
-            'description_activite', 'date_creation_entreprise',
-            'capital_social', 'numero_tva_intracommunautaire'
-        ]
-    
-    def validate(self, attrs):
-        """Validation des données de création."""
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({
-                'password_confirm': 'Les mots de passe ne correspondent pas.'
-            })
-        
-        attrs.pop('password_confirm')
-        return attrs
-    
-    def validate_siret(self, value):
-        """Validation du numéro SIRET."""
-        if value and len(value) != 14:
-            raise serializers.ValidationError('Le numéro SIRET doit contenir 14 chiffres.')
-        
-        if value and not value.isdigit():
-            raise serializers.ValidationError('Le numéro SIRET ne doit contenir que des chiffres.')
-        
-        return value
-    
-    def create(self, validated_data):
-        """Création d'une entreprise avec son utilisateur associé."""
-        # Séparer les données utilisateur et entreprise
-        user_data = {
-            'email': validated_data.pop('email'),
-            'password': validated_data.pop('password'),
-            'first_name': validated_data.pop('first_name'),
-            'last_name': validated_data.pop('last_name'),
-            'user_type': 'ENTREPRISE',
-        }
-        
-        # Ajouter les champs optionnels s'ils existent
-        for field in ['numero_telephone', 'langue_preferee']:
-            if field in validated_data:
-                user_data[field] = validated_data.pop(field)
-        
-        # Créer l'utilisateur
-        password = user_data.pop('password')
-        user = User.objects.create_user(password=password, **user_data)
-        
-        # Créer l'entreprise
-        entreprise = Entreprise.objects.create(user=user, **validated_data)
-        return entreprise
-
-
-class EntrepriseUpdateSerializer(serializers.ModelSerializer):
-    """Serializer pour la mise à jour des entreprises."""
-    
-    class Meta:
-        model = Entreprise
-        fields = [
-            'nom', 'forme_juridique', 'secteur_activite', 'taille_entreprise',
-            'chiffre_affaires_annuel', 'nombre_employes', 'adresse_siege_social',
-            'ville_siege', 'code_postal_siege', 'pays_siege',
-            'telephone_entreprise', 'site_web', 'description_activite',
-            'date_creation_entreprise', 'capital_social',
-            'numero_tva_intracommunautaire'
-        ]
-    
-    def validate_siret(self, value):
-        """Validation du numéro SIRET."""
-        if value and len(value) != 14:
-            raise serializers.ValidationError('Le numéro SIRET doit contenir 14 chiffres.')
-        
-        if value and not value.isdigit():
-            raise serializers.ValidationError('Le numéro SIRET ne doit contenir que des chiffres.')
-        
-        return value
-
-
 class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer pour le profil complet d'un utilisateur."""
     
     client_profile = ClientSerializer(source='client', read_only=True)
-    entreprise_profile = EntrepriseSerializer(source='entreprise', read_only=True)
     
     class Meta:
         model = User
         fields = [
             'id', 'email', 'first_name', 'last_name', 'full_name',
             'user_type', 'is_active', 'date_joined', 'last_login',
-            'numero_telephone', 'langue_preferee', 'timezone',
-            'preferences_notifications', 'avatar', 'email_verified',
-            'phone_verified', 'client_profile', 'entreprise_profile'
+            'client_profile'
         ]
         read_only_fields = [
-            'id', 'date_joined', 'last_login', 'full_name',
-            'email_verified', 'phone_verified'
+            'id', 'date_joined', 'last_login', 'full_name'
         ]
 
 
@@ -382,8 +256,8 @@ class UserStatsSerializer(serializers.Serializer):
     total_users = serializers.IntegerField(read_only=True)
     active_users = serializers.IntegerField(read_only=True)
     clients_count = serializers.IntegerField(read_only=True)
-    entreprises_count = serializers.IntegerField(read_only=True)
-    verified_entreprises_count = serializers.IntegerField(read_only=True)
+    organizations_count = serializers.IntegerField(read_only=True)
+    verified_organizations_count = serializers.IntegerField(read_only=True)
     new_users_this_month = serializers.IntegerField(read_only=True)
     users_by_country = serializers.DictField(read_only=True)
     users_by_language = serializers.DictField(read_only=True)

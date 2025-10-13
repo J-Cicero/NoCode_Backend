@@ -1,6 +1,6 @@
 """
-Système de vérification des entreprises.
-Gère l'upload et la validation des documents officiels pour les entreprises.
+Système de vérification des organisations.
+Gère l'upload et la validation des documents officiels pour les organisations.
 """
 from django.db import models
 from django.utils import timezone
@@ -15,10 +15,7 @@ User = get_user_model()
 
 
 class DocumentVerification(BaseModel, StatusMixin, MetadataMixin):
-    """
-    Processus de vérification d'une entreprise.
-    Gère l'ensemble du workflow de vérification.
-    """
+
     STATUS_CHOICES = [
         ('PENDING', 'En attente'),
         ('IN_REVIEW', 'En cours de révision'),
@@ -27,12 +24,12 @@ class DocumentVerification(BaseModel, StatusMixin, MetadataMixin):
         ('INCOMPLETE', 'Incomplète'),
     ]
     
-    # Lien vers l'entreprise
-    entreprise = models.OneToOneField(
-        'foundation.Entreprise',
+    # Lien vers l'organisation
+    organization = models.OneToOneField(
+        'foundation.Organization',
         on_delete=models.CASCADE,
         related_name='verification',
-        verbose_name="Entreprise"
+        verbose_name="Organisation"
     )
     
     # Documents requis pour la vérification
@@ -117,7 +114,7 @@ class DocumentVerification(BaseModel, StatusMixin, MetadataMixin):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"Vérification {self.entreprise.nom_entreprise} ({self.status})"
+        return f"Vérification {self.organization.name} ({self.status})"
     
     def save(self, *args, **kwargs):
         """Override save pour définir la deadline."""
@@ -194,10 +191,10 @@ class DocumentVerification(BaseModel, StatusMixin, MetadataMixin):
         if notes:
             self.notes_admin = notes
         
-        # Marquer l'entreprise comme vérifiée
-        self.entreprise.est_verifiee = True
-        self.entreprise.date_verification = timezone.now()
-        self.entreprise.save(update_fields=['est_verifiee', 'date_verification'])
+        # Marquer l'organisation comme vérifiée
+        self.organization.is_verified = True
+        self.organization.verified_at = timezone.now()
+        self.organization.save(update_fields=['is_verified', 'verified_at'])
         
         self.save(update_fields=['status', 'reviewed_by', 'reviewed_at', 'notes_admin'])
     
@@ -239,26 +236,26 @@ class DocumentVerification(BaseModel, StatusMixin, MetadataMixin):
 
 def verification_upload_path(instance, filename):
     """Génère le chemin d'upload pour les documents de vérification."""
-    # Organiser par entreprise et type de document
-    entreprise_id = instance.verification.entreprise.user.id
+    # Organiser par organisation et type de document
+    organization_id = instance.verification.organization.id
     doc_type = instance.document_type
     
     # Garder l'extension originale
     name, ext = os.path.splitext(filename)
     
-    return f'verifications/{entreprise_id}/{doc_type}/{timezone.now().strftime("%Y%m%d_%H%M%S")}{ext}'
+    return f'verifications/{organization_id}/{doc_type}/{timezone.now().strftime("%Y%m%d_%H%M%S")}{ext}'
 
 
 class DocumentUpload(BaseModel, MetadataMixin):
     """
-    Document uploadé pour la vérification d'une entreprise.
+    Document uploadé pour la vérification d'une organisation.
     """
     DOCUMENT_TYPES = [
         ('kbis', 'Extrait Kbis'),
         ('statuts', 'Statuts de la société'),
         ('id_dirigeant', 'Pièce d\'identité du dirigeant'),
         ('justificatif_domicile', 'Justificatif de domicile'),
-        ('rib', 'RIB de l\'entreprise'),
+        ('rib', 'RIB de l\'organisation'),
         ('attestation_assurance', 'Attestation d\'assurance'),
         ('autre', 'Autre document'),
     ]
@@ -359,7 +356,7 @@ class DocumentUpload(BaseModel, MetadataMixin):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.get_document_type_display()} - {self.verification.entreprise.nom_entreprise}"
+        return f"{self.get_document_type_display()} - {self.verification.organization.name}"
     
     def save(self, *args, **kwargs):
         """Override save pour extraire les métadonnées du fichier."""

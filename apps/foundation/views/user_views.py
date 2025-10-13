@@ -11,7 +11,7 @@ from django.contrib.auth import get_user_model
 from ..services.user_service import UserService
 from ..serializers import (
     UserProfileSerializer, UserUpdateSerializer, UserStatsSerializer,
-    ClientUpdateSerializer, EntrepriseUpdateSerializer
+    ClientUpdateSerializer
 )
 
 

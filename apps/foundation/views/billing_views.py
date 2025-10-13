@@ -21,12 +21,10 @@ User = get_user_model()
 
 
 class SubscriptionPlansView(APIView):
-    """Vue pour les plans d'abonnement."""
     
     permission_classes = [AllowAny]
     
     def get(self, request):
-        """Liste les plans d'abonnement disponibles."""
         user_type = request.query_params.get('user_type')
         
         billing_service = BillingService(user=request.user if request.user.is_authenticated else None)
@@ -41,12 +39,9 @@ class SubscriptionPlansView(APIView):
 
 
 class OrganizationSubscriptionView(APIView):
-    """Vue pour les abonnements d'organisation."""
-    
     permission_classes = [IsAuthenticated]
     
     def post(self, request, org_id):
-        """Souscrit une organisation à un plan."""
         serializer = AbonnementCreateSerializer(
             data=request.data,
             context={'request': request}
@@ -77,7 +72,6 @@ class OrganizationSubscriptionView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     def delete(self, request, org_id):
-        """Annule l'abonnement d'une organisation."""
         reason = request.data.get('reason', '')
         
         try:
@@ -111,12 +105,10 @@ class OrganizationSubscriptionView(APIView):
 
 
 class OrganizationBillingInfoView(APIView):
-    """Vue pour les informations de facturation d'une organisation."""
-    
+
     permission_classes = [IsAuthenticated]
     
     def get(self, request, org_id):
-        """Récupère les informations de facturation."""
         try:
             organization = Organization.objects.get(id=org_id)
         except Organization.DoesNotExist:

@@ -11,9 +11,7 @@ User = get_user_model()
 
 
 class CanManageBilling(permissions.BasePermission):
-    """
-    Permission pour gérer la facturation d'une organisation.
-    """
+
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -47,9 +45,7 @@ class CanManageBilling(permissions.BasePermission):
 
 
 class CanViewBillingInfo(permissions.BasePermission):
-    """
-    Permission pour consulter les informations de facturation.
-    """
+
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -82,10 +78,7 @@ class CanViewBillingInfo(permissions.BasePermission):
 
 
 class CanManageSubscriptions(permissions.BasePermission):
-    """
-    Permission pour gérer les abonnements.
-    """
-    
+
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
@@ -138,10 +131,7 @@ class CanManageSubscriptions(permissions.BasePermission):
 
 
 class CanManagePaymentMethods(permissions.BasePermission):
-    """
-    Permission pour gérer les moyens de paiement.
-    """
-    
+
     def has_permission(self, request, view):
         return request.user.is_authenticated
     
@@ -154,9 +144,6 @@ class CanManagePaymentMethods(permissions.BasePermission):
 
 
 class CanViewInvoices(permissions.BasePermission):
-    """
-    Permission pour consulter les factures.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -209,9 +196,7 @@ class CanViewInvoices(permissions.BasePermission):
 
 
 class HasActiveSubscription(permissions.BasePermission):
-    """
-    Permission pour vérifier qu'une organisation a un abonnement actif.
-    """
+
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -235,9 +220,7 @@ class HasActiveSubscription(permissions.BasePermission):
 
 
 class CanCreatePaymentIntent(permissions.BasePermission):
-    """
-    Permission pour créer des Payment Intents.
-    """
+
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -271,10 +254,7 @@ class CanCreatePaymentIntent(permissions.BasePermission):
 
 
 class CanGenerateInvoices(permissions.BasePermission):
-    """
-    Permission pour générer des factures.
-    """
-    
+
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
@@ -306,19 +286,14 @@ class CanGenerateInvoices(permissions.BasePermission):
 
 
 class CanViewBillingStats(permissions.BasePermission):
-    """
-    Permission pour consulter les statistiques de facturation.
-    """
-    
+
     def has_permission(self, request, view):
         # Seuls les staff peuvent voir les stats globales de facturation
         return request.user.is_authenticated and request.user.is_staff
 
 
 class SubscriptionLimitPermission(permissions.BasePermission):
-    """
-    Permission basée sur les limites d'abonnement.
-    """
+
     
     def __init__(self, limit_type, current_usage_calculator=None):
         self.limit_type = limit_type

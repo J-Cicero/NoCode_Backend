@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Project, DataSchema, Page
-from apps.foundation.serializers import OrganizationSerializer
+from apps.foundation.serializers import OrganizationBaseSerializer
 
 class ProjectSerializer(serializers.ModelSerializer):
     organization_name = serializers.CharField(source='organization.name', read_only=True)

@@ -12,10 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class CORSMiddleware(MiddlewareMixin):
-    """
-    Middleware pour gérer les en-têtes CORS.
-    Permet les requêtes cross-origin depuis les domaines autorisés.
-    """
     
     def __init__(self, get_response):
         self.get_response = get_response
@@ -50,9 +46,6 @@ class CORSMiddleware(MiddlewareMixin):
         super().__init__(get_response)
     
     def process_request(self, request):
-        """
-        Traite les requêtes CORS, notamment les requêtes preflight OPTIONS.
-        """
         origin = request.META.get('HTTP_ORIGIN')
         
         # Gérer les requêtes preflight OPTIONS
@@ -62,13 +55,11 @@ class CORSMiddleware(MiddlewareMixin):
         return None
     
     def process_response(self, request, response):
-        """
-        Ajoute les en-têtes CORS à la réponse.
-        """
+
         origin = request.META.get('HTTP_ORIGIN')
         
         if origin and self._is_origin_allowed(origin):
-            # En-têtes CORS de base
+
             response['Access-Control-Allow-Origin'] = origin
             
             if self.allow_credentials:
@@ -91,9 +82,7 @@ class CORSMiddleware(MiddlewareMixin):
         return response
     
     def _handle_preflight_request(self, request, origin):
-        """
-        Gère les requêtes preflight OPTIONS.
-        """
+
         if not origin or not self._is_origin_allowed(origin):
             return HttpResponse(status=403)
         
@@ -125,9 +114,6 @@ class CORSMiddleware(MiddlewareMixin):
         return response
     
     def _is_origin_allowed(self, origin):
-        """
-        Vérifie si une origine est autorisée.
-        """
         if not origin:
             return False
         
@@ -153,10 +139,7 @@ class CORSMiddleware(MiddlewareMixin):
 
 
 class CSRFExemptCORSMiddleware(MiddlewareMixin):
-    """
-    Middleware pour exempter certaines vues CORS de la protection CSRF.
-    """
-    
+
     def __init__(self, get_response):
         self.get_response = get_response
         
@@ -168,12 +151,9 @@ class CSRFExemptCORSMiddleware(MiddlewareMixin):
         super().__init__(get_response)
     
     def process_request(self, request):
-        """
-        Exempte certains chemins de la protection CSRF.
-        """
+
         path = request.path
         
-        # Vérifier si le chemin doit être exempté
         for exempt_path in self.csrf_exempt_paths:
             if path.startswith(exempt_path):
                 setattr(request, '_dont_enforce_csrf_checks', True)
@@ -183,19 +163,13 @@ class CSRFExemptCORSMiddleware(MiddlewareMixin):
 
 
 class SecurityCORSMiddleware(MiddlewareMixin):
-    """
-    Middleware pour ajouter des en-têtes de sécurité liés à CORS.
-    """
     
     def __init__(self, get_response):
         self.get_response = get_response
         super().__init__(get_response)
     
     def process_response(self, request, response):
-        """
-        Ajoute des en-têtes de sécurité.
-        """
-        # Content Security Policy pour CORS
+
         if not response.get('Content-Security-Policy'):
             csp_directives = [
                 "default-src 'self'",
@@ -208,7 +182,6 @@ class SecurityCORSMiddleware(MiddlewareMixin):
             ]
             response['Content-Security-Policy'] = '; '.join(csp_directives)
         
-        # Autres en-têtes de sécurité
         security_headers = {
             'X-Content-Type-Options': 'nosniff',
             'X-Frame-Options': 'DENY',

@@ -717,3 +717,152 @@ class OrganizationService(BaseService):
         except Exception as e:
             logger.error(f"Erreur lors de l'envoi de l'email d'invitation: {e}", exc_info=True)
             # Ne pas faire échouer l'invitation si l'email ne peut pas être envoyé
+    
+    def activate_organization(self, organization_id: int, reason: str = '') -> ServiceResult:
+        """
+        Active une organisation après validation des documents.
+        """
+        try:
+            # Vérifier les permissions (seuls les staff peuvent activer)
+            if not self.user.is_staff:
+                raise PermissionException("Seuls les administrateurs peuvent activer des organisations")
+            
+            # Récupérer l'organisation
+            try:
+                organization = Organization.objects.get(id=organization_id)
+            except Organization.DoesNotExist:
+                return ServiceResult.error_result("Organisation introuvable")
+            
+            # Vérifier que l'organisation n'est pas déjà active
+            if organization.is_active:
+                return ServiceResult.error_result("Cette organisation est déjà active")
+            
+            with transaction.atomic():
+                # Activer l'organisation
+                organization.activate(admin_user=self.user)
+                
+                # Publier l'événement
+                EventBus.publish(FoundationEvents.ORGANIZATION_ACTIVATED, {
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'activated_by': self.user.id,
+                    'reason': reason,
+                })
+                
+                self.log_activity('organization_activated', {
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'reason': reason,
+                })
+                
+                return ServiceResult.success_result({
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'message': 'Organisation activée avec succès',
+                })
+                
+        except PermissionException as e:
+            return ServiceResult.error_result(str(e))
+        except Exception as e:
+            logger.error(f"Erreur lors de l'activation de l'organisation: {e}", exc_info=True)
+            return ServiceResult.error_result("Erreur lors de l'activation de l'organisation")
+    
+    def deactivate_organization(self, organization_id: int, reason: str = '') -> ServiceResult:
+        """
+        Désactive une organisation.
+        """
+        try:
+            # Vérifier les permissions (seuls les staff peuvent désactiver)
+            if not self.user.is_staff:
+                raise PermissionException("Seuls les administrateurs peuvent désactiver des organisations")
+            
+            # Récupérer l'organisation
+            try:
+                organization = Organization.objects.get(id=organization_id)
+            except Organization.DoesNotExist:
+                return ServiceResult.error_result("Organisation introuvable")
+            
+            # Vérifier que l'organisation n'est pas déjà inactive
+            if not organization.is_active:
+                return ServiceResult.error_result("Cette organisation est déjà inactive")
+            
+            with transaction.atomic():
+                # Désactiver l'organisation
+                organization.deactivate(admin_user=self.user, reason=reason)
+                
+                # Publier l'événement
+                EventBus.publish(FoundationEvents.ORGANIZATION_DEACTIVATED, {
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'deactivated_by': self.user.id,
+                    'reason': reason,
+                })
+                
+                self.log_activity('organization_deactivated', {
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'reason': reason,
+                })
+                
+                return ServiceResult.success_result({
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'message': 'Organisation désactivée avec succès',
+                })
+                
+        except PermissionException as e:
+            return ServiceResult.error_result(str(e))
+        except Exception as e:
+            logger.error(f"Erreur lors de la désactivation de l'organisation: {e}", exc_info=True)
+            return ServiceResult.error_result("Erreur lors de la désactivation de l'organisation")
+    
+    def verify_organization(self, organization_id: int, reason: str = '') -> ServiceResult:
+        """
+        Vérifie une organisation (la marque comme vérifiée ET l'active automatiquement).
+        """
+        try:
+            # Vérifier les permissions (seuls les staff peuvent vérifier)
+            if not self.user.is_staff:
+                raise PermissionException("Seuls les administrateurs peuvent vérifier des organisations")
+            
+            # Récupérer l'organisation
+            try:
+                organization = Organization.objects.get(id=organization_id)
+            except Organization.DoesNotExist:
+                return ServiceResult.error_result("Organisation introuvable")
+            
+            # Vérifier que l'organisation n'est pas déjà vérifiée
+            if organization.is_verified:
+                return ServiceResult.error_result("Cette organisation est déjà vérifiée")
+            
+            with transaction.atomic():
+                # Vérifier l'organisation (active automatiquement)
+                organization.verify(admin_user=self.user)
+                
+                # Publier l'événement
+                EventBus.publish(FoundationEvents.ORGANIZATION_VERIFIED, {
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'verified_by': self.user.id,
+                    'reason': reason,
+                })
+                
+                self.log_activity('organization_verified', {
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'reason': reason,
+                })
+                
+                return ServiceResult.success_result({
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'is_active': organization.is_active,
+                    'is_verified': organization.is_verified,
+                    'message': 'Organisation vérifiée et activée avec succès',
+                })
+                
+        except PermissionException as e:
+            return ServiceResult.error_result(str(e))
+        except Exception as e:
+            logger.error(f"Erreur lors de la vérification de l'organisation: {e}", exc_info=True)
+            return ServiceResult.error_result("Erreur lors de la vérification de l'organisation")

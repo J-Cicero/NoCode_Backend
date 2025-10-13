@@ -18,15 +18,7 @@ class SchemaManager:
                 raise
     
     def create_project_schema(self, project_id):
-        """
-        Crée un nouveau schéma pour un projet
 
-        Args:
-            project_id: ID du projet
-
-        Returns:
-            str: Le nom du schéma créé
-        """
         schema_name = f"project_{project_id}"
         
         with transaction.atomic():
@@ -100,6 +92,6 @@ class SchemaManager:
         return table_name
     
     def drop_schema(self, schema_name, cascade=True):
-        """Supprime un schéma et toutes ses tables"""
         cascade_clause = "CASCADE" if cascade else ""
         self._execute_sql(f"DROP SCHEMA IF EXISTS {schema_name} {cascade_clause}")
+

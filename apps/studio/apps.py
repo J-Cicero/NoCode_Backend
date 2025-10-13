@@ -7,5 +7,4 @@ class StudioConfig(AppConfig):
     verbose_name = 'Studio NoCode'
 
     def ready(self):
-        # Importer les signaux ici pour éviter les imports circulaires
         import apps.studio.signals  # noqa

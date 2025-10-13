@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from ..models import (
-    Client, Entreprise, Organization, OrganizationMember, OrganizationInvitation,
+    Client, Organization, OrganizationMember, OrganizationInvitation,
     Abonnement, Facture, MoyenDePaiement, DocumentVerification, DocumentUpload
 )
 
@@ -94,48 +94,6 @@ class ClientModelTestCase(TestCase):
         self.assertEqual(client.full_name, 'John Doe')
 
 
-class EntrepriseModelTestCase(TestCase):
-    """Tests pour le modèle Entreprise."""
-    
-    def setUp(self):
-        self.user = User.objects.create_user(
-            email='entreprise@example.com',
-            password='testpass123',
-            user_type='ENTREPRISE'
-        )
-    
-    def test_create_entreprise(self):
-        """Test de création d'un profil entreprise."""
-        entreprise = Entreprise.objects.create(
-            user=self.user,
-            company_name='Test Company',
-            siret='73282932000074',
-            legal_form='SAS',
-            address='123 Test Street',
-            postal_code='75001',
-            city='Paris',
-            country='France'
-        )
-        
-        self.assertEqual(entreprise.company_name, 'Test Company')
-        self.assertEqual(entreprise.siret, '73282932000074')
-        self.assertFalse(entreprise.is_verified)
-        self.assertEqual(str(entreprise), 'Test Company')
-    
-    def test_entreprise_verification_status(self):
-        """Test du statut de vérification."""
-        entreprise = Entreprise.objects.create(
-            user=self.user,
-            company_name='Test Company',
-            siret='73282932000074'
-        )
-        
-        self.assertFalse(entreprise.is_verified)
-        
-        entreprise.is_verified = True
-        entreprise.save()
-        
-        self.assertTrue(entreprise.is_verified)
 
 
 class OrganizationModelTestCase(TestCase):

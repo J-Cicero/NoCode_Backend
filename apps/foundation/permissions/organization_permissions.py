@@ -11,10 +11,7 @@ User = get_user_model()
 
 
 class OrganizationPermission(permissions.BasePermission):
-    """
-    Permission principale pour les organisations avec gestion des rôles.
-    """
-    
+
     # Mapping des actions vers les rôles requis
     ROLE_PERMISSIONS = {
         'create': [],  # Tout utilisateur authentifié peut créer une organisation
@@ -69,9 +66,6 @@ class OrganizationPermission(permissions.BasePermission):
 
 
 class OrganizationMemberPermission(permissions.BasePermission):
-    """
-    Permission pour la gestion des membres d'organisation.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -138,9 +132,6 @@ class OrganizationMemberPermission(permissions.BasePermission):
 
 
 class OrganizationInvitationPermission(permissions.BasePermission):
-    """
-    Permission pour la gestion des invitations d'organisation.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -215,10 +206,7 @@ class OrganizationInvitationPermission(permissions.BasePermission):
 
 
 class CanManageOrganizationSettings(permissions.BasePermission):
-    """
-    Permission pour gérer les paramètres d'organisation.
-    """
-    
+
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
@@ -250,9 +238,7 @@ class CanManageOrganizationSettings(permissions.BasePermission):
 
 
 class CanViewOrganizationStats(permissions.BasePermission):
-    """
-    Permission pour consulter les statistiques d'organisation.
-    """
+
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -285,10 +271,6 @@ class CanViewOrganizationStats(permissions.BasePermission):
 
 
 class OrganizationContextPermission(permissions.BasePermission):
-    """
-    Permission qui injecte le contexte d'organisation dans la requête.
-    Utile pour les vues qui ont besoin de l'organisation courante.
-    """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:

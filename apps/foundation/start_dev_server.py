@@ -78,7 +78,7 @@ def start_server():
     print("📖 Guide de test disponible dans: apps/foundation/docs/POSTMAN_TESTING_GUIDE.md")
     print("\n🔑 Comptes de test créés:")
     print("   👤 Client: client@test.dev / TestPass123!")
-    print("   🏢 Entreprise: entreprise@test.dev / TestPass123!")
+    print("   🏢 Organisation: organization@test.dev / TestPass123!")
     print("\n⚠️  Appuyez sur Ctrl+C pour arrêter le serveur")
     print("-" * 60)
     

@@ -298,10 +298,10 @@ class DocumentVerificationSerializer(serializers.ModelSerializer):
             'reviewed_at', 'approved_at', 'created_at', 'updated_at'
         ]
     
-    def get_entreprise(self, obj):
-        """Récupère les informations de l'entreprise."""
-        from .user_serializers import EntrepriseSerializer
-        return EntrepriseSerializer(obj.entreprise, context=self.context).data
+    def get_organization(self, obj):
+        """Récupère les informations de l'organisation."""
+        from .org_serializers import OrganizationBaseSerializer
+        return OrganizationBaseSerializer(obj.organization, context=self.context).data
     
     def get_completion_percentage(self, obj):
         """Calcule le pourcentage de completion."""

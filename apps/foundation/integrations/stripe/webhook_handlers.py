@@ -1,6 +1,4 @@
-"""
-Handlers pour les webhooks Stripe.
-"""
+
 import logging
 import stripe
 from django.conf import settings
@@ -12,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class StripeWebhookHandler:
-    """Gestionnaire principal des webhooks Stripe."""
     
     def __init__(self):
         self.stripe_service = StripeService()
@@ -27,7 +24,6 @@ class StripeWebhookHandler:
         }
     
     def handle_webhook(self, payload, sig_header):
-        """Point d'entrée principal pour traiter un webhook Stripe."""
         try:
             event = stripe.Webhook.construct_event(
                 payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
@@ -57,7 +53,7 @@ class StripeWebhookHandler:
             raise
     
     def handle_payment_succeeded(self, event):
-        """Traite un paiement réussi."""
+
         payment_intent = event['data']['object']
         try:
             paiement = Paiement.objects.get(stripe_payment_intent_id=payment_intent['id'])
@@ -73,7 +69,6 @@ class StripeWebhookHandler:
             return {'status': 'ignored'}
     
     def handle_payment_failed(self, event):
-        """Traite un échec de paiement."""
         payment_intent = event['data']['object']
         try:
             paiement = Paiement.objects.get(stripe_payment_intent_id=payment_intent['id'])
@@ -89,7 +84,6 @@ class StripeWebhookHandler:
             return {'status': 'ignored'}
     
     def handle_subscription_created(self, event):
-        """Traite la création d'un abonnement."""
         subscription = event['data']['object']
         try:
             customer = stripe.Customer.retrieve(subscription['customer'])
@@ -117,7 +111,6 @@ class StripeWebhookHandler:
             return {'status': 'error'}
     
     def handle_subscription_updated(self, event):
-        """Traite la mise à jour d'un abonnement."""
         subscription = event['data']['object']
         try:
             abonnement = Abonnement.objects.get(stripe_subscription_id=subscription['id'])
@@ -132,7 +125,6 @@ class StripeWebhookHandler:
             return {'status': 'ignored'}
     
     def handle_subscription_deleted(self, event):
-        """Traite la suppression d'un abonnement."""
         subscription = event['data']['object']
         try:
             abonnement = Abonnement.objects.get(stripe_subscription_id=subscription['id'])
@@ -147,7 +139,6 @@ class StripeWebhookHandler:
             return {'status': 'ignored'}
     
     def handle_invoice_paid(self, event):
-        """Traite le paiement d'une facture."""
         invoice = event['data']['object']
         try:
             facture = Facture.objects.get(stripe_invoice_id=invoice['id'])
@@ -162,7 +153,6 @@ class StripeWebhookHandler:
             return {'status': 'ignored'}
     
     def handle_invoice_payment_failed(self, event):
-        """Traite l'échec de paiement d'une facture."""
         invoice = event['data']['object']
         try:
             facture = Facture.objects.get(stripe_invoice_id=invoice['id'])
@@ -177,7 +167,6 @@ class StripeWebhookHandler:
             return {'status': 'ignored'}
     
     def _map_stripe_status(self, stripe_status):
-        """Mappe les statuts Stripe vers les statuts locaux."""
         mapping = {
             'active': 'ACTIF',
             'canceled': 'ANNULE',

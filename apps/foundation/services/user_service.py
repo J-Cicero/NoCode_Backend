@@ -1,6 +1,6 @@
 """
 Service de gestion des utilisateurs.
-Gère les opérations CRUD et la logique métier des utilisateurs, clients et entreprises.
+Gère les opérations CRUD et la logique métier des utilisateurs et clients.
 """
 import logging
 from typing import Dict, List, Optional, Any
@@ -8,20 +8,20 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
+from datetime import timedelta
 from django.db.models import Q, Count
 from .base_service import BaseService, ServiceResult, ValidationException, BusinessLogicException, PermissionException
 from .event_bus import EventBus, FoundationEvents
-from ..models import Client, Entreprise, Organization, OrganizationMember
+from ..models import Client, Organization, OrganizationMember
 
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
-
 class UserService(BaseService):
     """
     Service de gestion des utilisateurs.
-    Gère toute la logique métier liée aux utilisateurs, clients et entreprises.
+    Gère toute la logique métier liée aux utilisateurs et clients.
     """
     
     def __init__(self, user: User = None, organization: Organization = None):
@@ -81,22 +81,7 @@ class UserService(BaseService):
                 except Client.DoesNotExist:
                     profile_data['client_profile'] = None
             
-            elif target_user.user_type == 'ENTREPRISE':
-                try:
-                    entreprise = target_user.entreprise
-                    profile_data['entreprise_profile'] = {
-                        'id': entreprise.id,
-                        'nom': entreprise.nom,
-                        'siret': entreprise.siret,
-                        'forme_juridique': entreprise.forme_juridique,
-                        'secteur_activite': entreprise.secteur_activite,
-                        'verification_status': entreprise.verification_status,
-                        'is_verified': entreprise.is_verified,
-                        'ville_siege': entreprise.ville_siege,
-                        'pays_siege': entreprise.pays_siege,
-                    }
-                except Entreprise.DoesNotExist:
-                    profile_data['entreprise_profile'] = None
+            # Note: Le type ENTREPRISE a été supprimé, les organisations sont gérées via OrganizationMember
             
             # Récupérer les organisations
             organizations = Organization.objects.filter(
@@ -186,28 +171,8 @@ class UserService(BaseService):
                     except Client.DoesNotExist:
                         pass
                 
-                elif target_user.user_type == 'ENTREPRISE' and 'entreprise_profile' in profile_data:
-                    entreprise_data = profile_data['entreprise_profile']
-                    try:
-                        entreprise = target_user.entreprise
-                        entreprise_fields = [
-                            'nom', 'forme_juridique', 'secteur_activite', 'taille_entreprise',
-                            'adresse_siege_social', 'ville_siege', 'code_postal_siege',
-                            'pays_siege', 'telephone_entreprise', 'site_web',
-                            'description_activite', 'capital_social'
-                        ]
-                        
-                        entreprise_updated = []
-                        for field in entreprise_fields:
-                            if field in entreprise_data:
-                                setattr(entreprise, field, entreprise_data[field])
-                                entreprise_updated.append(field)
-                        
-                        if entreprise_updated:
-                            entreprise.save(update_fields=entreprise_updated)
-                            
-                    except Entreprise.DoesNotExist:
-                        pass
+                # Note: La mise à jour des profils entreprise a été supprimée
+                # Les organisations sont maintenant gérées via OrganizationService
                 
                 # Publier l'événement
                 EventBus.publish(FoundationEvents.USER_PROFILE_UPDATED, {
@@ -280,6 +245,53 @@ class UserService(BaseService):
             logger.error(f"Erreur lors de la désactivation: {e}", exc_info=True)
             return ServiceResult.error_result("Erreur lors de la désactivation de l'utilisateur")
     
+    def activate_user(self, user_id: int, reason: str = '') -> ServiceResult:
+        """
+        Active un utilisateur désactivé.
+        """
+        try:
+            # Récupérer l'utilisateur
+            try:
+                target_user = User.objects.get(id=user_id)
+            except User.DoesNotExist:
+                return ServiceResult.error_result("Utilisateur introuvable")
+            
+            # Vérifier les permissions (seuls les staff peuvent activer)
+            if not self.user.is_staff:
+                raise PermissionException("Seuls les administrateurs peuvent activer des utilisateurs")
+            
+            # Vérifier que l'utilisateur n'est pas déjà actif
+            if target_user.is_active:
+                return ServiceResult.error_result("Cet utilisateur est déjà actif")
+            
+            with transaction.atomic():
+                # Activer l'utilisateur
+                target_user.is_active = True
+                target_user.save(update_fields=['is_active'])
+                
+                # Publier l'événement
+                EventBus.publish(FoundationEvents.USER_ACTIVATED, {
+                    'user_id': target_user.id,
+                    'activated_by': self.user.id,
+                    'reason': reason,
+                })
+                
+                self.log_activity('user_activated', {
+                    'user_id': target_user.id,
+                    'reason': reason,
+                })
+                
+                return ServiceResult.success_result({
+                    'user_id': target_user.id,
+                    'message': 'Utilisateur activé avec succès',
+                })
+                
+        except PermissionException as e:
+            return ServiceResult.error_result(str(e))
+        except Exception as e:
+            logger.error(f"Erreur lors de l'activation: {e}", exc_info=True)
+            return ServiceResult.error_result("Erreur lors de l'activation de l'utilisateur")
+    
     def search_users(self, query: str, user_type: str = None, limit: int = 20) -> ServiceResult:
         """
         Recherche des utilisateurs.
@@ -316,14 +328,8 @@ class UserService(BaseService):
                     'last_login': user.last_login.isoformat() if user.last_login else None,
                 }
                 
-                # Ajouter des infos spécifiques selon le type
-                if user.user_type == 'ENTREPRISE':
-                    try:
-                        entreprise = user.entreprise
-                        user_data['entreprise_name'] = entreprise.nom
-                        user_data['verification_status'] = entreprise.verification_status
-                    except Entreprise.DoesNotExist:
-                        pass
+                # Note: Les infos entreprise ont été supprimées
+                # Les organisations sont maintenant gérées séparément
                 
                 users_data.append(user_data)
             
@@ -353,11 +359,11 @@ class UserService(BaseService):
             total_users = User.objects.count()
             active_users = User.objects.filter(is_active=True).count()
             clients_count = User.objects.filter(user_type='CLIENT').count()
-            entreprises_count = User.objects.filter(user_type='ENTREPRISE').count()
+            organizations_count = Organization.objects.count()
             
-            # Entreprises vérifiées
-            verified_entreprises = Entreprise.objects.filter(
-                verification_status='VERIFIED'
+            # Organisations vérifiées
+            verified_organizations = Organization.objects.filter(
+                is_verified=True
             ).count()
             
             # Nouveaux utilisateurs ce mois
@@ -378,13 +384,13 @@ class UserService(BaseService):
                 country = item['pays'] or 'Non spécifié'
                 users_by_country[country] = users_by_country.get(country, 0) + item['count']
             
-            # Entreprises par pays
-            entreprise_countries = Entreprise.objects.values('pays_siege').annotate(
+            # Organisations par pays
+            organization_countries = Organization.objects.values('country').annotate(
                 count=Count('id')
             ).order_by('-count')[:10]
             
-            for item in entreprise_countries:
-                country = item['pays_siege'] or 'Non spécifié'
+            for item in organization_countries:
+                country = item['country'] or 'Non spécifié'
                 users_by_country[country] = users_by_country.get(country, 0) + item['count']
             
             # Répartition par langue
@@ -398,13 +404,13 @@ class UserService(BaseService):
                 'total_users': total_users,
                 'active_users': active_users,
                 'clients_count': clients_count,
-                'entreprises_count': entreprises_count,
-                'verified_entreprises_count': verified_entreprises,
+                'organizations_count': organizations_count,
+                'verified_organizations_count': verified_organizations,
                 'new_users_this_month': new_users_this_month,
                 'users_by_country': dict(sorted(users_by_country.items(), key=lambda x: x[1], reverse=True)),
                 'users_by_language': users_by_language,
                 'activity_rate': round((active_users / total_users * 100), 2) if total_users > 0 else 0,
-                'verification_rate': round((verified_entreprises / entreprises_count * 100), 2) if entreprises_count > 0 else 0,
+                'verification_rate': round((verified_organizations / organizations_count * 100), 2) if organizations_count > 0 else 0,
             }
             
             return ServiceResult.success_result(stats_data)
