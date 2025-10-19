@@ -8,20 +8,15 @@ from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from django.utils import timezone
 from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .base_service import BaseService, ServiceResult, ValidationException, BusinessLogicException
 from .event_bus import EventBus, FoundationEvents
-from ..models import User, Client, Organization, OrganizationMember
-import re
-
+from ..models import User, Organization, OrganizationMember
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
-
-
 class AuthService(BaseService):
     """
     Service d'authentification principal.
@@ -246,9 +241,9 @@ class AuthService(BaseService):
             logger.error(f"Erreur lors de l'inscription client: {e}", exc_info=True)
             return ServiceResult.error_result("Erreur lors de l'inscription")
     
-    def register_entreprise(self, data: Dict) -> ServiceResult:
+    def register_organization(self, data: Dict) -> ServiceResult:
         """
-        Inscrit une nouvelle entreprise (personne morale).
+        Inscrit une nouvelle organisation (personne morale).
         """
         try:
             # Validation des données requises
@@ -267,9 +262,9 @@ class AuthService(BaseService):
             if User.objects.filter(email=email).exists():
                 return ServiceResult.error_result("Un compte avec cet email existe déjà")
             
-            # Vérifier si le nom d'entreprise existe déjà
-            if Entreprise.objects.filter(nom_entreprise=data['nom_entreprise']).exists():
-                return ServiceResult.error_result("Une entreprise avec ce nom existe déjà")
+            # Vérifier si le nom d'organisation existe déjà
+            if Organization.objects.filter(name=data['nom_entreprise']).exists():
+                return ServiceResult.error_result("Une organisation avec ce nom existe déjà")
             
             # Validation du mot de passe
             is_valid_password, password_errors = self.validate_password_strength(data['password'])
@@ -279,15 +274,6 @@ class AuthService(BaseService):
             # Validation du téléphone
             if not self.validate_phone_number(data['numero_telephone']):
                 return ServiceResult.error_result("Format de numéro de téléphone invalide")
-            
-            # Validation du SIRET si fourni
-            if data.get('numero_siret'):
-                siret = ''.join(filter(str.isdigit, data['numero_siret']))
-                if len(siret) != 14:
-                    return ServiceResult.error_result("Le numéro SIRET doit contenir exactement 14 chiffres")
-                
-                if Entreprise.objects.filter(numero_siret=siret).exists():
-                    return ServiceResult.error_result("Une entreprise avec ce SIRET existe déjà")
             
             with transaction.atomic():
                 # Créer l'utilisateur
@@ -299,20 +285,9 @@ class AuthService(BaseService):
                     is_active=True,
                 )
                 
-                # Créer le profil entreprise
-                entreprise = Entreprise.objects.create(
-                    user=user,
-                    nom_entreprise=data['nom_entreprise'],
-                    numero_siret=data.get('numero_siret', ''),
-                    site_web=data.get('site_web', ''),
-                    secteur_activite=data.get('secteur_activite', ''),
-                    taille_entreprise=data.get('taille_entreprise', ''),
-                    forme_juridique=data.get('forme_juridique', ''),
-                )
-                
-                # Créer l'organisation entreprise
+                # Créer l'organisation
                 organization = Organization.objects.create(
-                    name=entreprise.nom_entreprise,
+                    name=data['nom_entreprise'],
                     type='BUSINESS',
                     owner=user,
                     status='ACTIVE',
@@ -328,9 +303,6 @@ class AuthService(BaseService):
                     status='ACTIVE',
                 )
                 
-                # Initier le processus de vérification
-                verification = entreprise.initier_verification()
-                
                 # Générer les tokens
                 tokens = self.generate_tokens(user)
                 
@@ -339,8 +311,8 @@ class AuthService(BaseService):
                     'user': {
                         'id': user.id,
                         'email': user.email,
-                        'user_type': 'ENTREPRISE',
-                        'full_name': entreprise.nom_entreprise,
+                        'user_type': 'BUSINESS',
+                        'full_name': organization.name,
                         'is_verified': False,
                     },
                     'tokens': tokens,
@@ -350,28 +322,23 @@ class AuthService(BaseService):
                         'slug': organization.slug,
                         'type': organization.type,
                     },
-                    'verification': {
-                        'id': verification.id if verification else None,
-                        'status': verification.status if verification else None,
-                        'required_documents': verification.documents_requis if verification else [],
-                    }
                 }
                 
                 # Publier l'événement de création d'utilisateur
                 EventBus.publish(FoundationEvents.USER_CREATED, {
                     'user_id': user.id,
                     'email': user.email,
-                    'user_type': 'ENTREPRISE',
+                    'user_type': 'BUSINESS',
                     'organization_id': organization.id,
                     'requires_verification': True,
                 })
                 
-                self.log_activity('entreprise_registered', {'user_id': user.id})
+                self.log_activity('organization_registered', {'user_id': user.id})
                 
                 return ServiceResult.success_result(response_data)
                 
         except Exception as e:
-            logger.error(f"Erreur lors de l'inscription entreprise: {e}", exc_info=True)
+            logger.error(f"Erreur lors de l'inscription organisation: {e}", exc_info=True)
             return ServiceResult.error_result("Erreur lors de l'inscription")
     
     def refresh_token(self, refresh_token: str) -> ServiceResult:

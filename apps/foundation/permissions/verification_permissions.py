@@ -1,10 +1,10 @@
 """
-Permissions spécialisées pour la vérification des entreprises.
+Permissions spécialisées pour la vérification des organisations.
 Gère les permissions liées au processus KYB et à l'upload de documents.
 """
 from rest_framework import permissions
 from django.contrib.auth import get_user_model
-from ..models import DocumentVerification, DocumentUpload, Organization
+from ..models import DocumentVerification, DocumentUpload, Organization, OrganizationMember
 
 
 User = get_user_model()
@@ -19,17 +19,17 @@ class CanStartVerification(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
         
-        entreprise_id = view.kwargs.get('entreprise_id')
-        if not entreprise_id:
+        organization_id = view.kwargs.get('organization_id')
+        if not organization_id:
             return False
         
         try:
-            entreprise = Entreprise.objects.get(id=entreprise_id)
+            organization = Organization.objects.get(id=organization_id)
             
-            # Seul le propriétaire de l'entreprise peut démarrer la vérification
-            return entreprise.user == request.user
+            # Seul le propriétaire ou admin de l'organisation peut démarrer la vérification
+            return organization.members.filter(user=request.user, role__in=['OWNER', 'ADMIN']).exists()
             
-        except Entreprise.DoesNotExist:
+        except Organization.DoesNotExist:
             return False
 
 
@@ -42,17 +42,18 @@ class CanViewVerificationStatus(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
         
-        entreprise_id = view.kwargs.get('entreprise_id')
-        if not entreprise_id:
+        organization_id = view.kwargs.get('organization_id')
+        if not organization_id:
             return False
         
         try:
-            entreprise = Entreprise.objects.get(id=entreprise_id)
+            organization = Organization.objects.get(id=organization_id)
             
-            # Le propriétaire peut voir le statut, les staff aussi
-            return entreprise.user == request.user or request.user.is_staff
+            # Le propriétaire ou admin peut voir le statut, les staff aussi
+            return (organization.members.filter(user=request.user, role__in=['OWNER', 'ADMIN']).exists() or 
+                   request.user.is_staff)
             
-        except Entreprise.DoesNotExist:
+        except Organization.DoesNotExist:
             return False
 
 
@@ -72,8 +73,8 @@ class CanUploadDocuments(permissions.BasePermission):
         try:
             verification = DocumentVerification.objects.get(id=verification_id)
             
-            # Seul le propriétaire de l'entreprise peut uploader des documents
-            return verification.entreprise.user == request.user
+            # Seul les membres de l'organisation peuvent uploader des documents
+            return verification.organization.members.filter(user=request.user).exists()
             
         except DocumentVerification.DoesNotExist:
             return False
@@ -131,23 +132,26 @@ class CanViewVerificationStats(permissions.BasePermission):
         return request.user.is_authenticated and request.user.is_staff
 
 
-class IsVerifiedEntreprise(permissions.BasePermission):
+class IsVerifiedOrganization(permissions.BasePermission):
     """
-    Permission pour vérifier qu'une entreprise est vérifiée.
+    Permission pour vérifier qu'une organisation est vérifiée.
     """
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
         
-        if request.user.user_type != 'ENTREPRISE':
+        if request.user.user_type not in ['BUSINESS', 'ENTREPRISE']:
             return False
         
-        try:
-            entreprise = request.user.entreprise
-            return entreprise.is_verified
-        except Entreprise.DoesNotExist:
-            return False
+        # Récupérer les organisations de l'utilisateur
+        user_organizations = Organization.objects.filter(
+            members__user=request.user,
+            members__status='ACTIVE',
+            is_verified=True
+        )
+        
+        return user_organizations.exists()
 
 
 class CanAccessVerificationData(permissions.BasePermission):
@@ -163,13 +167,13 @@ class CanAccessVerificationData(permissions.BasePermission):
     
     def has_object_permission(self, request, view, obj):
         if isinstance(obj, DocumentVerification):
-            # Le propriétaire de l'entreprise ou les staff peuvent accéder
-            return (obj.entreprise.user == request.user or 
+            # Les membres de l'organisation ou les staff peuvent accéder
+            return (obj.organization.members.filter(user=request.user).exists() or 
                    request.user.is_staff)
         
         elif isinstance(obj, DocumentUpload):
-            # Le propriétaire de l'entreprise ou les staff peuvent accéder
-            return (obj.verification.entreprise.user == request.user or 
+            # Les membres de l'organisation ou les staff peuvent accéder
+            return (obj.verification.organization.members.filter(user=request.user).exists() or 
                    request.user.is_staff)
         
         return False
@@ -177,7 +181,7 @@ class CanAccessVerificationData(permissions.BasePermission):
 
 class VerificationStatusPermission(permissions.BasePermission):
     """
-    Permission basée sur le statut de vérification de l'entreprise.
+    Permission basée sur le statut de vérification de l'organisation.
     """
     
     def __init__(self, required_status='VERIFIED'):
@@ -187,11 +191,18 @@ class VerificationStatusPermission(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
         
-        if request.user.user_type != 'ENTREPRISE':
+        if request.user.user_type not in ['BUSINESS', 'ENTREPRISE']:
             return False
         
-        try:
-            entreprise = request.user.entreprise
-            return entreprise.verification_status == self.required_status
-        except Entreprise.DoesNotExist:
-            return False
+        # Récupérer les organisations de l'utilisateur
+        user_organizations = Organization.objects.filter(
+            members__user=request.user,
+            members__status='ACTIVE'
+        )
+        
+        # Vérifier si au moins une organisation a le statut requis
+        for org in user_organizations:
+            if org.is_verified == (self.required_status == 'VERIFIED'):
+                return True
+        
+        return False

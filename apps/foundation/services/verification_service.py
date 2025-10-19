@@ -1,6 +1,6 @@
 """
-Service de vérification des entreprises.
-Gère le processus de vérification des documents d'entreprise et la validation KYB.
+Service de vérification des organisations.
+Gère le processus de vérification des documents d'organisation et la validation KYB.
 """
 import logging
 from typing import Dict, List, Optional, Any
@@ -12,7 +12,7 @@ from django.conf import settings
 from .base_service import BaseService, ServiceResult, ValidationException, BusinessLogicException, PermissionException
 from .event_bus import EventBus, FoundationEvents
 from ..models import (
-    Entreprise, DocumentVerification, DocumentUpload, 
+    DocumentVerification, DocumentUpload, 
     Organization, OrganizationMember
 )
 
@@ -23,7 +23,7 @@ User = get_user_model()
 
 class VerificationService(BaseService):
     """
-    Service de vérification des entreprises.
+    Service de vérification des organisations.
     Gère toute la logique métier liée à la vérification KYB.
     """
     
@@ -54,67 +54,65 @@ class VerificationService(BaseService):
         except OrganizationMember.DoesNotExist:
             return False
     
-    def start_verification_process(self, entreprise_id: int) -> ServiceResult:
+    def start_verification_process(self, organization_id: int) -> ServiceResult:
         """
-        Démarre le processus de vérification pour une entreprise.
+        Démarre le processus de vérification pour une organisation.
         """
         try:
-            # Récupérer l'entreprise
+            # Récupérer l'organisation
             try:
-                entreprise = Entreprise.objects.get(id=entreprise_id)
-            except Entreprise.DoesNotExist:
-                return ServiceResult.error_result("Entreprise introuvable")
+                organization = Organization.objects.get(id=organization_id)
+            except Organization.DoesNotExist:
+                return ServiceResult.error_result("Organisation introuvable")
             
             # Vérifier les permissions
-            if self.user != entreprise.user:
-                raise PermissionException("Vous ne pouvez pas vérifier cette entreprise")
+            if not organization.members.filter(id=self.user.id).exists():
+                raise PermissionException("Vous ne pouvez pas vérifier cette organisation")
             
             # Vérifier si une vérification est déjà en cours
             existing_verification = DocumentVerification.objects.filter(
-                entreprise=entreprise,
-                status__in=['EN_ATTENTE', 'EN_COURS']
+                organization=organization,
+                status__in=['PENDING', 'IN_REVIEW']
             ).first()
             
             if existing_verification:
-                return ServiceResult.error_result("Une vérification est déjà en cours pour cette entreprise")
+                return ServiceResult.error_result("Une vérification est déjà en cours pour cette organisation")
             
-            # Vérifier si l'entreprise est déjà vérifiée
-            if entreprise.verification_status == 'VERIFIED':
-                return ServiceResult.error_result("Cette entreprise est déjà vérifiée")
+            # Vérifier si l'organisation est déjà vérifiée
+            if organization.is_verified:
+                return ServiceResult.error_result("Cette organisation est déjà vérifiée")
             
             with transaction.atomic():
                 # Créer une nouvelle demande de vérification
                 verification = DocumentVerification.objects.create(
-                    entreprise=entreprise,
-                    status='EN_ATTENTE',
-                    submitted_by=self.user,
+                    organization=organization,
+                    status='PENDING',
                     metadata={
                         'started_at': timezone.now().isoformat(),
                         'user_id': self.user.id,
-                        'entreprise_data': {
-                            'nom': entreprise.nom,
-                            'siret': entreprise.siret,
-                            'forme_juridique': entreprise.forme_juridique,
-                            'secteur_activite': entreprise.secteur_activite,
+                        'organization_data': {
+                            'name': organization.name,
+                            'type': organization.type,
+                            'status': organization.status,
                         }
                     }
                 )
                 
-                # Mettre à jour le statut de l'entreprise
-                entreprise.verification_status = 'PENDING'
-                entreprise.save(update_fields=['verification_status'])
+                # Mettre à jour le statut de l'organisation
+                organization.verification_status = 'PENDING'
+                organization.save(update_fields=['verification_status'])
                 
                 # Publier l'événement
                 EventBus.publish(FoundationEvents.VERIFICATION_STARTED, {
                     'verification_id': verification.id,
-                    'entreprise_id': entreprise.id,
+                    'organization_id': organization.id,
                     'user_id': self.user.id,
-                    'siret': entreprise.siret,
+                    'organization_name': organization.name,
                 })
                 
                 self.log_activity('verification_started', {
                     'verification_id': verification.id,
-                    'entreprise_id': entreprise.id,
+                    'organization_id': organization.id,
                 })
                 
                 return ServiceResult.success_result({
@@ -122,11 +120,11 @@ class VerificationService(BaseService):
                         'id': verification.id,
                         'status': verification.status,
                         'created_at': verification.created_at.isoformat(),
-                        'required_documents': self._get_required_documents(entreprise),
+                        'required_documents': self._get_required_documents(organization),
                     },
-                    'entreprise': {
-                        'id': entreprise.id,
-                        'verification_status': entreprise.verification_status,
+                    'organization': {
+                        'id': organization.id,
+                        'verification_status': organization.verification_status,
                     }
                 })
                 
@@ -149,17 +147,17 @@ class VerificationService(BaseService):
                 return ServiceResult.error_result("Vérification introuvable")
             
             # Vérifier les permissions
-            if self.user != verification.entreprise.user:
+            if not verification.organization.members.filter(id=self.user.id).exists():
                 raise PermissionException("Vous ne pouvez pas uploader de documents pour cette vérification")
             
             # Vérifier si la vérification accepte encore des documents
-            if verification.status not in ['EN_ATTENTE', 'EN_COURS', 'DOCUMENTS_REQUIS']:
+            if verification.status not in ['PENDING', 'IN_REVIEW', 'INCOMPLETE']:
                 return ServiceResult.error_result("Cette vérification n'accepte plus de documents")
             
             # Valider le type de document
             valid_types = [
-                'KBIS', 'STATUTS', 'PIECE_IDENTITE_DIRIGEANT', 
-                'JUSTIFICATIF_DOMICILE', 'RIB', 'AUTRE'
+                'kbis', 'statuts', 'id_dirigeant', 
+                'justificatif_domicile', 'rib', 'attestation_assurance', 'autre'
             ]
             if document_type not in valid_types:
                 return ServiceResult.error_result(f"Type de document invalide. Types acceptés: {', '.join(valid_types)}")
@@ -180,12 +178,12 @@ class VerificationService(BaseService):
                     mime_type=validation_result['mime_type'],
                     description=description,
                     uploaded_by=self.user,
-                    status='EN_ATTENTE',
+                    # Le statut sera défini automatiquement par le modèle
                 )
                 
                 # Mettre à jour le statut de la vérification si nécessaire
-                if verification.status == 'EN_ATTENTE':
-                    verification.status = 'EN_COURS'
+                if verification.status == 'PENDING':
+                    verification.status = 'IN_REVIEW'
                     verification.save(update_fields=['status'])
                 
                 # Publier l'événement
@@ -193,7 +191,7 @@ class VerificationService(BaseService):
                     'verification_id': verification.id,
                     'document_id': document_upload.id,
                     'document_type': document_type,
-                    'entreprise_id': verification.entreprise.id,
+                    'organization_id': verification.organization.id,
                     'user_id': self.user.id,
                 })
                 
@@ -268,7 +266,7 @@ class VerificationService(BaseService):
                     'document_type': document.document_type,
                     'status': status,
                     'reviewer_id': self.user.id,
-                    'entreprise_id': verification.entreprise.id,
+                    'entreprise_id': verification.organization.id,
                 })
                 
                 self.log_activity('document_reviewed', {
@@ -333,30 +331,28 @@ class VerificationService(BaseService):
                     'status', 'admin_comments', 'reviewed_by', 'reviewed_at', 'approved_at'
                 ])
                 
-                # Mettre à jour le statut de l'entreprise
-                entreprise = verification.entreprise
+                # Mettre à jour le statut de l'organisation
+                organization = verification.organization
                 if final_status == 'APPROUVE':
-                    entreprise.verification_status = 'VERIFIED'
-                    entreprise.verified_at = timezone.now()
+                    organization.is_verified = True
+                    organization.verified_at = timezone.now()
                 else:
-                    entreprise.verification_status = 'REJECTED'
-                
-                entreprise.save(update_fields=['verification_status', 'verified_at'])
+                    organization.verification_status = 'REJECTED'
                 
                 # Publier l'événement approprié
                 if final_status == 'APPROUVE':
                     EventBus.publish(FoundationEvents.VERIFICATION_APPROVED, {
                         'verification_id': verification.id,
-                        'entreprise_id': entreprise.id,
-                        'user_id': entreprise.user.id,
+                        'organization_id': organization.id,
+                        'user_id': organization.owner.id,
                         'reviewer_id': self.user.id,
                         'approved_at': verification.approved_at.isoformat(),
                     })
                 else:
                     EventBus.publish(FoundationEvents.VERIFICATION_REJECTED, {
                         'verification_id': verification.id,
-                        'entreprise_id': entreprise.id,
-                        'user_id': entreprise.user.id,
+                        'organization_id': organization.id,
+                        'user_id': organization.owner.id,
                         'reviewer_id': self.user.id,
                         'reason': admin_comments,
                     })
@@ -364,7 +360,7 @@ class VerificationService(BaseService):
                 self.log_activity('verification_completed', {
                     'verification_id': verification.id,
                     'final_status': final_status,
-                    'entreprise_id': entreprise.id,
+                    'organization_id': organization.id,
                 })
                 
                 return ServiceResult.success_result({
@@ -374,10 +370,10 @@ class VerificationService(BaseService):
                         'reviewed_at': verification.reviewed_at.isoformat(),
                         'admin_comments': verification.admin_comments,
                     },
-                    'entreprise': {
-                        'id': entreprise.id,
-                        'verification_status': entreprise.verification_status,
-                        'verified_at': entreprise.verified_at.isoformat() if entreprise.verified_at else None,
+                    'organization': {
+                        'id': organization.id,
+                        'verification_status': organization.verification_status,
+                        'verified_at': organization.verified_at.isoformat() if organization.verified_at else None,
                     }
                 })
                 
@@ -387,24 +383,24 @@ class VerificationService(BaseService):
             logger.error(f"Erreur lors de la finalisation de vérification: {e}", exc_info=True)
             return ServiceResult.error_result("Erreur lors de la finalisation de la vérification")
     
-    def get_verification_status(self, entreprise_id: int) -> ServiceResult:
+    def get_verification_status(self, organization_id: int) -> ServiceResult:
         """
-        Récupère le statut de vérification d'une entreprise.
+        Récupère le statut de vérification d'une organisation.
         """
         try:
-            # Récupérer l'entreprise
+            # Récupérer l'organisation
             try:
-                entreprise = Entreprise.objects.get(id=entreprise_id)
-            except Entreprise.DoesNotExist:
-                return ServiceResult.error_result("Entreprise introuvable")
+                organization = Organization.objects.get(id=organization_id)
+            except Organization.DoesNotExist:
+                return ServiceResult.error_result("Organisation introuvable")
             
             # Vérifier les permissions
-            if self.user != entreprise.user and not self.user.is_staff:
+            if not organization.members.filter(id=self.user.id).exists() and not self.user.is_staff:
                 raise PermissionException("Vous ne pouvez pas consulter cette vérification")
             
             # Récupérer la vérification en cours ou la plus récente
             verification = DocumentVerification.objects.filter(
-                entreprise=entreprise
+                organization=organization
             ).order_by('-created_at').first()
             
             verification_data = None
@@ -432,22 +428,21 @@ class VerificationService(BaseService):
                     'approved_at': verification.approved_at.isoformat() if verification.approved_at else None,
                     'admin_comments': verification.admin_comments,
                     'documents': documents_data,
-                    'required_documents': self._get_required_documents(entreprise),
+                    'required_documents': self._get_required_documents(organization),
                     'completion_percentage': self._calculate_completion_percentage(verification),
                 }
             
             return ServiceResult.success_result({
-                'entreprise': {
-                    'id': entreprise.id,
-                    'nom': entreprise.nom,
-                    'siret': entreprise.siret,
-                    'verification_status': entreprise.verification_status,
-                    'verified_at': entreprise.verified_at.isoformat() if entreprise.verified_at else None,
+                'organization': {
+                    'id': organization.id,
+                    'name': organization.name,
+                    'verification_status': organization.verification_status,
+                    'verified_at': organization.verified_at.isoformat() if organization.verified_at else None,
                 },
                 'verification': verification_data,
                 'can_start_verification': (
-                    not verification or verification.status in ['REJETE', 'EXPIRE']
-                ) and entreprise.verification_status != 'VERIFIED',
+                    not verification or verification.status in ['REJECTED', 'EXPIRED']
+                ) and not organization.is_verified,
             })
             
         except PermissionException as e:
@@ -456,39 +451,39 @@ class VerificationService(BaseService):
             logger.error(f"Erreur lors de la récupération du statut: {e}", exc_info=True)
             return ServiceResult.error_result("Erreur lors de la récupération du statut de vérification")
     
-    def _get_required_documents(self, entreprise: Entreprise) -> List[Dict]:
-        """Retourne la liste des documents requis selon le type d'entreprise."""
+    def _get_required_documents(self, organization) -> List[Dict]:
+        """Retourne la liste des documents requis selon le type d'organisation."""
         required_docs = [
             {
-                'type': 'KBIS',
+                'type': 'kbis',
                 'name': 'Extrait Kbis',
                 'description': 'Extrait Kbis de moins de 3 mois',
                 'required': True,
             },
             {
-                'type': 'STATUTS',
-                'name': 'Statuts de l\'entreprise',
+                'type': 'statuts',
+                'name': 'Statuts de l\'organisation',
                 'description': 'Statuts signés et datés',
                 'required': True,
             },
             {
-                'type': 'PIECE_IDENTITE_DIRIGEANT',
+                'type': 'id_dirigeant',
                 'name': 'Pièce d\'identité du dirigeant',
                 'description': 'Carte d\'identité ou passeport en cours de validité',
                 'required': True,
             },
             {
-                'type': 'RIB',
-                'name': 'RIB de l\'entreprise',
-                'description': 'Relevé d\'identité bancaire au nom de l\'entreprise',
+                'type': 'rib',
+                'name': 'RIB de l\'organisation',
+                'description': 'Relevé d\'identité bancaire au nom de l\'organisation',
                 'required': True,
             },
         ]
         
-        # Ajouter des documents spécifiques selon la forme juridique
-        if entreprise.forme_juridique in ['SAS', 'SARL']:
+        # Ajouter des documents spécifiques selon le type d'organisation
+        if organization.type in ['BUSINESS', 'ENTREPRISE']:
             required_docs.append({
-                'type': 'JUSTIFICATIF_DOMICILE',
+                'type': 'justificatif_domicile',
                 'name': 'Justificatif de domicile du dirigeant',
                 'description': 'Facture ou quittance de moins de 3 mois',
                 'required': False,
@@ -540,34 +535,34 @@ class VerificationService(BaseService):
     
     def _check_verification_completion(self, verification: DocumentVerification):
         """Vérifie si une vérification peut être considérée comme complète."""
-        required_docs = self._get_required_documents(verification.entreprise)
+        required_docs = self._get_required_documents(verification.organization)
         required_types = [doc['type'] for doc in required_docs if doc['required']]
         
         # Vérifier si tous les documents requis sont approuvés
-        approved_docs = verification.documents.filter(status='APPROUVE')
+        approved_docs = verification.documents.filter(is_valid=True)
         approved_types = list(approved_docs.values_list('document_type', flat=True))
         
         missing_types = set(required_types) - set(approved_types)
         
         if not missing_types:
             # Tous les documents requis sont approuvés
-            verification.status = 'PRET_POUR_VALIDATION'
+            verification.status = 'VERIFIED'
             verification.save(update_fields=['status'])
             
             # Publier un événement pour notifier qu'elle est prête
             EventBus.publish(FoundationEvents.VERIFICATION_READY, {
                 'verification_id': verification.id,
-                'entreprise_id': verification.entreprise.id,
-                'user_id': verification.entreprise.user.id,
+                'organization_id': verification.organization.id,
+                'user_id': verification.organization.owner.id,
             })
     
     def _calculate_completion_percentage(self, verification: DocumentVerification) -> int:
         """Calcule le pourcentage de completion d'une vérification."""
-        required_docs = self._get_required_documents(verification.entreprise)
+        required_docs = self._get_required_documents(verification.organization)
         required_count = len([doc for doc in required_docs if doc['required']])
         
         if required_count == 0:
             return 100
         
-        approved_count = verification.documents.filter(status='APPROUVE').count()
+        approved_count = verification.documents.filter(is_valid=True).count()
         return min(100, int((approved_count / required_count) * 100))

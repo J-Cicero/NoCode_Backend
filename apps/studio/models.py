@@ -68,3 +68,73 @@ class Page(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.route})"
+
+
+class Component(models.Model):
+    """
+    Catalogue de composants disponibles pour la construction d'interfaces.
+    Définit les métadonnées des composants utilisables dans les pages.
+    """
+
+    COMPONENT_CATEGORIES = [
+        ('layout', 'Layout'),
+        ('forms', 'Formulaires'),
+        ('content', 'Contenu'),
+        ('navigation', 'Navigation'),
+        ('data', 'Données'),
+        ('media', 'Médias'),
+        ('feedback', 'Feedback'),
+        ('overlay', 'Overlay'),
+    ]
+
+    name = models.CharField(max_length=255, unique=True)
+    display_name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    category = models.CharField(max_length=50, choices=COMPONENT_CATEGORIES, default='content')
+    icon = models.CharField(max_length=100, blank=True, help_text="Nom de l'icône (ex: 'button', 'input')")
+
+    # Configuration des propriétés du composant
+    properties = JSONField(default=dict, help_text="""
+        Définition des propriétés configurables du composant.
+        Format: {
+            'prop_name': {
+                'type': 'string|number|boolean|select|color|action',
+                'label': 'Label affiché',
+                'default': 'valeur par défaut',
+                'required': true/false,
+                'options': ['option1', 'option2'] // pour type select
+            }
+        }
+    """)
+
+    # Règles de validation
+    validation_rules = JSONField(default=dict, help_text="""
+        Règles de validation pour les propriétés.
+        Format: {
+            'prop_name': {
+                'min_length': 1,
+                'max_length': 100,
+                'pattern': 'regex',
+                'custom_validation': 'function_name'
+            }
+        }
+    """)
+
+    # Configuration par défaut du composant
+    default_config = JSONField(default=dict, help_text="""
+        Configuration par défaut quand le composant est ajouté à une page.
+    """)
+
+    # Métadonnées techniques
+    is_active = models.BooleanField(default=True)
+    version = models.CharField(max_length=20, default='1.0.0')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['category', 'name']
+        verbose_name = 'Composant'
+        verbose_name_plural = 'Composants'
+
+    def __str__(self):
+        return f"{self.display_name} ({self.category})"
