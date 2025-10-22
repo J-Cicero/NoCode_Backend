@@ -55,10 +55,13 @@ from .verification_permissions import (
     CanCompleteVerification,
     CanViewPendingVerifications,
     CanViewVerificationStats,
-    IsVerifiedEntreprise as VerificationIsVerifiedEntreprise,
+    IsVerifiedOrganization,
     CanAccessVerificationData,
     VerificationStatusPermission,
 )
+
+# Alias pour compatibilité
+IsVerifiedEntreprise = IsVerifiedOrganization
 
 # Exports pour faciliter les imports
 __all__ = [
@@ -110,7 +113,7 @@ __all__ = [
     'CanCompleteVerification',
     'CanViewPendingVerifications',
     'CanViewVerificationStats',
-    'VerificationIsVerifiedEntreprise',
+    'IsVerifiedOrganization',
     'CanAccessVerificationData',
     'VerificationStatusPermission',
 ]

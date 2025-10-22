@@ -26,6 +26,12 @@ urlpatterns = [
     
     # API Studio
     path('api/v1/studio/', include('apps.studio.urls')),
+    
+    # API Automation
+    path('api/v1/automation/', include('apps.automation.urls')),
+    
+    # API Runtime
+    path('api/v1/runtime/', include('apps.runtime.urls')),
 
     # Health check
     path('health/', include([

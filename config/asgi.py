@@ -4,19 +4,25 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from channels.security.websocket import AllowedHostsOriginValidator
 
-# Importer les routings WebSocket
-from apps.studio.websockets.routing import websocket_urlpatterns as studio_websockets
-from apps.automation.websockets.routing import websocket_urlpatterns as automation_websockets
-
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.production')
 
 # Applications Django standard
 django_asgi_app = get_asgi_application()
 
-# Combinaison des patterns WebSocket
+# Import des routings WebSocket
 websocket_urlpatterns = []
-websocket_urlpatterns.extend(studio_websockets)
-websocket_urlpatterns.extend(automation_websockets)
+
+try:
+    from apps.studio.websockets.routing import websocket_urlpatterns as studio_websockets
+    websocket_urlpatterns.extend(studio_websockets)
+except ImportError:
+    pass
+
+try:
+    from apps.automation.websockets.routing import websocket_urlpatterns as automation_websockets
+    websocket_urlpatterns.extend(automation_websockets)
+except ImportError:
+    pass
 
 # Configuration du routeur de protocoles
 application = ProtocolTypeRouter({

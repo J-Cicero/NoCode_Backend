@@ -266,7 +266,7 @@ class VerificationService(BaseService):
                     'document_type': document.document_type,
                     'status': status,
                     'reviewer_id': self.user.id,
-                    'entreprise_id': verification.organization.id,
+                    'organization_id': verification.organization.id,
                 })
                 
                 self.log_activity('document_reviewed', {

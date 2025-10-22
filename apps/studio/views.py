@@ -5,14 +5,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
 from django.utils import timezone
-from .models import Project, DataSchema, Page
-from .serializers import ProjectSerializer, DataSchemaSerializer, PageSerializer
+from .models import Project, DataSchema, Page, Component
+from .serializers import (
+    ProjectSerializer, 
+    DataSchemaSerializer, 
+    PageSerializer,
+    ComponentSerializer
+)
 from .schema_manager import SchemaManager
 from apps.foundation.permissions import IsOrgMember, IsOrgAdmin
 import logging
 
 logger = logging.getLogger(__name__)
-
 class ProjectViewSet(viewsets.ModelViewSet):
     """
     API endpoint pour gérer les projets NoCode

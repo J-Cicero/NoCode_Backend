@@ -122,24 +122,25 @@ class CanManageBilling(permissions.BasePermission):
 
 
 class IsEntrepriseOwner(permissions.BasePermission):
+    """Alias pour IsOrganizationOwner - pour compatibilité."""
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
         
-        entreprise_id = view.kwargs.get('entreprise_id')
-        if not entreprise_id:
+        org_id = view.kwargs.get('org_id') or view.kwargs.get('entreprise_id')
+        if not org_id:
             return False
         
         try:
-            entreprise = Entreprise.objects.get(id=entreprise_id)
-            return entreprise.user == request.user
-        except Entreprise.DoesNotExist:
+            organization = Organization.objects.get(id=org_id)
+            return organization.owner == request.user
+        except Organization.DoesNotExist:
             return False
     
     def has_object_permission(self, request, view, obj):
-        if isinstance(obj, Entreprise):
-            return obj.user == request.user
+        if isinstance(obj, Organization):
+            return obj.owner == request.user
         return False
 
 
@@ -162,18 +163,20 @@ class IsStaffOrOwner(permissions.BasePermission):
 
 
 class IsVerifiedEntreprise(permissions.BasePermission):
+    """Vérifie si l'utilisateur a une organisation vérifiée."""
+    
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
         
-        if request.user.user_type != 'ENTREPRISE':
-            return False
+        # Récupérer les organisations vérifiées de l'utilisateur
+        user_organizations = Organization.objects.filter(
+            members__user=request.user,
+            members__status='ACTIVE',
+            is_verified=True
+        )
         
-        try:
-            entreprise = request.user.entreprise
-            return entreprise.is_verified
-        except Entreprise.DoesNotExist:
-            return False
+        return user_organizations.exists()
 
 
 class HasActiveSubscription(permissions.BasePermission):

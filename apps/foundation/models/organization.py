@@ -327,3 +327,84 @@ class OrganizationInvitation(BaseModel):
             self.token = uuid.uuid4()
             
         super().save(*args, **kwargs)
+
+
+class OrganizationSettings(BaseModel):
+    """
+    Paramètres de configuration pour une organisation.
+    """
+    
+    organization = models.OneToOneField(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name='settings',
+        verbose_name="Organisation"
+    )
+    
+    # Paramètres généraux
+    default_user_role = models.CharField(
+        max_length=20,
+        choices=OrganizationMember.ROLE_CHOICES,
+        default='VIEWER',
+        verbose_name="Rôle par défaut des nouveaux membres"
+    )
+    
+    allow_public_signup = models.BooleanField(
+        default=False,
+        verbose_name="Autoriser l'inscription publique",
+        help_text="Si activé, les utilisateurs peuvent demander à rejoindre l'organisation"
+    )
+    
+    # Paramètres de sécurité
+    require_2fa = models.BooleanField(
+        default=False,
+        verbose_name="Authentification à deux facteurs requise",
+        help_text="Si activé, tous les membres devront activer la 2FA"
+    )
+    
+    session_timeout = models.PositiveIntegerField(
+        default=24,  # en heures
+        verbose_name="Délai d'expiration de session (heures)",
+        help_text="Durée d'inactivité avant déconnexion automatique"
+    )
+    
+    # Paramètres de personnalisation
+    custom_logo = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name="Logo personnalisé",
+        help_text="URL du logo de l'organisation"
+    )
+    
+    custom_theme = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Thème personnalisé",
+        help_text="Configuration du thème de l'interface (couleurs, polices, etc.)"
+    )
+    
+    # Paramètres de notifications
+    email_notifications = models.BooleanField(
+        default=True,
+        verbose_name="Activer les notifications par email"
+    )
+    
+    class Meta:
+        verbose_name = "Paramètres d'organisation"
+        verbose_name_plural = "Paramètres des organisations"
+    
+    def __str__(self):
+        return f"Paramètres - {self.organization.name}"
+    
+    def save(self, *args, **kwargs):
+        # S'assurer que le rôle par défaut est valide
+        if self.default_user_role not in dict(OrganizationMember.ROLE_CHOICES):
+            self.default_user_role = 'VIEWER'
+        
+        # Valider le délai de session
+        if self.session_timeout > 720:  # 30 jours
+            self.session_timeout = 720
+        elif self.session_timeout < 1:  # Au moins 1 heure
+            self.session_timeout = 1
+            
+        super().save(*args, **kwargs)

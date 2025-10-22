@@ -20,7 +20,6 @@ from .billing_tasks import (
 )
 
 from .verification_tasks import (
-    process_document_verification,
     send_verification_status_update,
     cleanup_expired_verifications,
 )

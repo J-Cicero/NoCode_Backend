@@ -3,7 +3,8 @@ Service d'authentification pour la plateforme NoCode.
 Gère la connexion, l'inscription, les tokens JWT et les sessions.
 """
 import logging
-from typing import Dict, Optional, Tuple
+import re
+from typing import Dict, List, Optional, Tuple, List
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
@@ -247,7 +248,7 @@ class AuthService(BaseService):
         """
         try:
             # Validation des données requises
-            required_fields = ['email', 'password', 'nom_entreprise', 'pays', 'numero_telephone']
+            required_fields = ['email', 'password', 'organization_name', 'pays', 'numero_telephone']
             missing_fields = [field for field in required_fields if not data.get(field)]
             
             if missing_fields:
@@ -263,7 +264,7 @@ class AuthService(BaseService):
                 return ServiceResult.error_result("Un compte avec cet email existe déjà")
             
             # Vérifier si le nom d'organisation existe déjà
-            if Organization.objects.filter(name=data['nom_entreprise']).exists():
+            if Organization.objects.filter(name=data['organization_name']).exists():
                 return ServiceResult.error_result("Une organisation avec ce nom existe déjà")
             
             # Validation du mot de passe
@@ -287,11 +288,11 @@ class AuthService(BaseService):
                 
                 # Créer l'organisation
                 organization = Organization.objects.create(
-                    name=data['nom_entreprise'],
+                    name=data['organization_name'],
                     type='BUSINESS',
                     owner=user,
                     status='ACTIVE',
-                    max_members=20,  # Plus de membres pour les entreprises
+                    max_members=20,  # Plus de membres pour les organisations
                     max_projects=10,
                 )
                 

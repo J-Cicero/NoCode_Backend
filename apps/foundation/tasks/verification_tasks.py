@@ -1,59 +1,15 @@
 """
-Tâches Celery pour la gestion de la vérification des entreprises.
+Tâches Celery pour la gestion de la vérification des organisations.
 """
 import logging
 from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta
-from ..models import DocumentVerification, DocumentUpload, Organization
-from ..services.verification_service import VerificationService
+from ..models import DocumentVerification, Organization
 from ..services.event_bus import EventBus
 from .email_tasks import send_billing_notification
 
 logger = logging.getLogger(__name__)
-
-
-@shared_task(bind=True, max_retries=3)
-def process_document_verification(self, document_upload_id):
-    """
-    Traite la vérification d'un document uploadé.
-    """
-    try:
-        document = DocumentUpload.objects.get(id=document_upload_id)
-        verification_service = VerificationService()
-        
-        # Analyser le document
-        result = verification_service.analyze_document(document_upload_id)
-        
-        if not result.success:
-            logger.error(f"Erreur lors de l'analyse du document: {result.error}")
-            return {'success': False, 'error': result.error}
-        
-        # Mettre à jour le statut
-        document.status = 'ANALYZED'
-        document.analysis_result = result.data.get('analysis', {})
-        document.save()
-        
-        EventBus.publish('document.analyzed', {
-            'document_id': document_upload_id,
-            'verification_id': document.verification.id,
-            'entreprise_id': document.verification.entreprise.id,
-        })
-        
-        logger.info(f"Document {document_upload_id} analysé avec succès")
-        return {'success': True, 'analysis': result.data}
-        
-    except DocumentUpload.DoesNotExist:
-        logger.error(f"Document {document_upload_id} non trouvé")
-        return {'success': False, 'error': 'Document not found'}
-    
-    except Exception as e:
-        logger.error(f"Erreur lors de l'analyse du document: {e}")
-        
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=300 * (2 ** self.request.retries))
-        
-        return {'success': False, 'error': str(e)}
 
 
 @shared_task(bind=True, max_retries=3)
@@ -63,11 +19,11 @@ def send_verification_status_update(self, verification_id, status):
     """
     try:
         verification = DocumentVerification.objects.get(id=verification_id)
-        entreprise = verification.entreprise
+        organization = verification.organization
         
         # Préparer le contexte selon le statut
         context = {
-            'entreprise': entreprise,
+            'organization': organization,
             'verification': verification,
             'status': status,
         }
@@ -87,13 +43,13 @@ def send_verification_status_update(self, verification_id, status):
         # Envoyer l'email (réutiliser la fonction de notification)
         send_billing_notification.delay(
             notification_type,
-            entreprise.user.id,  # Utiliser l'ID utilisateur comme organisation
+            organization.owner.id if organization.owner else None,
             **context
         )
         
         EventBus.publish('verification.status_notified', {
             'verification_id': verification_id,
-            'entreprise_id': entreprise.id,
+            'organization_id': organization.id,
             'status': status,
         })
         
@@ -117,6 +73,9 @@ def send_verification_status_update(self, verification_id, status):
 def cleanup_expired_verifications():
     """
     Nettoie les vérifications expirées.
+    
+    Marque comme expirées les vérifications en statut PENDING depuis plus de 30 jours.
+    Cette tâche doit être exécutée régulièrement via Celery Beat.
     """
     try:
         # Supprimer les vérifications abandonnées depuis plus de 30 jours
@@ -124,7 +83,7 @@ def cleanup_expired_verifications():
         
         expired_verifications = DocumentVerification.objects.filter(
             status='PENDING',
-            date_creation__lt=expiry_date,
+            created_at__lt=expiry_date,
         )
         
         count = expired_verifications.count()
@@ -141,55 +100,4 @@ def cleanup_expired_verifications():
         
     except Exception as e:
         logger.error(f"Erreur lors du nettoyage des vérifications: {e}")
-        return {'success': False, 'error': str(e)}
-
-
-@shared_task
-def auto_approve_simple_verifications():
-    """
-    Approuve automatiquement les vérifications simples.
-    """
-    try:
-        # Récupérer les vérifications en attente avec tous les documents analysés
-        pending_verifications = DocumentVerification.objects.filter(
-            status='PENDING_REVIEW'
-        )
-        
-        auto_approved = 0
-        
-        for verification in pending_verifications:
-            # Vérifier si tous les documents sont valides
-            documents = verification.documents.all()
-            
-            if not documents.exists():
-                continue
-            
-            all_valid = all(
-                doc.status == 'APPROVED' and 
-                doc.analysis_result.get('confidence', 0) > 0.8
-                for doc in documents
-            )
-            
-            if all_valid:
-                # Auto-approuver
-                verification.status = 'APPROVED'
-                verification.reviewed_by = None  # Auto-approval
-                verification.date_review = timezone.now()
-                verification.save()
-                
-                # Mettre à jour l'entreprise
-                verification.entreprise.verification_status = 'VERIFIED'
-                verification.entreprise.is_verified = True
-                verification.entreprise.save()
-                
-                # Envoyer une notification
-                send_verification_status_update.delay(verification.id, 'APPROVED')
-                
-                auto_approved += 1
-        
-        logger.info(f"Auto-approbation: {auto_approved} vérifications approuvées")
-        return {'success': True, 'auto_approved': auto_approved}
-        
-    except Exception as e:
-        logger.error(f"Erreur lors de l'auto-approbation: {e}")
         return {'success': False, 'error': str(e)}

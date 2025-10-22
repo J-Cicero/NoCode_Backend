@@ -37,6 +37,7 @@ from .organization import (
     Organization,
     OrganizationMember,
     OrganizationInvitation,
+    OrganizationSettings,
 )
 
 # Système d'abonnements

@@ -15,23 +15,31 @@ class FoundationConfig(AppConfig):
     verbose_name = 'Foundation'
 
     def ready(self):
-
         # Importer les signaux pour les activer
         try:
-            from . import signals
+            # Import des signaux depuis le package signals
+            from .signals import user_signals, organization_signals  # noqa
             logger.info("Signaux Foundation chargés avec succès")
         except ImportError as e:
             logger.warning(f"Impossible de charger les signaux Foundation: {e}")
 
         # Importer les tâches Celery pour les enregistrer
         try:
-            from . import tasks
+            from . import tasks  # noqa
             logger.info("Tâches Celery Foundation chargées avec succès")
         except ImportError as e:
             logger.warning(f"Impossible de charger les tâches Celery Foundation: {e}")
+            
+        # Vérifier si les modèles sont chargés avant de configurer les paramètres
+        try:
+            from django.apps import apps
+            if apps.is_installed('django.contrib.auth'):
+                self._setup_organization_settings()
+        except Exception as e:
+            logger.warning(f"Erreur lors de la configuration des paramètres d'organisation: {e}")
 
         # Configurer les permissions personnalisées
-        self._setup_permissions()
+        self._setup_permissions();
 
         # Connecter le signal post_migrate pour les données initiales
         post_migrate.connect(self._create_initial_data, sender=self)
@@ -43,6 +51,16 @@ class FoundationConfig(AppConfig):
             logger.info("Permissions personnalisées configurées")
         except Exception as e:
             logger.warning(f"Erreur lors de la configuration des permissions: {e}")
+            
+    def _setup_organization_settings(self):
+        """Configure les paramètres par défaut pour les organisations."""
+        from .models import Organization, OrganizationSettings
+        
+        # Créer des paramètres par défaut pour les organisations existantes qui n'en ont pas
+        for org in Organization.objects.all():
+            OrganizationSettings.objects.get_or_create(organization=org)
+            
+        logger.info("Configuration des paramètres d'organisation terminée")
 
     def _create_initial_data(self, sender, **kwargs):
         """

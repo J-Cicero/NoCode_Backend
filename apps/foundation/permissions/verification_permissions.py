@@ -141,10 +141,7 @@ class IsVerifiedOrganization(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
         
-        if request.user.user_type not in ['BUSINESS', 'ENTREPRISE']:
-            return False
-        
-        # Récupérer les organisations de l'utilisateur
+        # Récupérer les organisations vérifiées de l'utilisateur
         user_organizations = Organization.objects.filter(
             members__user=request.user,
             members__status='ACTIVE',
@@ -189,9 +186,6 @@ class VerificationStatusPermission(permissions.BasePermission):
     
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
-            return False
-        
-        if request.user.user_type not in ['BUSINESS', 'ENTREPRISE']:
             return False
         
         # Récupérer les organisations de l'utilisateur

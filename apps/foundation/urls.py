@@ -21,19 +21,29 @@ from .views.org_views import (
 from .views.billing_views import (
     SubscriptionPlansView, OrganizationSubscriptionView,
     OrganizationBillingInfoView, CreatePaymentIntentView,
-    StripeWebhookView, SubscriptionLimitsView,
-    InvoiceGenerateView, billing_stats
+    SubscriptionLimitsView,InvoiceGenerateView, billing_stats
 )
 from .views.verification_views import (
     StartVerificationView, VerificationStatusView, DocumentUploadView,
     DocumentReviewView, CompleteVerificationView
 )
 from .views.stripe_webhook_view import StripeWebhookView as StripeWebhookViewDedicated
+from .views.subscription_views import (
+    SubscriptionViewSet, SubscriptionPlanViewSet,
+    PaymentViewSet, InvoiceViewSet, PaymentMethodViewSet
+)
 
 app_name = 'foundation'
 
 # Configuration des URLs de l'API
 router = DefaultRouter()
+
+# Enregistrement des ViewSets pour les abonnements
+router.register(r'subscriptions', SubscriptionViewSet, basename='subscription')
+router.register(r'subscription-plans', SubscriptionPlanViewSet, basename='subscription-plan')
+router.register(r'payments', PaymentViewSet, basename='payment')
+router.register(r'invoices', InvoiceViewSet, basename='invoice')
+router.register(r'payment-methods', PaymentMethodViewSet, basename='payment-method')
 
 urlpatterns = [
     # === AUTHENTIFICATION ===
