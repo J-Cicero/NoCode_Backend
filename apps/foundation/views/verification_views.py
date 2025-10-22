@@ -1,5 +1,5 @@
 """
-Vues pour la vérification des entreprises.
+Vues pour la vérification des organisations.
 Expose les APIs pour la vérification KYB, upload de documents, etc.
 """
 from rest_framework import status, permissions

@@ -2,6 +2,7 @@
 Configuration pour l'environnement de test
 """
 from .base import *
+from datetime import timedelta
 import tempfile
 
 # Debug désactivé pour les tests
@@ -84,10 +85,10 @@ LOGGING = {
 }
 
 # Configuration JWT simplifiée pour tests
-SIMPLE_JWT.update({
+SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(minutes=10),
-})
+}
 
 # Configuration spécifique test
 NOCODE_CONFIG.update({

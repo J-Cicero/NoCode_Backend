@@ -23,37 +23,17 @@ urlpatterns = [
 
     # API Foundation
     path('api/v1/foundation/', include('apps.foundation.urls')),
-    
+
     # API Studio
     path('api/v1/studio/', include('apps.studio.urls')),
-    
+
     # API Automation
     path('api/v1/automation/', include('apps.automation.urls')),
-    
+
     # API Runtime
     path('api/v1/runtime/', include('apps.runtime.urls')),
 
+    # API Insights - Analytics et Monitoring
+    path('api/v1/insights/', include('apps.insights.urls'))]
+
     # Health check
-    path('health/', include([
-        path('', lambda request: JsonResponse({'status': 'ok'})),
-       # path('db/', include('apps.foundation.urls.health')),
-    ])),
-]
-
-# Fichiers statiques et media en développement
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-
-    # Debug toolbar en développement
-    if 'debug_toolbar' in settings.INSTALLED_APPS:
-        import debug_toolbar
-        urlpatterns = [
-            path('__debug__/', include(debug_toolbar.urls)),
-        ] + urlpatterns
-
-
-# Configuration du site admin
-admin.site.site_header = 'Administration  NoCode'
-admin.site.site_title = 'Plateforme Admin'
-admin.site.index_title = 'Gestion de la plateforme'

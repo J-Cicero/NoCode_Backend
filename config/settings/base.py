@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     # Project apps
     'apps.foundation',
     'apps.studio',
+    'apps.runtime',
+    'apps.insights',
     'apps.automation',
 ]
 
@@ -49,6 +51,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Middleware Insights pour le tracking automatique
+    'apps.insights.middleware.InsightsMiddleware',
+    'apps.insights.middleware.MetricsCollectionMiddleware',
 ]
 
 # Configuration des URLs

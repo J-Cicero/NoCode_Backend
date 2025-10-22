@@ -23,10 +23,6 @@ from .views.billing_views import (
     OrganizationBillingInfoView, CreatePaymentIntentView,
     SubscriptionLimitsView,InvoiceGenerateView, billing_stats
 )
-from .views.verification_views import (
-    StartVerificationView, VerificationStatusView, DocumentUploadView,
-    DocumentReviewView, CompleteVerificationView
-)
 from .views.stripe_webhook_view import StripeWebhookView as StripeWebhookViewDedicated
 from .views.subscription_views import (
     SubscriptionViewSet, SubscriptionPlanViewSet,

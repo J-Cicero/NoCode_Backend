@@ -14,15 +14,7 @@ logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=3)
 def deploy_app_task(self, deployment_log_id):
-    """
-    Tâche asynchrone pour déployer une application.
-    
-    Args:
-        deployment_log_id (int): L'ID du journal de déploiement
-        
-    Returns:
-        dict: Résultat du déploiement
-    """
+   
     try:
         with transaction.atomic():
             # Récupérer le journal de déploiement

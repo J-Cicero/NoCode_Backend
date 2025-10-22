@@ -30,13 +30,5 @@ def organization_member_post_save(sender, instance, created, **kwargs):
             f"{instance.user.email} (rôle: {instance.role})"
         )
 
-@receiver(m2m_changed, sender=Organization.members.through)
-def organization_members_changed(sender, instance, action, reverse, model, pk_set, **kwargs):
-    """
-    Déclenché lorsque les membres d'une organisation changent.
-    """
-    if action in ["post_add", "post_remove", "post_clear"]:
-        logger.info(
-            f"Membres de l'organisation {instance.name} mis à jour. "
-            f"Action: {action}"
-        )
+# Ce signal était incorrect car OrganizationMember n'a pas de relation ManyToMany
+# Il est remplacé par le signal post_save existant ci-dessus
