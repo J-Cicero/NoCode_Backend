@@ -1,0 +1,37 @@
+Metadata-Version: 2.4
+Name: pytest-common-subject
+Version: 1.1.2
+Summary: pytest framework for testing different aspects of a common method
+License: MIT
+License-File: LICENSE
+Keywords: pytest
+Author: Zach "theY4Kman" Kanzler
+Author-email: they4kman@gmail.com
+Requires-Python: >=3.9,<4.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
+Requires-Dist: lazy-object-proxy (>=1.3.1,<2.0.0)
+Requires-Dist: pytest (>=3.6,<9)
+Requires-Dist: pytest-fixture-order (>=0.1.5,<0.2.0)
+Requires-Dist: pytest-lambda (>=1.3.0)
+Project-URL: Homepage, https://github.com/theY4Kman/pytest-common-subject
+Project-URL: Repository, https://github.com/theY4Kman/pytest-common-subject
+Description-Content-Type: text/markdown
+
+# pytest-common-subject
+[![pytest-common-subject PyPI version](https://badge.fury.io/py/pytest-common-subject.svg)](https://pypi.python.org/pypi/pytest-common-subject/)
+[![pytest-common-subject PyPI pyversions](https://img.shields.io/pypi/pyversions/pytest-common-subject.svg)](https://pypi.python.org/pypi/pytest-common-subject/)
+[![pytest-common-subject PyPI license](https://img.shields.io/pypi/l/pytest-common-subject.svg)](https://pypi.python.org/pypi/pytest-common-subject/)
+
+**pytest-common-subject** is a "framework" for organizing tests to reduce boilerplate while writing, improve skimmability when reading, and bolster parallelization when executing the suite.
+
+To utilize this framework, we first choose a single function that our group of tests will all call — in other words, an entry point, or a _common subject_. This function will be automatically called before each of our tests, with args and kwargs that can be customized by overriding fixtures — enabling child test classes to make HTTP requests as a different user, or to use a different cache backend, or to change the value of a monkeypatched method.
+
+The return value of the chosen function will be passed as a fixture to each test. To reap the full benefits of the framework, create separate tests to verify different aspects of the return value. Was the response status code a 200? Did the response contain the expected data? Were the expected rows created in the database? By using separate tests for each of these aspects, we can pinpoint and correct multiple bugs at once, instead of getting sucked into a fix-test-fix cycle with its chorus of "oh, bother, not again!"
+

@@ -4,10 +4,21 @@ Gère les utilisateurs Client (personnes physiques). Les organisations sont gér
 """
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import uuid
 
 
 class User(AbstractUser):
     username = None
+    first_name = None
+    last_name = None
+    
+    tracking_id = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name="ID de suivi",
+        help_text="Identifiant public unique pour les requêtes API"
+    )
     
     email = models.EmailField(
         unique=True,
@@ -15,8 +26,25 @@ class User(AbstractUser):
         help_text="L'adresse email est utilisée comme identifiant de connexion."
     )
     
+    nom = models.CharField(
+        max_length=255,
+        verbose_name="Nom de famille"
+    )
+    
+    prenom = models.CharField(
+        max_length=255,
+        verbose_name="Prénom"
+    )
+    
+    pays = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        verbose_name="Pays"
+    )
+    
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['nom', 'prenom']
     
     class Meta:
         verbose_name = "Utilisateur"
@@ -28,9 +56,7 @@ class User(AbstractUser):
     
     @property
     def full_name(self):
-        if hasattr(self, 'client') and self.client:
-            return f"{self.client.prenom} {self.client.nom}"
-        return self.email.split('@')[0]
+        return f"{self.prenom} {self.nom}"
     
     @property
     def user_type(self):
@@ -54,35 +80,17 @@ class Client(models.Model):
         related_name='client'
     )
     
-    nom = models.CharField(
-        max_length=255,
-        verbose_name="Nom de famille"
-    )
-    
-    prenom = models.CharField(
-        max_length=255,
-        verbose_name="Prénom"
-    )
-    
-    pays = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        verbose_name="Pays"
-    )
-    
     class Meta:
         verbose_name = "Client"
         verbose_name_plural = "Clients"
         db_table = 'foundation_client'
     
     def __str__(self):
-        return f"{self.prenom} {self.nom}"
+        return f"{self.user.prenom} {self.user.nom}"
     
     @property
     def nom_complet(self):
-        """Retourne le nom complet du client."""
-        return f"{self.prenom} {self.nom}"
+        return f"{self.user.prenom} {self.user.nom}"
     
     @property
     def nom_affichage(self):

@@ -200,22 +200,15 @@ class BaseService:
         }
         
         self.logger.info(f"Activité: {action}", extra=activity_data)
-        
-        # TODO: Enregistrer dans la base de données si nécessaire
-        # ActivityLog.objects.create(**activity_data)
     
     def send_notification(self, notification_type: str, recipients: List[User], 
                          data: Dict = None):
-        """
-        Envoie une notification.
-        """
+
         # TODO: Implémenter le système de notifications
         self.logger.info(f"Notification {notification_type} envoyée à {len(recipients)} utilisateurs")
     
     def publish_event(self, event_name: str, data: Dict = None):
-        """
-        Publie un événement via l'EventBus.
-        """
+
         from .event_bus import EventBus
         
         event_data = {

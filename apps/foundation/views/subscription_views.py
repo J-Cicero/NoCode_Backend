@@ -17,7 +17,6 @@ from ..serializers.billing_serializers import (
     PaiementSerializer,
     FactureSerializer,
 )
-from ..services.stripe_service import StripeService
 from ..services.billing_service import BillingService
 from ..permissions import IsOrgAdmin
 
@@ -428,34 +427,11 @@ class PaymentMethodViewSet(viewsets.ViewSet):
     def list(self, request):
         """Liste les moyens de paiement de l'utilisateur."""
         try:
-            # Récupérer depuis Stripe si l'utilisateur a un customer_id
-            stripe_service = StripeService(user=request.user)
-            
-            if hasattr(request.user, 'stripe_customer_id') and request.user.stripe_customer_id:
-                result = stripe_service.get_customer_payment_methods(request.user.stripe_customer_id)
-                
-                if result.success:
-                    return Response(result.data)
-            
-            # Sinon, retourner les moyens de paiement locaux
-            from ..models import MoyenDePaiement
-            payment_methods = MoyenDePaiement.objects.filter(
-                user=request.user,
-                status='ACTIVE'
-            ).order_by('-is_default', '-last_used_at')
-            
-            data = [
-                {
-                    'id': pm.id,
-                    'type': pm.type,
-                    'details': pm.details,
-                    'is_default': pm.is_default,
-                    'is_valid': pm.is_valid,
-                }
-                for pm in payment_methods
-            ]
-            
-            return Response({'payment_methods': data})
+            # TODO: Implémenter l'intégration avec la banque digitale
+            return Response({
+                'message': 'Intégration banque digitale à implémenter',
+                'payment_methods': []
+            })
             
         except Exception as e:
             logger.error(f"Erreur lors de la récupération des moyens de paiement: {e}", exc_info=True)
@@ -467,35 +443,10 @@ class PaymentMethodViewSet(viewsets.ViewSet):
     def create(self, request):
         """Ajoute un nouveau moyen de paiement."""
         try:
-            stripe_service = StripeService(user=request.user)
-            
-            # Créer ou récupérer le customer Stripe
-            if not hasattr(request.user, 'stripe_customer_id') or not request.user.stripe_customer_id:
-                customer_result = stripe_service.create_customer(request.user)
-                if not customer_result.success:
-                    return Response(
-                        {'error': customer_result.error_message},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                
-                # Sauvegarder le customer_id
-                request.user.stripe_customer_id = customer_result.data['customer_id']
-                request.user.save(update_fields=['stripe_customer_id'])
-            
-            # Créer le moyen de paiement
-            payment_method_data = request.data.get('payment_method', {})
-            result = stripe_service.create_payment_method(
-                request.user.stripe_customer_id,
-                payment_method_data
-            )
-            
-            if result.success:
-                return Response(result.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response(
-                    {'error': result.error_message},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            # TODO: Implémenter l'intégration avec la banque digitale
+            return Response({
+                'message': 'Intégration banque digitale à implémenter'
+            }, status=status.HTTP_501_NOT_IMPLEMENTED)
                 
         except Exception as e:
             logger.error(f"Erreur lors de la création du moyen de paiement: {e}", exc_info=True)

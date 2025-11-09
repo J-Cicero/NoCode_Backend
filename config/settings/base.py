@@ -1,6 +1,4 @@
-"""
-Configuration de base pour l'application Django
-"""
+
 import os
 from pathlib import Path
 from decouple import config
@@ -106,7 +104,7 @@ REST_FRAMEWORK = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'nocode_platform',
+        'NAME': 'nocode',
         'USER': 'postgres',
         'PASSWORD': 'cicero',
         'HOST': 'localhost',
@@ -129,7 +127,6 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Configuration des logs
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

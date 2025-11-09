@@ -9,9 +9,7 @@ logger = logging.getLogger(__name__)
 
 @receiver(pre_delete, sender=Project)
 def delete_project_schema(sender, instance, **kwargs):
-    """
-    Supprime le schéma PostgreSQL associé lors de la suppression d'un projet
-    """
+
     if instance.schema_name:
         try:
             schema_manager = SchemaManager()
@@ -22,14 +20,12 @@ def delete_project_schema(sender, instance, **kwargs):
 
 @receiver(post_migrate)
 def create_public_functions(sender, **kwargs):
-    """
-    Crée les fonctions PostgreSQL nécessaires après les migrations
-    """
+
     if sender.name != 'studio':
         return
     
     with connection.cursor() as cursor:
-        # Fonction pour mettre à jour le champ updated_at automatiquement
+
         try:
             cursor.execute("""
             CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -44,7 +40,6 @@ def create_public_functions(sender, **kwargs):
         except Exception as e:
             logger.warning(f"Erreur lors de la création de la fonction update_updated_at_column: {e}")
         
-        # Fonction pour créer les triggers sur les nouvelles tables
         try:
             cursor.execute("""
             CREATE OR REPLACE FUNCTION create_updated_at_trigger()

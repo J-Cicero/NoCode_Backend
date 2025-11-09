@@ -1,7 +1,4 @@
-"""
-Configuration de l'application Foundation.
-Définit les paramètres de l'app Django et configure les signaux.
-"""
+
 from django.apps import AppConfig
 from django.db.models.signals import post_migrate
 import logging
@@ -15,22 +12,18 @@ class FoundationConfig(AppConfig):
     verbose_name = 'Foundation'
 
     def ready(self):
-        # Importer les signaux pour les activer
         try:
-            # Import des signaux depuis le package signals
             from .signals import user_signals, organization_signals  # noqa
             logger.info("Signaux Foundation chargés avec succès")
         except ImportError as e:
             logger.warning(f"Impossible de charger les signaux Foundation: {e}")
 
-        # Importer les tâches Celery pour les enregistrer
         try:
             from . import tasks  # noqa
             logger.info("Tâches Celery Foundation chargées avec succès")
         except ImportError as e:
             logger.warning(f"Impossible de charger les tâches Celery Foundation: {e}")
             
-        # Vérifier si les modèles sont chargés avant de configurer les paramètres
         try:
             from django.apps import apps
             if apps.is_installed('django.contrib.auth'):
@@ -44,16 +37,15 @@ class FoundationConfig(AppConfig):
         # Connecter le signal post_migrate pour les données initiales
         post_migrate.connect(self._create_initial_data, sender=self)
 
-    def _setup_permissions(self):
+    """def _setup_permissions(self):
         try:
             from .permissions import setup_custom_permissions
             setup_custom_permissions()
             logger.info("Permissions personnalisées configurées")
         except Exception as e:
             logger.warning(f"Erreur lors de la configuration des permissions: {e}")
-            
+      """
     def _setup_organization_settings(self):
-        """Configure les paramètres par défaut pour les organisations."""
         from .models import Organization, OrganizationSettings
         
         # Créer des paramètres par défaut pour les organisations existantes qui n'en ont pas
@@ -63,9 +55,7 @@ class FoundationConfig(AppConfig):
         logger.info("Configuration des paramètres d'organisation terminée")
 
     def _create_initial_data(self, sender, **kwargs):
-        """
-        Crée les données initiales après les migrations.
-        """
+
         if sender.name != self.name:
             return
 
@@ -131,7 +121,6 @@ class FoundationConfig(AppConfig):
             logger.error(f"Erreur lors de la création des types d'abonnement: {e}")
 
     def _create_default_notification_preferences(self):
-        """Crée les préférences de notification par défaut pour les nouveaux utilisateurs."""
         try:
             from django.contrib.auth import get_user_model
             from .models import NotificationPreference
@@ -164,12 +153,10 @@ class FoundationConfig(AppConfig):
 
     @staticmethod
     def get_version():
-        """Retourne la version de l'application Foundation."""
         return "1.0.0"
 
     @staticmethod
     def get_features():
-        """Retourne la liste des fonctionnalités disponibles."""
         return [
             'user_management',
             'organization_management',
@@ -177,7 +164,6 @@ class FoundationConfig(AppConfig):
             'document_verification',
             'activity_logging',
             'notification_system',
-            'stripe_integration',
             'admin_interface'
         ]
 

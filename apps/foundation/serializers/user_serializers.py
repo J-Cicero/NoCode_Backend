@@ -20,17 +20,14 @@ class UserBaseSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name', 'full_name',
-            'user_type', 'is_active', 'date_joined', 'last_login',
-            'numero_telephone', 'langue_preferee', 'timezone',
-            'preferences_notifications', 'avatar'
+            'id', 'email', 'nom', 'prenom', 'pays', 'full_name',
+            'is_active', 'date_joined', 'last_login'
         ]
         read_only_fields = ['id', 'date_joined', 'last_login', 'full_name']
 
 
 class UserDetailSerializer(UserBaseSerializer):
-    """Serializer détaillé pour les utilisateurs avec informations sensibles."""
-    
+
     class Meta(UserBaseSerializer.Meta):
         fields = UserBaseSerializer.Meta.fields + [
             'is_staff', 'is_superuser', 'email_verified', 'phone_verified'
@@ -38,7 +35,6 @@ class UserDetailSerializer(UserBaseSerializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    """Serializer pour la création d'utilisateurs."""
     
     password = serializers.CharField(write_only=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True)
@@ -46,8 +42,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'email', 'password', 'password_confirm', 'first_name', 'last_name',
-            'numero_telephone', 'langue_preferee', 'timezone', 'user_type'
+            'email', 'password', 'password_confirm', 'nom', 'prenom', 'pays'
         ]
     
     def validate(self, attrs):
@@ -74,8 +69,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'first_name', 'last_name', 'numero_telephone', 'langue_preferee',
-            'timezone', 'preferences_notifications', 'avatar'
+            'nom', 'prenom', 'pays'
         ]
 
 
@@ -135,11 +129,10 @@ class ClientCreateSerializer(serializers.ModelSerializer):
         model = Client
         fields = [
             # Champs utilisateur
-            'email', 'password', 'password_confirm', 'first_name', 'last_name',
-            'numero_telephone', 'langue_preferee',
+            'email', 'password', 'password_confirm', 'nom', 'prenom', 'pays',
             # Champs client
             'date_naissance', 'genre', 'profession', 'adresse_complete',
-            'ville', 'code_postal', 'pays', 'situation_familiale',
+            'ville', 'code_postal', 'situation_familiale',
             'nombre_enfants', 'revenus_annuels'
         ]
     
@@ -159,15 +152,11 @@ class ClientCreateSerializer(serializers.ModelSerializer):
         user_data = {
             'email': validated_data.pop('email'),
             'password': validated_data.pop('password'),
-            'first_name': validated_data.pop('first_name'),
-            'last_name': validated_data.pop('last_name'),
-            'user_type': 'CLIENT',
+            'nom': validated_data.pop('nom'),
+            'prenom': validated_data.pop('prenom'),
+            'pays': validated_data.pop('pays'),
+            'is_active': True,  # Client actif dès la création
         }
-        
-        # Ajouter les champs optionnels s'ils existent
-        for field in ['numero_telephone', 'langue_preferee']:
-            if field in validated_data:
-                user_data[field] = validated_data.pop(field)
         
         # Créer l'utilisateur
         password = user_data.pop('password')
@@ -184,7 +173,7 @@ class ClientUpdateSerializer(serializers.ModelSerializer):
         model = Client
         fields = [
             'date_naissance', 'genre', 'profession', 'adresse_complete',
-            'ville', 'code_postal', 'pays', 'situation_familiale',
+            'ville', 'code_postal', 'situation_familiale',
             'nombre_enfants', 'revenus_annuels'
         ]
 

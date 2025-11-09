@@ -4,7 +4,7 @@ Gère les permissions liées aux paiements, factures et abonnements.
 """
 from rest_framework import permissions
 from django.contrib.auth import get_user_model
-from ..models import Organization, OrganizationMember, Abonnement, Facture, MoyenDePaiement
+from ..models import Organization, OrganizationMember, Abonnement, Facture
 
 
 User = get_user_model()
@@ -136,7 +136,7 @@ class CanManagePaymentMethods(permissions.BasePermission):
         return request.user.is_authenticated
     
     def has_object_permission(self, request, view, obj):
-        if isinstance(obj, MoyenDePaiement):
+        if isinstance(obj):
             # Un utilisateur peut seulement gérer ses propres moyens de paiement
             return obj.user == request.user
         

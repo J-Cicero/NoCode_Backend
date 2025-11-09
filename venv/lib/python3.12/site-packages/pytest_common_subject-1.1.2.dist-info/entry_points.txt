@@ -1,0 +1,3 @@
+[pytest11]
+common_subject=pytest_common_subject.plugin
+

@@ -6,7 +6,6 @@ from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta
 from ..models import Abonnement, Paiement, Facture, Organization
-from ..services.stripe_service import StripeService
 from ..services.billing_service import BillingService
 from ..services.event_bus import EventBus
 from .email_tasks import send_billing_notification
@@ -14,53 +13,7 @@ from .email_tasks import send_billing_notification
 logger = logging.getLogger(__name__)
 
 
-@shared_task(bind=True, max_retries=3)
-def sync_stripe_subscription(self, subscription_id):
-    """
-    Synchronise un abonnement avec Stripe.
-    """
-    try:
-        abonnement = Abonnement.objects.get(id=subscription_id)
-        stripe_service = StripeService()
-        
-        # Récupérer les données Stripe
-        result = stripe_service.get_subscription(abonnement.stripe_subscription_id)
-        
-        if not result['success']:
-            logger.error(f"Erreur lors de la récupération de l'abonnement Stripe: {result['error']}")
-            return {'success': False, 'error': result['error']}
-        
-        stripe_subscription = result['subscription']
-        
-        # Mettre à jour l'abonnement local
-        abonnement.status = stripe_service._map_subscription_status(stripe_subscription['status'])
-        abonnement.date_fin = stripe_service._timestamp_to_datetime(stripe_subscription['current_period_end'])
-        
-        if stripe_subscription.get('trial_end'):
-            abonnement.trial_end = stripe_service._timestamp_to_datetime(stripe_subscription['trial_end'])
-        
-        abonnement.save()
-        
-        EventBus.publish('subscription.synced', {
-            'subscription_id': subscription_id,
-            'organization_id': abonnement.organization.id,
-            'status': abonnement.status,
-        })
-        
-        logger.info(f"Abonnement {subscription_id} synchronisé avec Stripe")
-        return {'success': True, 'status': abonnement.status}
-        
-    except Abonnement.DoesNotExist:
-        logger.error(f"Abonnement {subscription_id} non trouvé")
-        return {'success': False, 'error': 'Subscription not found'}
-    
-    except Exception as e:
-        logger.error(f"Erreur lors de la synchronisation de l'abonnement: {e}")
-        
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=300 * (2 ** self.request.retries))
-        
-        return {'success': False, 'error': str(e)}
+# Tâche sync_stripe_subscription supprimée - Intégration Stripe retirée
 
 
 @shared_task(bind=True, max_retries=3)
@@ -204,46 +157,7 @@ def send_payment_reminder(self, invoice_id):
         return {'success': False, 'error': str(e)}
 
 
-@shared_task(bind=True, max_retries=3)
-def update_subscription_usage(self, subscription_id, usage_data):
-    """
-    Met à jour l'usage d'un abonnement.
-    """
-    try:
-        abonnement = Abonnement.objects.get(id=subscription_id)
-        stripe_service = StripeService()
-        
-        # Rapporter l'usage à Stripe
-        result = stripe_service.report_usage(
-            abonnement.stripe_subscription_id,
-            usage_data['quantity'],
-            usage_data.get('timestamp')
-        )
-        
-        if not result['success']:
-            logger.error(f"Erreur lors du rapport d'usage: {result['error']}")
-            return {'success': False, 'error': result['error']}
-        
-        EventBus.publish('subscription.usage_updated', {
-            'subscription_id': subscription_id,
-            'organization_id': abonnement.organization.id,
-            'usage': usage_data,
-        })
-        
-        logger.info(f"Usage mis à jour pour l'abonnement {subscription_id}")
-        return {'success': True}
-        
-    except Abonnement.DoesNotExist:
-        logger.error(f"Abonnement {subscription_id} non trouvé")
-        return {'success': False, 'error': 'Subscription not found'}
-    
-    except Exception as e:
-        logger.error(f"Erreur lors de la mise à jour de l'usage: {e}")
-        
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=300 * (2 ** self.request.retries))
-        
-        return {'success': False, 'error': str(e)}
+# Tâche update_subscription_usage supprimée - Intégration Stripe retirée
 
 
 @shared_task

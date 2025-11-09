@@ -1,7 +1,4 @@
-"""
-Système d'organisations pour le multi-tenancy.
-Gère les organisations, membres, invitations et paramètres.
-"""
+
 import uuid
 from datetime import timedelta
 from django.db import models
@@ -20,12 +17,12 @@ User = get_user_model()
 class Organization(BaseModel):
 
     name = models.CharField(
-        max_length=255,
+        max_length=100,
         verbose_name="Nom de l'organisation"
     )
     
     slug = models.SlugField(
-        max_length=255,
+        max_length=100,
         unique=True,
         verbose_name="Slug",
         help_text="Identifiant unique pour les URLs (généré automatiquement)"
@@ -43,14 +40,20 @@ class Organization(BaseModel):
         verbose_name="Propriétaire"
     )
     
-    # Champ de sécurité pour l'activation
+    numero_certification = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Numéro de certification",
+        help_text="Numéro SIRET, KBIS ou autre certification officielle"
+    )
+    
     is_active = models.BooleanField(
-        default=False,  # FALSE par défaut pour les organisations
+        default=False,
         verbose_name="Organisation active",
         help_text="Les organisations doivent être validées avant d'être activées"
     )
     
-    # Champs de vérification
     is_verified = models.BooleanField(
         default=False,
         verbose_name="Organisation vérifiée"
@@ -72,7 +75,6 @@ class Organization(BaseModel):
         return self.name
     
     def save(self, *args, **kwargs):
-        """Override save pour générer automatiquement le slug."""
         if not self.slug:
             base_slug = slugify(self.name)
             slug = base_slug
@@ -87,61 +89,26 @@ class Organization(BaseModel):
         
         super().save(*args, **kwargs)
     
-    def activate(self, admin_user=None):
-        """Active l'organisation après validation."""
+    def activate(self):
         self.is_active = True
         self.save(update_fields=['is_active'])
-        
-        # Log de l'activation
-        if admin_user:
-            from .activity import ActivityLog
-            ActivityLog.objects.create(
-                user=admin_user,
-                action='organization_activated',
-                content_object=self,
-                details={'organization_id': self.id, 'organization_name': self.name}
-            )
     
-    def deactivate(self, admin_user=None, reason=''):
-        """Désactive l'organisation."""
+    def deactivate(self):
         self.is_active = False
         self.save(update_fields=['is_active'])
-        
-        # Log de la désactivation
-        if admin_user:
-            from .activity import ActivityLog
-            ActivityLog.objects.create(
-                user=admin_user,
-                action='organization_deactivated',
-                content_object=self,
-                details={'organization_id': self.id, 'organization_name': self.name, 'reason': reason}
-            )
     
-    def verify(self, admin_user=None):
-        """Marque l'organisation comme vérifiée ET l'active."""
+    def verify(self):
         self.is_verified = True
         self.verified_at = timezone.now()
-        self.is_active = True  # Activation automatique après vérification
+        self.is_active = True
         self.save(update_fields=['is_verified', 'verified_at', 'is_active'])
-        
-        # Log de la vérification
-        if admin_user:
-            from .activity import ActivityLog
-            ActivityLog.objects.create(
-                user=admin_user,
-                action='organization_verified',
-                content_object=self,
-                details={'organization_id': self.id, 'organization_name': self.name}
-            )
     
     @property
     def can_operate(self):
-        """Vérifie si l'organisation peut fonctionner (active ET vérifiée)."""
         return self.is_active and self.is_verified
     
     @property
     def status_display(self):
-        """Retourne le statut lisible de l'organisation."""
         if not self.is_active:
             return "Inactive"
         elif not self.is_verified:
@@ -154,9 +121,7 @@ class OrganizationMember(BaseModel):
 
     ROLE_CHOICES = [
         ('OWNER', 'Propriétaire'),
-        ('ADMIN', 'Administrateur'),
-        ('EDITOR', 'Éditeur'),
-        ('VIEWER', 'Observateur'),
+        ('MEMBER', 'Membre'),
     ]
     
     organization = models.ForeignKey(
@@ -176,7 +141,7 @@ class OrganizationMember(BaseModel):
     role = models.CharField(
         max_length=20,
         choices=ROLE_CHOICES,
-        default='VIEWER',
+        default='MEMBER',
         verbose_name="Rôle"
     )
     
@@ -190,150 +155,14 @@ class OrganizationMember(BaseModel):
         verbose_name = "Membre d'organisation"
         verbose_name_plural = "Membres d'organisation"
         db_table = 'foundation_organization_member'
-        ordering = ['organization', 'user__last_name', 'user__first_name']
+        ordering = ['organization', 'user__email']
 
     def __str__(self):
         return f"{self.user.email} - {self.organization.name} ({self.get_role_display()})"
 
 
-class OrganizationInvitation(BaseModel):
-
-    STATUS_CHOICES = [
-        ('PENDING', 'En attente'),
-        ('ACCEPTED', 'Acceptée'),
-        ('EXPIRED', 'Expirée'),
-        ('REVOKED', 'Révoquée')
-    ]
-
-    email = models.EmailField(
-        verbose_name="Email invité"
-    )
-    
-    organization = models.ForeignKey(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name='invitations',
-        verbose_name="Organisation"
-    )
-    
-    invited_by = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='sent_invitations',
-        verbose_name="Invité par"
-    )
-    
-    role = models.CharField(
-        max_length=20,
-        choices=OrganizationMember.ROLE_CHOICES,
-        default='VIEWER',
-        verbose_name="Rôle"
-    )
-    
-    token = models.UUIDField(
-        default=uuid.uuid4,
-        unique=True,
-        editable=False,
-        verbose_name="Jeton d'invitation"
-    )
-    
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='PENDING',
-        verbose_name="Statut"
-    )
-    
-    expires_at = models.DateTimeField(
-        default=lambda: timezone.now() + timedelta(days=7),
-        verbose_name="Date d'expiration"
-    )
-    
-    accepted_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Date d'acceptation"
-    )
-    
-    class Meta:
-        verbose_name = "Invitation d'organisation"
-        verbose_name_plural = "Invitations d'organisation"
-        db_table = 'foundation_organization_invitation'
-        ordering = ['-created_at']
-        unique_together = ('email', 'organization')
-    
-    def __str__(self):
-        return f"Invitation pour {self.email} à {self.organization.name}"
-    
-    @property
-    def is_expired(self):
-        return self.status == 'EXPIRED' or (
-            self.status == 'PENDING' and 
-            timezone.now() > self.expires_at
-        )
-    
-    def send_invitation_email(self, request=None):
-        context = {
-            'organization': self.organization,
-            'invitation': self,
-            'inviter': self.invited_by.get_full_name() or self.invited_by.email,
-            'expires_in_days': (self.expires_at - timezone.now()).days,
-            'accept_url': f"{settings.FRONTEND_URL}/invitations/accept/{self.token}/"
-        }
-        
-        subject = f"Invitation à rejoindre {self.organization.name}"
-        message = render_to_string('emails/organization_invitation.txt', context)
-        html_message = render_to_string('emails/organization_invitation.html', context)
-        
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[self.email],
-            html_message=html_message,
-            fail_silently=False
-        )
-    
-    def accept(self, user):
-        if self.status != 'PENDING':
-            raise ValueError("Cette invitation n'est plus valide.")
-            
-        if self.is_expired:
-            self.status = 'EXPIRED'
-            self.save(update_fields=['status'])
-            raise ValueError("Cette invitation a expiré.")
-        
-        # Crée le membre de l'organisation
-        OrganizationMember.objects.create(
-            organization=self.organization,
-            user=user,
-            role=self.role
-        )
-        
-        self.status = 'ACCEPTED'
-        self.accepted_at = timezone.now()
-        self.save(update_fields=['status', 'accepted_at', 'updated_at'])
-    
-    def revoke(self):
-        if self.status == 'PENDING':
-            self.status = 'REVOKED'
-            self.save(update_fields=['status', 'updated_at'])
-    
-    def save(self, *args, **kwargs):
-        if self.status == 'PENDING' and self.is_expired:
-            self.status = 'EXPIRED'
-        
-        if not self.pk and not self.token:
-            self.token = uuid.uuid4()
-            
-        super().save(*args, **kwargs)
-
-
 class OrganizationSettings(BaseModel):
-    """
-    Paramètres de configuration pour une organisation.
-    """
-    
+
     organization = models.OneToOneField(
         Organization,
         on_delete=models.CASCADE,
@@ -341,34 +170,12 @@ class OrganizationSettings(BaseModel):
         verbose_name="Organisation"
     )
     
-    # Paramètres généraux
-    default_user_role = models.CharField(
-        max_length=20,
-        choices=OrganizationMember.ROLE_CHOICES,
-        default='VIEWER',
-        verbose_name="Rôle par défaut des nouveaux membres"
-    )
-    
-    allow_public_signup = models.BooleanField(
-        default=False,
-        verbose_name="Autoriser l'inscription publique",
-        help_text="Si activé, les utilisateurs peuvent demander à rejoindre l'organisation"
-    )
-    
-    # Paramètres de sécurité
-    require_2fa = models.BooleanField(
-        default=False,
-        verbose_name="Authentification à deux facteurs requise",
-        help_text="Si activé, tous les membres devront activer la 2FA"
-    )
-    
     session_timeout = models.PositiveIntegerField(
-        default=24,  # en heures
+        default=24,
         verbose_name="Délai d'expiration de session (heures)",
         help_text="Durée d'inactivité avant déconnexion automatique"
     )
     
-    # Paramètres de personnalisation
     custom_logo = models.URLField(
         blank=True,
         null=True,
@@ -383,7 +190,6 @@ class OrganizationSettings(BaseModel):
         help_text="Configuration du thème de l'interface (couleurs, polices, etc.)"
     )
     
-    # Paramètres de notifications
     email_notifications = models.BooleanField(
         default=True,
         verbose_name="Activer les notifications par email"
@@ -392,19 +198,15 @@ class OrganizationSettings(BaseModel):
     class Meta:
         verbose_name = "Paramètres d'organisation"
         verbose_name_plural = "Paramètres des organisations"
+        db_table = 'foundation_organization_settings'
     
     def __str__(self):
         return f"Paramètres - {self.organization.name}"
     
     def save(self, *args, **kwargs):
-        # S'assurer que le rôle par défaut est valide
-        if self.default_user_role not in dict(OrganizationMember.ROLE_CHOICES):
-            self.default_user_role = 'VIEWER'
-        
-        # Valider le délai de session
-        if self.session_timeout > 720:  # 30 jours
+        if self.session_timeout > 720:
             self.session_timeout = 720
-        elif self.session_timeout < 1:  # Au moins 1 heure
+        elif self.session_timeout < 1:
             self.session_timeout = 1
             
         super().save(*args, **kwargs)

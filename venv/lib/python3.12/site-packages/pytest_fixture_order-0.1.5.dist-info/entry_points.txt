@@ -1,0 +1,3 @@
+[pytest11]
+fixture_order=pytest_fixture_order.plugin
+

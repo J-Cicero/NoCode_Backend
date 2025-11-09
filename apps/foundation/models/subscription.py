@@ -1,7 +1,4 @@
-"""
-Système d'abonnements pour la plateforme NoCode.
-Gère les types d'abonnements et les souscriptions actives.
-"""
+
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MinValueValidator
@@ -22,8 +19,8 @@ class TypeAbonnement(BaseModel):
     ]
     
     CATEGORIE_CHOICES = [
-        ('CLIENT', 'Client '),
-        ('ORGANIZATION', 'Organisation '),
+        ('CLIENT', 'Client'),
+        ('ORGANIZATION', 'Organisation'),
     ]
     
     nom = models.CharField(
@@ -42,31 +39,28 @@ class TypeAbonnement(BaseModel):
         max_digits=10,
         decimal_places=2,
         validators=[MinValueValidator(Decimal('0.00'))],
-        verbose_name="Tarif (fcfa)"
+        verbose_name="Tarif (FCFA)"
     )
     
     duree_en_jours = models.PositiveIntegerField(
         verbose_name="Durée en jours"
     )
     
-    # Description optionnelle
     description = models.TextField(
         blank=True,
         verbose_name="Description"
     )
     
-    # Paramètre du plan
     is_active = models.BooleanField(
         default=True,
         verbose_name="Plan actif",
         help_text="Indique si ce plan peut être souscrit"
     )
     
-    
     class Meta:
         verbose_name = "Type d'abonnement"
         verbose_name_plural = "Types d'abonnement"
-        db_table = 'type_abonnement'
+        db_table = 'foundation_type_abonnement'
         unique_together = ['nom', 'categorie_utilisateur']
         ordering = ['tarif']
     
@@ -87,11 +81,22 @@ class Abonnement(BaseModel):
         ('ANNULE', 'Annulé'),
     ]
     
-    client = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='abonnements',
-        verbose_name="Client"
+        verbose_name="Utilisateur",
+        help_text="Utilisateur souscripteur (Client ou Owner d'organisation)"
+    )
+    
+    organization = models.ForeignKey(
+        'foundation.Organization',
+        on_delete=models.CASCADE,
+        related_name='abonnements',
+        null=True,
+        blank=True,
+        verbose_name="Organisation",
+        help_text="Si renseigné, c'est un abonnement d'organisation"
     )
     
     type_abonnement = models.ForeignKey(
@@ -117,16 +122,12 @@ class Abonnement(BaseModel):
         verbose_name="Date de fin"
     )
     
-    date_activation = models.DateTimeField(
-        null=True,
+    transaction_reference = models.CharField(
+        max_length=255,
         blank=True,
-        verbose_name="Date d'activation"
-    )
-    
-    date_annulation = models.DateTimeField(
         null=True,
-        blank=True,
-        verbose_name="Date d'annulation"
+        verbose_name="Référence de transaction",
+        help_text="Référence de la transaction de paiement (API bancaire)"
     )
     
     class Meta:
@@ -136,7 +137,9 @@ class Abonnement(BaseModel):
         ordering = ['-date_debut']
     
     def __str__(self):
-        return f"{self.client.email} - {self.type_abonnement} ({self.status})"
+        if self.organization:
+            return f"Organisation: {self.organization.name} - {self.type_abonnement} ({self.status})"
+        return f"User: {self.user.email} - {self.type_abonnement} ({self.status})"
     
     def save(self, *args, **kwargs):
         if not self.date_fin and self.type_abonnement:

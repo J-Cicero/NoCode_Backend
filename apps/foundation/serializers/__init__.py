@@ -43,18 +43,7 @@ from .billing_serializers import (
     TypeAbonnementDetailSerializer,
     AbonnementSerializer,
     AbonnementCreateSerializer,
-    MoyenDePaiementSerializer,
-    PaiementSerializer,
-    FactureSerializer,
-    FactureDetailSerializer,
-    HistoriqueTarificationSerializer,
-    DocumentVerificationSerializer,
-    DocumentUploadSerializer,
-    DocumentUploadCreateSerializer,
-    BillingStatsSerializer,
-    PaymentIntentSerializer,
-    SubscriptionLimitsSerializer,
-    BillingInfoSerializer,
+
 )
 
 # Exports pour faciliter les imports
@@ -94,16 +83,4 @@ __all__ = [
     'TypeAbonnementDetailSerializer',
     'AbonnementSerializer',
     'AbonnementCreateSerializer',
-    'MoyenDePaiementSerializer',
-    'PaiementSerializer',
-    'FactureSerializer',
-    'FactureDetailSerializer',
-    'HistoriqueTarificationSerializer',
-    'DocumentVerificationSerializer',
-    'DocumentUploadSerializer',
-    'DocumentUploadCreateSerializer',
-    'BillingStatsSerializer',
-    'PaymentIntentSerializer',
-    'SubscriptionLimitsSerializer',
-    'BillingInfoSerializer',
 ]

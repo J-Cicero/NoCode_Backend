@@ -1,0 +1,3 @@
+[pytest11]
+lambda=pytest_lambda.plugin
+

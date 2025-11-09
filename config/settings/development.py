@@ -1,22 +1,16 @@
-"""
-Configuration pour l'environnement de développement
-"""
+
 from .base import *
 
-# Debug activé en développement
 DEBUG = True
 
-# Hosts autorisés en développement
 ALLOWED_HOSTS = ['*']
 
-# Configuration de la base de données pour le développement
 DATABASES['default'].update({
     'OPTIONS': {
-        'sslmode': 'disable',  # Pas de SSL en local
+        'sslmode': 'disable',
     }
 })
 
-# Configuration des logs pour le développement
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -35,14 +29,15 @@ LOGGING = {
     },
 }
 
-# Email en console pour le développement
+#pour l'envoie d'email
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# CORS permissif en développement
+
+#Cors configuraion
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# CSRF - Configuration permissive pour le développement
+#configurisaion avec le CSRF
 CSRF_COOKIE_SECURE = False
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",

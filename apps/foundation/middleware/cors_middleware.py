@@ -177,7 +177,7 @@ class SecurityCORSMiddleware(MiddlewareMixin):
                 "style-src 'self' 'unsafe-inline'",
                 "img-src 'self' data: https:",
                 "font-src 'self' data:",
-                "connect-src 'self' https://api.stripe.com",
+                "connect-src 'self'",
                 "frame-ancestors 'none'",
             ]
             response['Content-Security-Policy'] = '; '.join(csp_directives)

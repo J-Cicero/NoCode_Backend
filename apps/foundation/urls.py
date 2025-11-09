@@ -1,6 +1,4 @@
-"""
-URLs pour l'application foundation
-"""
+
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
@@ -23,7 +21,6 @@ from .views.billing_views import (
     OrganizationBillingInfoView, CreatePaymentIntentView,
     SubscriptionLimitsView,InvoiceGenerateView, billing_stats
 )
-from .views.stripe_webhook_view import StripeWebhookView as StripeWebhookViewDedicated
 from .views.subscription_views import (
     SubscriptionViewSet, SubscriptionPlanViewSet,
     PaymentViewSet, InvoiceViewSet, PaymentMethodViewSet
@@ -80,15 +77,7 @@ urlpatterns = [
     path('billing/payment-intent/', CreatePaymentIntentView.as_view(), name='create-payment-intent'),
     path('billing/stats/', billing_stats, name='billing-stats'),
 
-    # === WEBHOOKS STRIPE ===
-    path('webhooks/stripe/', StripeWebhookViewDedicated.as_view(), name='stripe-webhook'),
 
-    # === VÉRIFICATION DE DOCUMENTS ===
-    path('verification/start/', StartVerificationView.as_view(), name='start-verification'),
-    path('verification/status/', VerificationStatusView.as_view(), name='verification-status'),
-    path('verification/upload/', DocumentUploadView.as_view(), name='document-upload'),
-    path('verification/review/', DocumentReviewView.as_view(), name='document-review'),
-    path('verification/complete/', CompleteVerificationView.as_view(), name='complete-verification'),
 ]
 
 # Inclure les URLs du routeur

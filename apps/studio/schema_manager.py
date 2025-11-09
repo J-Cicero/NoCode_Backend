@@ -63,7 +63,6 @@ class SchemaManager:
         if not all(isinstance(col, (list, tuple)) and len(col) >= 2 for col in columns):
             raise ValueError("Les colonnes doivent être des tuples (nom, type, [options])")
         
-        # Construction de la définition des colonnes
         columns_sql = ", ".join(
             f"{col[0]} {col[1]} {col[2] if len(col) > 2 else ''}".strip()
             for col in columns

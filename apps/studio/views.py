@@ -66,16 +66,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def add_table(self, request, pk=None):
-        """
-        Ajoute une nouvelle table au schéma du projet
-        
-        Args:
-            request: La requête HTTP
-            pk: L'ID du projet
-            
-        Returns:
-            Response: La réponse HTTP avec le résultat de l'opération
-        """
+
         project = self.get_object()
         
         # Validation des données
@@ -101,12 +92,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 return Response(schema_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             
             with transaction.atomic():
-                # Sauvegarde le schéma
                 data_schema = schema_serializer.save()
                 
-                # Crée la table dans le schéma PostgreSQL
                 schema_manager = SchemaManager()
-                
+
                 # Convertit la configuration des champs en format pour SQL
                 columns = [
                     (field['name'], self._get_sql_type(field['type']), 
@@ -132,7 +121,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             )
     
     def _get_sql_type(self, field_type):
-        """Convertit un type de champ en type SQL"""
         type_mapping = {
             'string': 'VARCHAR(255)',
             'text': 'TEXT',
@@ -147,36 +135,21 @@ class ProjectViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['get'])
     def tables(self, request, pk=None):
-        """
-        Liste toutes les tables du projet
-        
-        Args:
-            request: La requête HTTP
-            pk: L'ID du projet
-            
-        Returns:
-            Response: La réponse HTTP avec la liste des tables
-        """
+
         project = self.get_object()
         schemas = DataSchema.objects.filter(project=project)
         return Response(DataSchemaSerializer(schemas, many=True).data)
 
     @action(detail=True, methods=['get'])
     def export_project(self, request, pk=None):
-        """
-        Exporte un projet complet au format JSON.
 
-        Returns:
-            Response: JSON contenant toutes les données du projet
-        """
         project = self.get_object()
 
         try:
-            # Récupérer toutes les données du projet
+
             pages = Page.objects.filter(project=project)
             schemas = DataSchema.objects.filter(project=project)
 
-            # Construire l'export complet
             export_data = {
                 'project': ProjectSerializer(project).data,
                 'pages': PageSerializer(pages, many=True).data,
@@ -199,17 +172,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def import_project(self, request):
-        """
-        Importe un projet depuis un fichier JSON.
 
-        Args:
-            request: Requête contenant le fichier JSON du projet
-
-        Returns:
-            Response: Informations du projet importé
-        """
         try:
-            # Récupérer les données JSON
             if 'file' not in request.FILES:
                 return Response(
                     {'error': 'Aucun fichier fourni'},
@@ -219,7 +183,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
             file = request.FILES['file']
             import json
 
-            # Lire et parser le JSON
             try:
                 data = json.load(file)
             except json.JSONDecodeError:
@@ -228,7 +191,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Valider la structure du JSON
             required_keys = ['project', 'pages', 'schemas']
             missing_keys = [key for key in required_keys if key not in data]
             if missing_keys:
@@ -238,7 +200,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 )
 
             with transaction.atomic():
-                # Créer le projet
+
                 project_data = data['project']
                 project_serializer = ProjectSerializer(data={
                     'name': project_data['name'],
@@ -251,16 +213,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
-                # Créer le projet et son schéma PostgreSQL
                 project = project_serializer.save(created_by=request.user)
                 schema_manager = SchemaManager()
                 schema_name = schema_manager.create_project_schema(project.id)
                 project.schema_name = schema_name
                 project.save(update_fields=['schema_name'])
 
-                # Importer les schémas et créer les tables
                 for schema_data in data['schemas']:
-                    # Créer l'entrée DataSchema
+
                     schema_serializer = DataSchemaSerializer(data={
                         'project': project.id,
                         'table_name': schema_data['table_name'],
@@ -271,7 +231,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     if schema_serializer.is_valid():
                         data_schema = schema_serializer.save()
 
-                        # Créer la table dans PostgreSQL
                         columns = [
                             (field['name'], self._get_sql_type(field['type']),
                              'NOT NULL' if field.get('required', False) else '')
@@ -284,7 +243,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
                             columns=columns
                         )
 
-                # Importer les pages
                 for page_data in data['pages']:
                     page_serializer = PageSerializer(data={
                         'project': project.id,
@@ -297,7 +255,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
                     if page_serializer.is_valid():
                         page_serializer.save()
 
-                # Retourner les informations du projet importé
                 return Response({
                     'message': 'Projet importé avec succès',
                     'project': ProjectSerializer(project).data,
@@ -314,9 +271,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
 class DataSchemaViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint pour gérer les schémas de données
-    """
+
     serializer_class = DataSchemaSerializer
     permission_classes = [IsAuthenticated, IsOrgMember]
     
@@ -328,24 +283,19 @@ class DataSchemaViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         # La création de table se fait via l'endpoint add_table de ProjectViewSet
-        raise NotImplementedError("Utilisez l'endpoint /projects/<id>/add_table/ pour créer des tables")
+        raise NotImplementedError("Utilisez l'endpoint convenable  pour créer des tables")
 
 
 class PageViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint pour gérer les pages du builder
-    """
     serializer_class = PageSerializer
     permission_classes = [IsAuthenticated, IsOrgMember]
     
     def get_queryset(self):
-        # Filtre par l'organisation de l'utilisateur
         return Page.objects.filter(
             project__organization__members=self.request.user
         ).select_related('project')
     
     def perform_create(self, serializer):
-        # Vérifie que l'utilisateur a le droit de créer une page pour ce projet
         project = serializer.validated_data['project']
         if not project.organization.members.filter(id=self.request.user.id).exists():
             raise PermissionDenied("Vous n'avez pas la permission d'ajouter des pages à ce projet.")
@@ -354,29 +304,22 @@ class PageViewSet(viewsets.ModelViewSet):
 
 
 class ComponentViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API endpoint pour consulter le catalogue de composants (lecture seule)
-    """
+
     serializer_class = ComponentSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        # Retourne seulement les composants actifs
         return Component.objects.filter(is_active=True)
 
     @action(detail=False, methods=['get'])
     def categories(self, request):
-        """
-        Retourne la liste des catégories de composants disponibles
-        """
+
         categories = Component.objects.filter(is_active=True).values_list('category', flat=True).distinct()
         return Response(list(categories))
 
     @action(detail=True, methods=['get'])
     def properties_schema(self, request, pk=None):
-        """
-        Retourne le schéma des propriétés d'un composant spécifique
-        """
+
         component = self.get_object()
         return Response({
             'name': component.name,

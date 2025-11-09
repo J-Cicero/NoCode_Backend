@@ -56,10 +56,7 @@ class NoCodePlatformChecker:
         # Vérifier les modèles de Foundation
         foundation_models = [
             'User', 'Client', 'Organization', 'OrganizationMember',
-            'OrganizationInvitation', 'OrganizationSettings',
-            'TypeAbonnement', 'Abonnement', 'MoyenDePaiement',
-            'Paiement', 'Facture', 'HistoriqueTarification',
-            'DocumentVerification', 'DocumentUpload', 'ActivityLog'
+            'TypeAbonnement', 'Abonnement'
         ]
 
         try:

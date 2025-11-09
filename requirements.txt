@@ -30,7 +30,6 @@ channels-redis==4.1.0
 # Documentation API
 drf-spectacular==0.26.5
 
-# Traitement d'images
 Pillow==10.0.1
 
 # Utilitaires
@@ -41,13 +40,9 @@ python-dateutil==2.8.2
 jsonschema==4.19.2
 pyyaml==6.0.1
 
-# Monitoring et logging
 
 # Templates et génération de code
 Jinja2==3.1.2
-
-# Paiements Stripe
-stripe==7.7.0
 
 # Requests HTTP
 requests==2.31.0

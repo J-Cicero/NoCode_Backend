@@ -24,7 +24,7 @@ class DevCORSMiddleware:
             response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
             response['Access-Control-Allow-Headers'] = (
                 'Accept, Accept-Language, Authorization, Content-Type, '
-                'X-Requested-With, X-CSRFToken, X-API-Key, Stripe-Signature'
+                'X-Requested-With, X-CSRFToken, X-API-Key'
             )
             response['Access-Control-Allow-Credentials'] = 'true'
             response['Access-Control-Max-Age'] = '86400'

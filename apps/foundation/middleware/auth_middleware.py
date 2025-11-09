@@ -89,7 +89,6 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
             '/api/auth/password-reset/',
             '/api/auth/password-reset-confirm/',
             '/api/auth/email-verify/',
-            '/api/billing/webhook/stripe/',
             '/api/health/',
             '/api/docs/',
             '/admin/',

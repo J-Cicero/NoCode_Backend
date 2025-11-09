@@ -1,6 +1,6 @@
 """
 Tâches Celery pour le module Foundation.
-Gère les opérations asynchrones comme l'envoi d'emails, la synchronisation Stripe, etc.
+Gère les opérations asynchrones comme l'envoi d'emails, la facturation, etc.
 """
 
 from .email_tasks import (
@@ -12,11 +12,9 @@ from .email_tasks import (
 )
 
 from .billing_tasks import (
-    sync_stripe_subscription,
     process_failed_payment,
     generate_invoice,
     send_payment_reminder,
-    update_subscription_usage,
 )
 
 from .verification_tasks import (

@@ -1,17 +1,8 @@
-"""
-Imports des modèles du module Foundation.
-Ce fichier centralise tous les imports pour faciliter l'utilisation des modèles.
-"""
 
-# Modèles de base et mixins
 from .base import (
     BaseModel,
     TimestampedModel,
-    SoftDeleteModel,
     UUIDModel,
-    ActiveManager,
-    AllObjectsManager,
-    SoftDeleteQuerySet,
 )
 
 from .mixins import (
@@ -23,7 +14,6 @@ from .mixins import (
     MetadataMixin,
     SlugMixin,
     OrderingMixin,
-    ActivityLogMixin,
 )
 
 # Système d'utilisateurs
@@ -36,7 +26,6 @@ from .user import (
 from .organization import (
     Organization,
     OrganizationMember,
-    OrganizationInvitation,
     OrganizationSettings,
 )
 
@@ -46,35 +35,13 @@ from .subscription import (
     Abonnement,
 )
 
-# Système de facturation
-from .billing import (
-    MoyenDePaiement,
-    Paiement,
-    Facture,
-    HistoriqueTarification,
-)
-
-# Système de vérification des entreprises
-from .verification import (
-    DocumentVerification,
-    DocumentUpload,
-)
-
-# Système de logs d'activité
-from .activityLog import (
-    ActivityLog,
-)
 
 # Liste de tous les modèles pour faciliter les imports
 __all__ = [
     # Base et mixins
     'BaseModel',
     'TimestampedModel',
-    'SoftDeleteModel',
     'UUIDModel',
-    'ActiveManager',
-    'AllObjectsManager',
-    'SoftDeleteQuerySet',
     'TimestampMixin',
     'SoftDeleteMixin',
     'StatusMixin',
@@ -83,7 +50,6 @@ __all__ = [
     'MetadataMixin',
     'SlugMixin',
     'OrderingMixin',
-    'ActivityLogMixin',
     
     # Utilisateurs
     'User',
@@ -92,23 +58,9 @@ __all__ = [
     # Organisations
     'Organization',
     'OrganizationMember',
-    'OrganizationInvitation',
-
+    'OrganizationSettings',
     
     # Abonnements
     'TypeAbonnement',
     'Abonnement',
-    
-    # Facturation
-    'MoyenDePaiement',
-    'Paiement',
-    'Facture',
-    'HistoriqueTarification',
-    
-    # Vérification
-    'DocumentVerification',
-    'DocumentUpload',
-    
-    # Logs d'activité
-    'ActivityLog',
 ]

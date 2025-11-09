@@ -10,8 +10,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.contrib.auth import get_user_model
 from ..services.auth_service import AuthService
+from ..services.user_service import UserService
 from ..serializers import (
-    UserCreateSerializer, ClientCreateSerializer,
+     ClientCreateSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     PasswordChangeSerializer, EmailVerificationSerializer
 )
@@ -147,8 +148,6 @@ class PasswordChangeView(APIView):
 
 
 class PasswordResetRequestView(APIView):
-    """Vue pour la demande de réinitialisation de mot de passe."""
-    
     permission_classes = [AllowAny]
     
     def post(self, request):
@@ -170,8 +169,7 @@ class PasswordResetRequestView(APIView):
 
 
 class PasswordResetConfirmView(APIView):
-    """Vue pour la confirmation de réinitialisation de mot de passe."""
-    
+
     permission_classes = [AllowAny]
     
     def post(self, request):
@@ -236,9 +234,7 @@ class EmailVerificationView(APIView):
 @permission_classes([IsAuthenticated])
 def me(request):
     """Récupère les informations de l'utilisateur connecté."""
-    from ..services.user_service import UserService
-    from ..serializers import UserProfileSerializer
-    
+
     user_service = UserService(user=request.user)
     result = user_service.get_user_profile()
     

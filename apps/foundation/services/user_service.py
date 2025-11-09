@@ -51,18 +51,13 @@ class UserService(BaseService):
             profile_data = {
                 'id': target_user.id,
                 'email': target_user.email,
-                'first_name': target_user.first_name,
-                'last_name': target_user.last_name,
+                'nom': target_user.nom,
+                'prenom': target_user.prenom,
+                'pays': target_user.pays,
                 'full_name': target_user.full_name,
-                'user_type': target_user.user_type,
                 'is_active': target_user.is_active,
                 'date_joined': target_user.date_joined.isoformat(),
                 'last_login': target_user.last_login.isoformat() if target_user.last_login else None,
-                'numero_telephone': target_user.numero_telephone,
-                'langue_preferee': target_user.langue_preferee,
-                'timezone': target_user.timezone,
-                'email_verified': target_user.email_verified,
-                'phone_verified': target_user.phone_verified,
             }
             
             # Ajouter les informations spécifiques selon le type
@@ -135,8 +130,7 @@ class UserService(BaseService):
             with transaction.atomic():
                 # Mettre à jour les champs utilisateur
                 user_fields = [
-                    'first_name', 'last_name', 'numero_telephone',
-                    'langue_preferee', 'timezone'
+                    'nom', 'prenom', 'pays'
                 ]
                 
                 updated_fields = []
@@ -155,7 +149,7 @@ class UserService(BaseService):
                         client = target_user.client
                         client_fields = [
                             'date_naissance', 'genre', 'profession', 'adresse_complete',
-                            'ville', 'code_postal', 'pays', 'situation_familiale',
+                            'ville', 'code_postal', 'situation_familiale',
                             'nombre_enfants', 'revenus_annuels'
                         ]
                         
@@ -307,8 +301,8 @@ class UserService(BaseService):
             if query:
                 queryset = queryset.filter(
                     Q(email__icontains=query) |
-                    Q(first_name__icontains=query) |
-                    Q(last_name__icontains=query)
+                    Q(nom__icontains=query) |
+                    Q(prenom__icontains=query)
                 )
             
             if user_type:

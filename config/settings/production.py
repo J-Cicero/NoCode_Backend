@@ -1,6 +1,4 @@
-"""
-Configuration pour l'environnement de production
-"""
+
 from .base import *
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
@@ -108,14 +106,14 @@ LOGGING.update({
 # Configuration Email avec SendGrid ou SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.sendgrid.net')
-EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_PORT = config('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='apikey')
 EMAIL_HOST_PASSWORD = config('SENDGRID_API_KEY', default='')
 
 # Configuration des admins pour les emails d'erreur
 ADMINS = [
-    ('Admin', config('ADMIN_EMAIL', default='admin@nocode.com')),
+    ('Admin', config('ADMIN_EMAIL', default='prudencioworou2006@gmail.com')),
 ]
 MANAGERS = ADMINS
 

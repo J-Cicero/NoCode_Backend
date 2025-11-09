@@ -1,0 +1,3 @@
+[pytest11]
+assert_utils=pytest_assert_utils
+

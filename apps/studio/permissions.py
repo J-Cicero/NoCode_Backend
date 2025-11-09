@@ -1,15 +1,9 @@
-"""
-Permissions personnalisées pour le module Studio.
-"""
+
 from rest_framework import permissions
 from .models import Project, OrganizationMember
 
-
 class HasProjectAccess(permissions.BasePermission):
-    """
-    Vérifie que l'utilisateur a accès au projet.
-    L'utilisateur doit être membre de l'organisation du projet.
-    """
+
     
     def has_permission(self, request, view):
         # Vérifie que l'utilisateur est authentifié

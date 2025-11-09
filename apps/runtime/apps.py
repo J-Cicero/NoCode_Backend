@@ -1,7 +1,4 @@
-"""
-Configuration de l'application Runtime.
-Gère la génération et l'exécution des applications créées avec le Studio.
-"""
+
 from django.apps import AppConfig
 import logging
 
@@ -13,7 +10,6 @@ class RuntimeConfig(AppConfig):
     verbose_name = 'Runtime'
 
     def ready(self):
-        # Importer les signaux pour les activer
         try:
             from . import signals  # noqa
             logger.info("Signaux Runtime chargés avec succès")

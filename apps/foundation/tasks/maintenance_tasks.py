@@ -73,14 +73,6 @@ def health_check_services():
         except Exception as e:
             health_status['database'] = f'error: {e}'
         
-        # Vérifier Stripe (simulation)
-        try:
-            import stripe
-            # Test simple de l'API Stripe
-            health_status['stripe'] = 'healthy'
-        except Exception as e:
-            health_status['stripe'] = f'error: {e}'
-        
         # Vérifier le cache
         try:
             from django.core.cache import cache

@@ -221,32 +221,3 @@ class OrderingMixin(models.Model):
             self.save(update_fields=['order'])
             next_item.save(update_fields=['order'])
 
-
-class ActivityLogMixin(models.Model):
-
-    class Meta:
-        abstract = True
-
-    def log_activity(self, action, user=None, details=None):
-        """Enregistre une activité sur cet objet."""
-        from .activityLog import ActivityLog
-
-        ActivityLog.objects.create(
-            content_type=ContentType.objects.get_for_model(self),
-            object_id=self.pk,
-            action=action,
-            user=user,
-            details=details or {}
-        )
-
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-        super().save(*args, **kwargs)
-        
-        # Enregistrer l'activité
-        action = 'created' if is_new else 'updated'
-        self.log_activity(action)
-
-    def delete(self, *args, **kwargs):
-        self.log_activity('deleted')
-        super().delete(*args, **kwargs)

@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-"""
-Script de déploiement pour la plateforme NoCode
-"""
+
 import os
 import sys
 import subprocess

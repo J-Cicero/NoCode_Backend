@@ -1,9 +1,4 @@
-"""
-Générateur de code pour les applications créées avec le Studio.
 
-Ce module gère la génération du code source des applications à partir des modèles
-définis dans le Studio.
-"""
 import os
 import logging
 from django.conf import settings

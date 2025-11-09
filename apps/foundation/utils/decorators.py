@@ -200,9 +200,6 @@ def require_post(view_func):
 
 
 def handle_exceptions(default_response=None):
-    """
-    Decorator pour gérer les exceptions de manière uniforme.
-    """
     def decorator(view_func):
         @functools.wraps(view_func)
         def wrapper(request, *args, **kwargs):

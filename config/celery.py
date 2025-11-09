@@ -38,12 +38,6 @@ app.conf.beat_schedule = {
         'schedule': crontab(minute='*/5'),  # Toutes les 5 minutes
     },
 
-    # Synchronisation des webhooks Stripe
-    'sync-stripe-webhooks': {
-        'task': 'apps.foundation.tasks.sync_stripe_webhooks',
-        'schedule': crontab(hour=1, minute=0),  # Tous les jours à 1h
-    },
-
     # Nettoyage des logs anciens
     'cleanup-old-logs': {
         'task': 'apps.insights.tasks.cleanup_old_logs',

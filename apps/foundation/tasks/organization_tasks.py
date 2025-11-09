@@ -52,7 +52,7 @@ def sync_organization_data(self, organization_id):
         organization = Organization.objects.get(id=organization_id)
         organization_service = OrganizationService()
         
-        # Synchroniser avec les services externes (Stripe, etc.)
+        # Synchroniser avec les services externes
         result = organization_service.sync_external_data(organization_id)
         
         if not result.success:
