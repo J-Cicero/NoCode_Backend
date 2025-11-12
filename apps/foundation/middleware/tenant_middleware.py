@@ -1,7 +1,4 @@
-"""
-Middleware de gestion multi-tenant pour le module Foundation.
-Gère l'isolation des données par organisation et le contexte tenant.
-"""
+
 import logging
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin

@@ -204,16 +204,10 @@ class EmailVerificationView(APIView):
         if serializer.is_valid():
             token = serializer.validated_data['token']
             
-            # Extraire l'ID utilisateur du token (implémentation simplifiée)
-            # Dans une vraie implémentation, on décoderait le JWT
+            # Utiliser AuthService pour vérifier l'email avec le token
             try:
-                # Ici on devrait décoder le token pour récupérer l'user_id
-                # Pour l'exemple, on suppose que le token contient l'ID
-                user_id = 1  # À remplacer par la vraie logique de décodage
-                
-                from ..services.user_service import UserService
-                user_service = UserService()
-                result = user_service.verify_email(user_id, token)
+                auth_service = AuthService()
+                result = auth_service.verify_email(token)
                 
                 if result.success:
                     return Response(result.data, status=status.HTTP_200_OK)

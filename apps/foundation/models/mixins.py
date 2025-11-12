@@ -1,12 +1,7 @@
-"""
-Mixins réutilisables pour fonctionnalités transversales.
-Ces mixins peuvent être utilisés par tous les modèles de la plateforme.
-"""
+
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericForeignKey
+
 
 
 class TimestampMixin(models.Model):

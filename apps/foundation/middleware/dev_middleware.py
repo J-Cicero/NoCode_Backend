@@ -1,7 +1,4 @@
-"""
-Middleware de développement pour faciliter les tests avec Postman.
-ATTENTION: À utiliser uniquement en développement !
-"""
+
 from django.http import JsonResponse
 from django.conf import settings
 

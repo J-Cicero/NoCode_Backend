@@ -1,7 +1,4 @@
-"""
-Service d'authentification pour la plateforme NoCode.
-Gère la connexion, l'inscription, les tokens JWT et les sessions.
-"""
+
 import logging
 import re
 from typing import Dict, List, Optional, Tuple, List
@@ -10,6 +7,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
+from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .base_service import BaseService, ServiceResult, ValidationException, BusinessLogicException
@@ -19,16 +17,11 @@ from ..models import User, Organization, OrganizationMember
 logger = logging.getLogger(__name__)
 User = get_user_model()
 class AuthService(BaseService):
-    """
-    Service d'authentification principal.
-    Gère toutes les opérations liées à l'authentification et l'autorisation.
-    """
-    
+
     def __init__(self):
         super().__init__()
     
     def validate_email_format(self, email: str) -> bool:
-        """Valide le format de l'email."""
         try:
             validate_email(email)
             return True
@@ -36,10 +29,6 @@ class AuthService(BaseService):
             return False
     
     def validate_password_strength(self, password: str) -> Tuple[bool, List[str]]:
-        """
-        Valide la force du mot de passe.
-        Retourne (is_valid, list_of_errors).
-        """
         errors = []
         
         if len(password) < 8:
@@ -60,24 +49,18 @@ class AuthService(BaseService):
         return len(errors) == 0, errors
     
     def validate_phone_number(self, phone: str) -> bool:
-        """Valide le format du numéro de téléphone."""
-        # Format international basique
-        pattern = r'^\+?1?\d{9,15}$'
+        pattern = r'^\+?1?\d{8,15}$'
         return bool(re.match(pattern, phone))
     
     def login(self, email: str, password: str) -> ServiceResult:
-        """
-        Authentifie un utilisateur et génère les tokens JWT.
-        """
+
         try:
-            # Validation des entrées
             if not email or not password:
                 return ServiceResult.error_result("Email et mot de passe requis")
             
             if not self.validate_email_format(email):
                 return ServiceResult.error_result("Format d'email invalide")
             
-            # Tentative d'authentification
             user = authenticate(username=email, password=password)
             
             if not user:
@@ -86,11 +69,9 @@ class AuthService(BaseService):
             
             if not user.is_active:
                 return ServiceResult.error_result("Compte désactivé")
-            
-            # Générer les tokens JWT
+
             tokens = self.generate_tokens(user)
             
-            # Mettre à jour la dernière connexion
             user.last_login = timezone.now()
             user.save(update_fields=['last_login'])
             
@@ -172,25 +153,19 @@ class AuthService(BaseService):
                 return ServiceResult.error_result("Format de numéro de téléphone invalide")
             
             with transaction.atomic():
-                # Créer l'utilisateur
+                # Créer l'utilisateur avec nom et prenom
                 user = User.objects.create(
                     email=email,
+                    nom=data['nom'],
+                    prenom=data['prenom'],
                     pays=data['pays'],
                     numero_telephone=data['numero_telephone'],
                     password=make_password(data['password']),
-                    is_active=True,
-                )
-                
-                # Créer le profil client
-                client = Client.objects.create(
-                    user=user,
-                    nom=data['nom'],
-                    prenom=data['prenom'],
-                    surnom=data.get('surnom', ''),
+                    is_active=True,  # CLIENT actif dès la création
                 )
                 
                 # Créer l'organisation personnelle
-                org_name = f"{client.prenom} {client.nom}"
+                org_name = f"{user.prenom} {user.nom}"
                 organization = Organization.objects.create(
                     name=org_name,
                     type='PERSONAL',
@@ -214,8 +189,10 @@ class AuthService(BaseService):
                     'user': {
                         'id': user.id,
                         'email': user.email,
+                        'nom': user.nom,
+                        'prenom': user.prenom,
                         'user_type': 'CLIENT',
-                        'full_name': client.nom_complet,
+                        'full_name': f"{user.prenom} {user.nom}",
                     },
                     'tokens': tokens,
                     'organization': {

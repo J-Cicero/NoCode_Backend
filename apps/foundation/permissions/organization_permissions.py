@@ -4,7 +4,7 @@ Gère les permissions complexes liées aux organisations et leurs membres.
 """
 from rest_framework import permissions
 from django.contrib.auth import get_user_model
-from ..models import Organization, OrganizationMember, OrganizationInvitation
+from ..models import Organization, OrganizationMember
 
 
 User = get_user_model()
@@ -131,78 +131,7 @@ class OrganizationMemberPermission(permissions.BasePermission):
             return False
 
 
-class OrganizationInvitationPermission(permissions.BasePermission):
-    
-    def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-        
-        org_id = view.kwargs.get('org_id')
-        if not org_id:
-            return False
-        
-        try:
-            organization = Organization.objects.get(id=org_id)
-            
-            # Vérifier les permissions d'invitation
-            if organization.owner == request.user:
-                return True
-            
-            try:
-                member = OrganizationMember.objects.get(
-                    organization=organization,
-                    user=request.user,
-                    status='ACTIVE'
-                )
-                
-                # Vérifier les paramètres d'organisation
-                try:
-                    settings = organization.settings
-                    if settings.allow_member_invites:
-                        return True  # Tous les membres peuvent inviter
-                    else:
-                        return member.role in ['ADMIN', 'OWNER']  # Seuls admin/owner
-                except:
-                    # Paramètres par défaut : seuls admin/owner peuvent inviter
-                    return member.role in ['ADMIN', 'OWNER']
-                    
-            except OrganizationMember.DoesNotExist:
-                return False
-                
-        except Organization.DoesNotExist:
-            return False
-    
-    def has_object_permission(self, request, view, obj):
-        if not isinstance(obj, OrganizationInvitation):
-            return False
-        
-        organization = obj.organization
-        action = getattr(view, 'action', None)
-        
-        # Le propriétaire peut tout faire
-        if organization.owner == request.user:
-            return True
-        
-        # L'inviteur peut gérer ses propres invitations
-        if obj.invited_by == request.user:
-            return action in ['retrieve', 'update', 'destroy', 'resend']
-        
-        try:
-            member = OrganizationMember.objects.get(
-                organization=organization,
-                user=request.user,
-                status='ACTIVE'
-            )
-            
-            # Les admins peuvent gérer toutes les invitations
-            if member.role in ['ADMIN', 'OWNER']:
-                return True
-            
-            # Les membres peuvent seulement voir les invitations
-            return action in ['retrieve', 'list']
-            
-        except OrganizationMember.DoesNotExist:
-            return False
+# OrganizationInvitationPermission - SUPPRIMÉ (modèle OrganizationInvitation supprimé)
 
 
 class CanManageOrganizationSettings(permissions.BasePermission):

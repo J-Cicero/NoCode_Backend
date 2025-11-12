@@ -12,11 +12,10 @@ from ..services.organization_service import OrganizationService
 from ..serializers import (
     OrganizationCreateSerializer, OrganizationUpdateSerializer,
     OrganizationDetailSerializer, OrganizationListSerializer,
-    OrganizationMemberSerializer, OrganizationInvitationCreateSerializer,
-    OrganizationInvitationAcceptSerializer,
+    OrganizationMemberSerializer,
     OrganizationTransferOwnershipSerializer, OrganizationStatsSerializer
 )
-from ..models import Organization, OrganizationMember, OrganizationInvitation
+from ..models import Organization, OrganizationMember
 
 
 User = get_user_model()
@@ -152,106 +151,8 @@ class OrganizationMemberDetailView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class OrganizationInvitationsView(APIView):
-    """Vue pour les invitations d'organisation."""
-    
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request, org_id):
-        """Liste les invitations d'une organisation."""
-        try:
-            organization = Organization.objects.get(id=org_id)
-        except Organization.DoesNotExist:
-            return Response({
-                'error': 'Organisation introuvable'
-            }, status=status.HTTP_404_NOT_FOUND)
-        
-        # Vérifier les permissions
-        try:
-            member = OrganizationMember.objects.get(
-                organization=organization,
-                user=request.user,
-                status='ACTIVE'
-            )
-            if member.role not in ['OWNER', 'ADMIN']:
-                return Response({
-                    'error': 'Permissions insuffisantes'
-                }, status=status.HTTP_403_FORBIDDEN)
-        except OrganizationMember.DoesNotExist:
-            return Response({
-                'error': 'Vous n\'êtes pas membre de cette organisation'
-            }, status=status.HTTP_403_FORBIDDEN)
-        
-        invitations = OrganizationInvitation.objects.filter(
-            organization=organization
-        ).order_by('-created_at')
-        
-        from ..serializers import OrganizationInvitationSerializer
-        serializer = OrganizationInvitationSerializer(invitations, many=True)
-        
-        return Response({
-            'invitations': serializer.data,
-            'total_count': len(serializer.data)
-        }, status=status.HTTP_200_OK)
-    
-    def post(self, request, org_id):
-        """Crée une nouvelle invitation."""
-        try:
-            organization = Organization.objects.get(id=org_id)
-        except Organization.DoesNotExist:
-            return Response({
-                'error': 'Organisation introuvable'
-            }, status=status.HTTP_404_NOT_FOUND)
-        
-        serializer = OrganizationInvitationCreateSerializer(
-            data=request.data,
-            context={
-                'request': request,
-                'organization': organization
-            }
-        )
-        
-        if serializer.is_valid():
-            org_service = OrganizationService(user=request.user, organization=organization)
-            result = org_service.invite_member(
-                email=serializer.validated_data['email'],
-                role=serializer.validated_data['role'],
-                message=serializer.validated_data.get('message', '')
-            )
-            
-            if result.success:
-                return Response(result.data, status=status.HTTP_201_CREATED)
-            else:
-                return Response({
-                    'error': result.error_message
-                }, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class OrganizationInvitationAcceptView(APIView):
-    """Vue pour accepter une invitation."""
-    
-    permission_classes = [IsAuthenticated]
-    
-    def post(self, request):
-        """Accepte une invitation d'organisation."""
-        serializer = OrganizationInvitationAcceptSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            token = serializer.validated_data['token']
-            
-            org_service = OrganizationService(user=request.user)
-            result = org_service.accept_invitation(token)
-            
-            if result.success:
-                return Response(result.data, status=status.HTTP_200_OK)
-            else:
-                return Response({
-                    'error': result.error_message
-                }, status=status.HTTP_400_BAD_REQUEST)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# OrganizationInvitationsView - SUPPRIMÉ (modèle OrganizationInvitation supprimé)
+# OrganizationInvitationAcceptView - SUPPRIMÉ (modèle OrganizationInvitation supprimé)
 
 
 class OrganizationTransferOwnershipView(APIView):
@@ -310,7 +211,7 @@ class OrganizationStatsView(APIView):
                 user=request.user,
                 status='ACTIVE'
             )
-            if member.role not in ['OWNER', 'ADMIN']:
+            if member.role not in ['OWNER', 'MEMBER']:
                 return Response({
                     'error': 'Permissions insuffisantes'
                 }, status=status.HTTP_403_FORBIDDEN)
@@ -357,27 +258,4 @@ def leave_organization(request, org_id):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def resend_invitation(request, org_id, invitation_id):
-    """Renvoie une invitation d'organisation."""
-    try:
-        organization = Organization.objects.get(id=org_id)
-        invitation = OrganizationInvitation.objects.get(
-            id=invitation_id,
-            organization=organization
-        )
-    except (Organization.DoesNotExist, OrganizationInvitation.DoesNotExist):
-        return Response({
-            'error': 'Organisation ou invitation introuvable'
-        }, status=status.HTTP_404_NOT_FOUND)
-    
-    org_service = OrganizationService(user=request.user, organization=organization)
-    result = org_service.resend_invitation(invitation_id)
-    
-    if result.success:
-        return Response(result.data, status=status.HTTP_200_OK)
-    else:
-        return Response({
-            'error': result.error_message
-        }, status=status.HTTP_400_BAD_REQUEST)
+# resend_invitation - SUPPRIMÉ (modèle OrganizationInvitation supprimé)

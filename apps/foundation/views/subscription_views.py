@@ -6,19 +6,16 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
-from decimal import Decimal
+
 import logging
 
-from ..models import Abonnement, TypeAbonnement, Paiement, Facture
+from ..models import Abonnement, TypeAbonnement
 from ..serializers.billing_serializers import (
     AbonnementSerializer,
     TypeAbonnementSerializer,
-    PaiementSerializer,
-    FactureSerializer,
 )
 from ..services.billing_service import BillingService
-from ..permissions import IsOrgAdmin
+
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +31,7 @@ class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
         """Retourne les abonnements de l'utilisateur."""
         user = self.request.user
         return Abonnement.objects.filter(
-            client=user
+            user=user
         ).select_related('type_abonnement', 'organization')
     
     @action(detail=False, methods=['get'])
@@ -44,8 +41,8 @@ class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
         """
         try:
             abonnement = Abonnement.objects.filter(
-                client=request.user,
-                statut='ACTIF'
+                user=request.user,
+                status='ACTIF'
             ).select_related('type_abonnement').first()
             
             if not abonnement:
@@ -84,8 +81,8 @@ class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
             
             # Vérifier que l'utilisateur n'a pas déjà un abonnement actif
             existing = Abonnement.objects.filter(
-                client=request.user,
-                statut='ACTIF'
+                user=request.user,
+                status='ACTIF'
             ).exists()
             
             if existing:
@@ -131,7 +128,7 @@ class SubscriptionViewSet(viewsets.ReadOnlyModelViewSet):
             abonnement = self.get_object()
             
             # Vérifier que l'utilisateur est le propriétaire
-            if abonnement.client != request.user:
+            if abonnement.user != request.user:
                 return Response(
                     {'error': 'Non autorisé'},
                     status=status.HTTP_403_FORBIDDEN
@@ -279,143 +276,6 @@ class SubscriptionPlanViewSet(viewsets.ReadOnlyModelViewSet):
         })
 
 
-class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API pour consulter l'historique des paiements.
-    """
-    serializer_class = PaiementSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def get_queryset(self):
-        """Retourne les paiements de l'utilisateur."""
-        return Paiement.objects.filter(
-            abonnement__client=self.request.user
-        ).select_related('abonnement', 'moyen_de_paiement_utilise').order_by('-date_paiement')
-    
-    @action(detail=True, methods=['post'])
-    def request_refund(self, request, pk=None):
-        """
-        Demande un remboursement pour un paiement.
-        """
-        try:
-            paiement = self.get_object()
-            
-            if paiement.abonnement.client != request.user:
-                return Response(
-                    {'error': 'Non autorisé'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            
-            if not paiement.can_be_refunded:
-                return Response(
-                    {'error': 'Ce paiement ne peut pas être remboursé'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            reason = request.data.get('reason', '')
-            amount = request.data.get('amount')  # Optionnel, remboursement partiel
-            
-            # Utiliser le BillingService
-            billing_service = BillingService(user=request.user)
-            result = billing_service.process_refund(
-                payment_id=paiement.id,
-                amount=Decimal(amount) if amount else None,
-                reason=reason
-            )
-            
-            if result.success:
-                return Response({
-                    'message': 'Remboursement traité avec succès',
-                    'payment': result.data,
-                })
-            else:
-                return Response(
-                    {'error': result.error_message},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-                
-        except Exception as e:
-            logger.error(f"Erreur lors du remboursement: {e}", exc_info=True)
-            return Response(
-                {'error': 'Erreur lors du remboursement'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
-class InvoiceViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API pour consulter les factures.
-    """
-    serializer_class = FactureSerializer
-    permission_classes = [IsAuthenticated]
-    
-    def get_queryset(self):
-        """Retourne les factures de l'organisation de l'utilisateur."""
-        if hasattr(self.request.user, 'organization'):
-            return Facture.objects.filter(
-                organization=self.request.user.organization
-            ).order_by('-date_emission')
-        return Facture.objects.none()
-    
-    @action(detail=True, methods=['get'])
-    def download(self, request, pk=None):
-        """
-        Télécharge le PDF d'une facture.
-        """
-        try:
-            facture = self.get_object()
-            
-            if not facture.fichier_pdf:
-                return Response(
-                    {'error': 'PDF non disponible'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            # Retourner l'URL du fichier
-            return Response({
-                'download_url': facture.fichier_pdf.url,
-                'filename': f'facture_{facture.numero_facture}.pdf',
-            })
-            
-        except Exception as e:
-            logger.error(f"Erreur lors du téléchargement: {e}", exc_info=True)
-            return Response(
-                {'error': 'Erreur lors du téléchargement'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
-    @action(detail=False, methods=['get'])
-    def summary(self, request):
-        """
-        Retourne un résumé de la facturation.
-        """
-        try:
-            queryset = self.get_queryset()
-            
-            total_paid = sum(
-                f.montant_ttc for f in queryset.filter(status='PAYEE')
-            )
-            
-            total_pending = sum(
-                f.montant_ttc for f in queryset.filter(status='ENVOYEE')
-            )
-            
-            overdue_count = queryset.filter(status='EN_RETARD').count()
-            
-            return Response({
-                'total_paid': float(total_paid),
-                'total_pending': float(total_pending),
-                'overdue_count': overdue_count,
-                'total_invoices': queryset.count(),
-                'currency': 'EUR',
-            })
-            
-        except Exception as e:
-            logger.error(f"Erreur lors du calcul du résumé: {e}", exc_info=True)
-            return Response(
-                {'error': 'Erreur lors du calcul du résumé'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
 
 
 class PaymentMethodViewSet(viewsets.ViewSet):

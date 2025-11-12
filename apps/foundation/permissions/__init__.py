@@ -26,7 +26,6 @@ IsOrgAdmin = IsOrganizationAdmin
 from .organization_permissions import (
     OrganizationPermission,
     OrganizationMemberPermission,
-    OrganizationInvitationPermission,
     CanManageOrganizationSettings,
     CanViewOrganizationStats,
     OrganizationContextPermission,
@@ -88,7 +87,6 @@ __all__ = [
     # Organization permissions
     'OrganizationPermission',
     'OrganizationMemberPermission',
-    'OrganizationInvitationPermission',
     'CanManageOrganizationSettings',
     'CanViewOrganizationStats',
     'OrganizationContextPermission',

@@ -1,7 +1,4 @@
-"""
-Middleware d'authentification JWT pour le module Foundation.
-Gère l'authentification des utilisateurs via les tokens JWT.
-"""
+
 import logging
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
@@ -79,9 +76,7 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
         return None
     
     def _should_skip_auth(self, request):
-        """
-        Détermine si l'authentification doit être ignorée pour cette requête.
-        """
+
         # Chemins qui n'ont pas besoin d'authentification
         skip_paths = [
             '/api/auth/login/',

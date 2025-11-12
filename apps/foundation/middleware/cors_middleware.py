@@ -1,7 +1,4 @@
-"""
-Middleware CORS pour le module Foundation.
-Gère les en-têtes CORS pour les requêtes cross-origin.
-"""
+
 import logging
 from django.http import HttpResponse
 from django.utils.deprecation import MiddlewareMixin

@@ -4,7 +4,7 @@ Gère les permissions liées aux paiements, factures et abonnements.
 """
 from rest_framework import permissions
 from django.contrib.auth import get_user_model
-from ..models import Organization, OrganizationMember, Abonnement, Facture
+from ..models import Organization, OrganizationMember, Abonnement
 
 
 User = get_user_model()

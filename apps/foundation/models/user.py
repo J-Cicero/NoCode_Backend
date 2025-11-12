@@ -1,8 +1,7 @@
-"""
-Système d'utilisateurs personnalisé pour la plateforme NoCode.
-Gère les utilisateurs Client (personnes physiques). Les organisations sont gérées via le modèle Organization.
-"""
+
 from django.contrib.auth.models import AbstractUser
+
+from django.core.validators import RegexValidator
 from django.db import models
 import uuid
 
@@ -23,6 +22,12 @@ class User(AbstractUser):
     email = models.EmailField(
         unique=True,
         verbose_name="Adresse email",
+        validators=[
+            RegexValidator(
+                regex=r'^[a-zA-Z0-9._%+-]+@gmail\.com$',
+                message="Seules les adresses Gmail sont autorisées."
+            )
+        ],
         help_text="L'adresse email est utilisée comme identifiant de connexion."
     )
     
@@ -36,6 +41,26 @@ class User(AbstractUser):
         verbose_name="Prénom"
     )
     
+    pays = models.CharField(
+        max_length=100,
+        blank=False,
+        null=True,
+        verbose_name="Pays"
+    )
+
+    telephone = models.CharField(
+        max_length=10,
+        validators=[
+            RegexValidator(
+                regex=r'^\+?\d{8,15}$',
+            message="Le numéro de téléphone doit contenir exactement 10 chiffres.",
+                code='invalid_phone'
+            )
+        ],
+        verbose_name="Numéro de téléphone",
+        unique=True
+    )
+
     pays = models.CharField(
         max_length=100,
         blank=True,
@@ -56,7 +81,7 @@ class User(AbstractUser):
     
     @property
     def full_name(self):
-        return f"{self.prenom} {self.nom}"
+        return f"{self.prenom}' ' {self.nom}"
     
     @property
     def user_type(self):

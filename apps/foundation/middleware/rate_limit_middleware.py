@@ -1,7 +1,4 @@
-"""
-Middleware de limitation de débit pour le module Foundation.
-Protège contre les abus et limite les requêtes par utilisateur/IP.
-"""
+
 import logging
 import time
 from collections import defaultdict

@@ -1,36 +1,26 @@
-"""
-Service de gestion des utilisateurs.
-Gère les opérations CRUD et la logique métier des utilisateurs et clients.
-"""
+
 import logging
 from typing import Dict, List, Optional, Any
 from django.db import transaction
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
-from datetime import timedelta
 from django.db.models import Q, Count
-from .base_service import BaseService, ServiceResult, ValidationException, BusinessLogicException, PermissionException
+from .base_service import BaseService, ServiceResult,  BusinessLogicException, PermissionException
 from .event_bus import EventBus, FoundationEvents
-from ..models import Client, Organization, OrganizationMember
+from ..models import Organization, OrganizationMember
 
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
 class UserService(BaseService):
-    """
-    Service de gestion des utilisateurs.
-    Gère toute la logique métier liée aux utilisateurs et clients.
-    """
+
     
     def __init__(self, user: User = None, organization: Organization = None):
         super().__init__(user, organization)
     
     def get_user_profile(self, user_id: int = None) -> ServiceResult:
-        """
-        Récupère le profil complet d'un utilisateur.
-        """
+
         try:
             # Utiliser l'utilisateur actuel si aucun ID n'est fourni
             target_user = self.user
@@ -62,19 +52,12 @@ class UserService(BaseService):
             
             # Ajouter les informations spécifiques selon le type
             if target_user.user_type == 'CLIENT':
-                try:
-                    client = target_user.client
-                    profile_data['client_profile'] = {
-                        'id': client.id,
-                        'date_naissance': client.date_naissance.isoformat() if client.date_naissance else None,
-                        'age': client.age,
-                        'genre': client.genre,
-                        'profession': client.profession,
-                        'ville': client.ville,
-                        'pays': client.pays,
-                    }
-                except Client.DoesNotExist:
-                    profile_data['client_profile'] = None
+                profile_data['client_profile'] = {
+                    'nom': target_user.nom,
+                    'prenom': target_user.prenom,
+                    'pays': target_user.pays,
+                    'numero_telephone': target_user.numero_telephone,
+                }
             
             # Note: Le type ENTREPRISE a été supprimé, les organisations sont gérées via OrganizationMember
             
@@ -142,31 +125,9 @@ class UserService(BaseService):
                 if updated_fields:
                     target_user.save(update_fields=updated_fields)
                 
-                # Mettre à jour le profil spécifique
-                if target_user.user_type == 'CLIENT' and 'client_profile' in profile_data:
-                    client_data = profile_data['client_profile']
-                    try:
-                        client = target_user.client
-                        client_fields = [
-                            'date_naissance', 'genre', 'profession', 'adresse_complete',
-                            'ville', 'code_postal', 'situation_familiale',
-                            'nombre_enfants', 'revenus_annuels'
-                        ]
-                        
-                        client_updated = []
-                        for field in client_fields:
-                            if field in client_data:
-                                setattr(client, field, client_data[field])
-                                client_updated.append(field)
-                        
-                        if client_updated:
-                            client.save(update_fields=client_updated)
-                            
-                    except Client.DoesNotExist:
-                        pass
-                
-                # Note: La mise à jour des profils entreprise a été supprimée
-                # Les organisations sont maintenant gérées via OrganizationService
+                # Note: Les profils clients sont maintenant intégrés dans User
+                # Les champs nom, prenom, pays sont directement dans User
+                # Les organisations sont gérées via OrganizationService
                 
                 # Publier l'événement
                 EventBus.publish(FoundationEvents.USER_PROFILE_UPDATED, {
@@ -366,15 +327,17 @@ class UserService(BaseService):
                 date_joined__gte=current_month
             ).count()
             
-            # Répartition par pays (clients et entreprises)
+            # Répartition par pays
             users_by_country = {}
             
-            # Clients par pays
-            client_countries = Client.objects.values('pays').annotate(
+            # Utilisateurs (clients) par pays
+            user_countries = User.objects.filter(
+                user_type='CLIENT'
+            ).values('pays').annotate(
                 count=Count('id')
             ).order_by('-count')[:10]
             
-            for item in client_countries:
+            for item in user_countries:
                 country = item['pays'] or 'Non spécifié'
                 users_by_country[country] = users_by_country.get(country, 0) + item['count']
             

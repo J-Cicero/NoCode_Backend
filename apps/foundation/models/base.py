@@ -1,10 +1,5 @@
-"""
-Modèles abstraits et classes de base pour le module Foundation.
-Ces classes servent de fondation pour tous les autres modèles de la plateforme.
-"""
+
 from django.db import models
-from django.utils import timezone
-from django.contrib.auth import get_user_model
 import uuid
 
 
@@ -26,8 +21,14 @@ class BaseModel(models.Model):
         related_name='%(class)s_created',
         verbose_name="Créé par"
     )
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
-    updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Créé le"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Modifié le"
+    )
 
     class Meta:
         abstract = True

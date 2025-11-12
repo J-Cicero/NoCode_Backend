@@ -22,6 +22,7 @@ class Organization(BaseModel):
     )
     
     slug = models.SlugField(
+        blank=True,
         max_length=100,
         unique=True,
         verbose_name="Slug",

@@ -1,12 +1,12 @@
 """
 Serializers pour les modèles d'organisation du module Foundation.
-Gère la sérialisation des Organization, OrganizationMember, OrganizationInvitation, etc.
+Gère la sérialisation des Organization, OrganizationMember, etc.
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from ..models import (
-    Organization, OrganizationMember, OrganizationInvitation
+    Organization, OrganizationMember
 )
 from .user_serializers import UserBaseSerializer
 
@@ -179,95 +179,9 @@ class OrganizationMemberUpdateSerializer(serializers.ModelSerializer):
         return value
 
 
-class OrganizationInvitationSerializer(serializers.ModelSerializer):
-    """Serializer pour les invitations d'organisation."""
-    
-    organization = OrganizationBaseSerializer(read_only=True)
-    invited_by = UserBaseSerializer(read_only=True)
-    is_expired = serializers.BooleanField(read_only=True)
-    
-    class Meta:
-        model = OrganizationInvitation
-        fields = [
-            'id', 'organization', 'email', 'role', 'status',
-            'invited_by', 'token', 'expires_at', 'is_expired',
-            'accepted_at', 'created_at', 'updated_at'
-        ]
-        read_only_fields = [
-            'id', 'token', 'expires_at', 'accepted_at',
-            'created_at', 'updated_at', 'is_expired'
-        ]
-
-
-class OrganizationInvitationCreateSerializer(serializers.ModelSerializer):
-    """Serializer pour la création d'invitations."""
-    
-    class Meta:
-        model = OrganizationInvitation
-        fields = ['email', 'role', 'message']
-    
-    def validate_email(self, value):
-        """Validation de l'email d'invitation."""
-        # Vérifier si l'utilisateur n'est pas déjà membre
-        organization = self.context.get('organization')
-        if organization:
-            existing_member = OrganizationMember.objects.filter(
-                organization=organization,
-                user__email=value,
-                status='ACTIVE'
-            ).exists()
-            
-            if existing_member:
-                raise serializers.ValidationError(
-                    'Cet utilisateur est déjà membre de l\'organisation.'
-                )
-            
-            # Vérifier si une invitation n'est pas déjà en attente
-            existing_invitation = OrganizationInvitation.objects.filter(
-                organization=organization,
-                email=value,
-                status='PENDING'
-            ).exists()
-            
-            if existing_invitation:
-                raise serializers.ValidationError(
-                    'Une invitation est déjà en attente pour cet email.'
-                )
-        
-        return value
-    
-    def create(self, validated_data):
-        """Création d'une invitation."""
-        organization = self.context.get('organization')
-        invited_by = self.context.get('request').user
-        
-        validated_data['organization'] = organization
-        validated_data['invited_by'] = invited_by
-        
-        return super().create(validated_data)
-
-
-class OrganizationInvitationAcceptSerializer(serializers.Serializer):
-    """Serializer pour l'acceptation d'invitations."""
-    
-    token = serializers.CharField()
-    
-    def validate_token(self, value):
-        """Validation du token d'invitation."""
-        try:
-            invitation = OrganizationInvitation.objects.get(
-                token=value,
-                status='PENDING'
-            )
-            
-            if invitation.is_expired:
-                raise serializers.ValidationError('Cette invitation a expiré.')
-            
-            self.invitation = invitation
-            return value
-            
-        except OrganizationInvitation.DoesNotExist:
-            raise serializers.ValidationError('Invitation invalide ou expirée.')
+# OrganizationInvitationSerializer - SUPPRIMÉ (modèle OrganizationInvitation supprimé)
+# OrganizationInvitationCreateSerializer - SUPPRIMÉ (modèle OrganizationInvitation supprimé)
+# OrganizationInvitationAcceptSerializer - SUPPRIMÉ (modèle OrganizationInvitation supprimé)
 
 
 

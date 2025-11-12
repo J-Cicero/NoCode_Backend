@@ -7,7 +7,7 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from ..models import Organization, OrganizationInvitation, Abonnement
+from ..models import Organization, Abonnement
 from ..services.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
@@ -169,63 +169,10 @@ def send_password_reset_email(self, user_id, reset_token):
         return {'success': False, 'error': str(e)}
 
 
-@shared_task(bind=True, max_retries=3)
-def send_invitation_email(self, invitation_id):
-    """
-    Envoie un email d'invitation à rejoindre une organisation.
-    """
-    try:
-        invitation = OrganizationInvitation.objects.get(id=invitation_id)
-        
-        invitation_url = f"{settings.FRONTEND_URL}/accept-invitation?token={invitation.token}"
-        
-        subject = f"Invitation à rejoindre {invitation.organization.name}"
-        
-        context = {
-            'invitation': invitation,
-            'organization': invitation.organization,
-            'inviter': invitation.invited_by,
-            'invitation_url': invitation_url,
-            'site_name': settings.SITE_NAME,
-        }
-        
-        html_message = render_to_string('emails/organization_invitation.html', context)
-        plain_message = render_to_string('emails/organization_invitation.txt', context)
-        
-        send_mail(
-            subject=subject,
-            message=plain_message,
-            html_message=html_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[invitation.email],
-            fail_silently=False,
-        )
-        
-        # Marquer l'invitation comme envoyée
-        invitation.status = 'SENT'
-        invitation.save()
-        
-        EventBus.publish('email.sent', {
-            'type': 'invitation',
-            'invitation_id': invitation_id,
-            'email': invitation.email,
-            'organization_id': invitation.organization.id,
-        })
-        
-        logger.info(f"Email d'invitation envoyé à {invitation.email}")
-        return {'success': True, 'email': invitation.email}
-        
-    except OrganizationInvitation.DoesNotExist:
-        logger.error(f"Invitation {invitation_id} non trouvée")
-        return {'success': False, 'error': 'Invitation not found'}
-    
-    except Exception as e:
-        logger.error(f"Erreur lors de l'envoi de l'email d'invitation: {e}")
-        
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=60 * (2 ** self.request.retries))
-        
-        return {'success': False, 'error': str(e)}
+# TÂCHE DÉSACTIVÉE - Modèle OrganizationInvitation supprimé
+# @shared_task(bind=True, max_retries=3)
+# def send_invitation_email(self, invitation_id):
+#     pass
 
 
 @shared_task(bind=True, max_retries=3)

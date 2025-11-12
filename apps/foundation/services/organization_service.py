@@ -11,7 +11,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from .base_service import BaseService, ServiceResult, ValidationException, BusinessLogicException, PermissionException
 from .event_bus import EventBus, FoundationEvents
-from ..models import Organization, OrganizationMember, OrganizationInvitation, OrganizationSettings
+from ..models import Organization, OrganizationMember
 import secrets
 import string
 
@@ -207,7 +207,8 @@ class OrganizationService(BaseService):
             logger.error(f"Erreur lors de la mise à jour d'organisation: {e}", exc_info=True)
             return ServiceResult.error_result("Erreur lors de la mise à jour de l'organisation")
     
-    def invite_member(self, organization_id: int, email: str, role: str = 'VIEWER', 
+    # MÉTHODE DÉSACTIVÉE - Modèle OrganizationInvitation supprimé
+    def invite_member_DISABLED(self, organization_id: int, email: str, role: str = 'VIEWER', 
                      message: str = '') -> ServiceResult:
         """
         Invite un utilisateur à rejoindre une organisation.
@@ -296,7 +297,8 @@ class OrganizationService(BaseService):
             logger.error(f"Erreur lors de l'invitation: {e}", exc_info=True)
             return ServiceResult.error_result("Erreur lors de l'envoi de l'invitation")
     
-    def accept_invitation(self, token: str) -> ServiceResult:
+    # MÉTHODE DÉSACTIVÉE - Modèle OrganizationInvitation supprimé
+    def accept_invitation_DISABLED(self, token: str) -> ServiceResult:
         """
         Accepte une invitation à rejoindre une organisation.
         """
@@ -674,7 +676,8 @@ class OrganizationService(BaseService):
             logger.error(f"Erreur lors de la récupération des membres: {e}", exc_info=True)
             return ServiceResult.error_result("Erreur lors de la récupération des membres")
     
-    def _send_invitation_email(self, invitation: OrganizationInvitation):
+    # MÉTHODE DÉSACTIVÉE - Modèle OrganizationInvitation supprimé
+    def _send_invitation_email_DISABLED(self, invitation):
         """
         Envoie l'email d'invitation.
         """

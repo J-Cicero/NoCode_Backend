@@ -12,18 +12,13 @@ from .views.user_views import (
 from .views.org_views import (
     OrganizationListCreateView, OrganizationDetailView,
     OrganizationMembersView, OrganizationMemberDetailView,
-    OrganizationInvitationsView, OrganizationInvitationAcceptView,
     OrganizationTransferOwnershipView, OrganizationStatsView,
-    leave_organization, resend_invitation
+    leave_organization
 )
-from .views.billing_views import (
-    SubscriptionPlansView, OrganizationSubscriptionView,
-    OrganizationBillingInfoView, CreatePaymentIntentView,
-    SubscriptionLimitsView,InvoiceGenerateView, billing_stats
-)
+# billing_views.py supprimé
 from .views.subscription_views import (
     SubscriptionViewSet, SubscriptionPlanViewSet,
-    PaymentViewSet, InvoiceViewSet, PaymentMethodViewSet
+    PaymentMethodViewSet
 )
 
 app_name = 'foundation'
@@ -34,8 +29,6 @@ router = DefaultRouter()
 # Enregistrement des ViewSets pour les abonnements
 router.register(r'subscriptions', SubscriptionViewSet, basename='subscription')
 router.register(r'subscription-plans', SubscriptionPlanViewSet, basename='subscription-plan')
-router.register(r'payments', PaymentViewSet, basename='payment')
-router.register(r'invoices', InvoiceViewSet, basename='invoice')
 router.register(r'payment-methods', PaymentMethodViewSet, basename='payment-method')
 
 urlpatterns = [
@@ -61,21 +54,12 @@ urlpatterns = [
     path('organizations/<int:org_id>/', OrganizationDetailView.as_view(), name='organization-detail'),
     path('organizations/<int:org_id>/members/', OrganizationMembersView.as_view(), name='organization-members'),
     path('organizations/<int:org_id>/members/<int:member_id>/', OrganizationMemberDetailView.as_view(), name='organization-member-detail'),
-    path('organizations/<int:org_id>/invitations/', OrganizationInvitationsView.as_view(), name='organization-invitations'),
-    path('organizations/invitations/accept/', OrganizationInvitationAcceptView.as_view(), name='organization-invitation-accept'),
+    # Invitations - SUPPRIMÉES (modèle OrganizationInvitation supprimé)
     path('organizations/<int:org_id>/transfer-ownership/', OrganizationTransferOwnershipView.as_view(), name='organization-transfer-ownership'),
     path('organizations/<int:org_id>/stats/', OrganizationStatsView.as_view(), name='organization-stats'),
     path('organizations/<int:org_id>/leave/', leave_organization, name='leave-organization'),
-    path('organizations/<int:org_id>/invitations/<int:invitation_id>/resend/', resend_invitation, name='resend-invitation'),
+    # resend_invitation - SUPPRIMÉ (modèle OrganizationInvitation supprimé)
 
-    # === FACTURATION ===
-    path('billing/plans/', SubscriptionPlansView.as_view(), name='subscription-plans'),
-    path('billing/organizations/<int:org_id>/subscription/', OrganizationSubscriptionView.as_view(), name='organization-subscription'),
-    path('billing/organizations/<int:org_id>/info/', OrganizationBillingInfoView.as_view(), name='organization-billing-info'),
-    path('billing/organizations/<int:org_id>/limits/', SubscriptionLimitsView.as_view(), name='subscription-limits'),
-    path('billing/organizations/<int:org_id>/invoice/', InvoiceGenerateView.as_view(), name='generate-invoice'),
-    path('billing/payment-intent/', CreatePaymentIntentView.as_view(), name='create-payment-intent'),
-    path('billing/stats/', billing_stats, name='billing-stats'),
 
 
 ]

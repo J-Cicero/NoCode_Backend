@@ -1,18 +1,12 @@
-"""
-Permissions de base pour le module Foundation.
-Définit les classes de permissions réutilisables pour sécuriser les APIs.
-"""
+
 from rest_framework import permissions
 from django.contrib.auth import get_user_model
 from ..models import Organization, OrganizationMember
 
-
 User = get_user_model()
-
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
 
-    
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -122,8 +116,7 @@ class CanManageBilling(permissions.BasePermission):
 
 
 class IsEntrepriseOwner(permissions.BasePermission):
-    """Alias pour IsOrganizationOwner - pour compatibilité."""
-    
+
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
@@ -283,11 +276,9 @@ class CanAccessUserData(permissions.BasePermission):
         if not user_id:
             return True  # Accès à ses propres données
         
-        # Staff peut accéder à toutes les données
         if request.user.is_staff:
             return True
         
-        # Utilisateur peut accéder à ses propres données
         return str(request.user.id) == str(user_id)
 
 
