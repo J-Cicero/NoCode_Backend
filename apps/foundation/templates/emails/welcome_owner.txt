@@ -1,0 +1,16 @@
+Bonjour {{ user.prenom }},
+
+Votre organisation "{{ organization.name }}" a été créée avec succès sur {{ site_name }}.
+
+Vous disposez désormais d’un espace dédié pour gérer votre équipe, vos projets
+et le développement de vos activités.
+
+Tableau de bord : {{ dashboard_url }}
+Configuration initiale : {{ setup_url }}
+
+Notre équipe est à votre disposition pour vous accompagner si nécessaire.
+
+Respectueusement,
+L’équipe {{ site_name }}
+
+Support : {{ support_email }}

@@ -105,7 +105,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'nocode',
-        'USER': 'postgres',
+        'USER': 'nocode_user',
         'PASSWORD': 'cicero',
         'HOST': 'localhost',
         'PORT': '5432',
@@ -194,3 +194,16 @@ os.makedirs(NOCODE_CONFIG['GENERATED_APPS_DIR'], exist_ok=True)
 
 # Modèle utilisateur personnalisé
 AUTH_USER_MODEL = 'foundation.User'
+
+# Configuration email générique (Gmail/SMTP en développement)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER or 'noreply@example.com'
+
+SUPPORT_EMAIL = config('SUPPORT_EMAIL', default=DEFAULT_FROM_EMAIL)
+SITE_NAME = config('SITE_NAME', default='NoCode Platform')
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')

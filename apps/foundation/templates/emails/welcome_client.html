@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Bienvenue sur {{ site_name }}</title>
+    <style>
+        body { margin:0; padding:0; background:#F5F5DC; font-family:'Segoe UI', Arial, sans-serif; }
+        .header { background: linear-gradient(135deg, #D4AF37, #8B0000); padding:30px; text-align:center; }
+        .header h1 { color:#FFFFFF; margin:0; font-size:28px; }
+        .header p { color:#F5F5DC; margin:10px 0 0 0; font-size:16px; }
+        .container { max-width:600px; margin:30px auto; background:#FFFFFF; border-radius:8px;
+                     box-shadow:0 4px 20px rgba(0,0,0,0.08); overflow:hidden; }
+        .content { padding:30px 35px; color:#2C1810; font-size:15px; line-height:1.6; }
+        .content h2 { color:#8B0000; font-size:22px; margin-top:0; }
+        .highlight-box { background:#F5F5DC; padding:18px; border-radius:6px; margin:20px 0; }
+        .highlight-title { color:#228B22; font-size:16px; margin:0 0 12px 0; }
+        .btn-wrapper { text-align:center; margin:25px 0; }
+        .btn-primary { display:inline-block; background:#D4AF37; color:#FFFFFF; padding:14px 32px;
+                      text-decoration:none; border-radius:6px; font-weight:600; font-size:15px; }
+        .footer { text-align:center; padding:25px; color:#777; font-size:12px; }
+        .footer a { color:#8B0000; text-decoration:none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Bienvenue {{ user.prenom }} {{ user.nom }}</h1>
+        <p>Nous sommes ravis de vous compter parmi nos utilisateurs.</p>
+    </div>
+
+    <div class="container">
+        <div class="content">
+            <h2>Votre espace est prêt</h2>
+            <p>
+                Bonjour {{ user.prenom }},<br><br>
+                Merci de la confiance que vous accordez à {{ site_name }}. Votre compte est maintenant
+                créé et vous pouvez accéder à votre espace personnel pour découvrir l’ensemble des
+                fonctionnalités mises à votre disposition.
+            </p>
+
+            <div class="highlight-box">
+                <p class="highlight-title">✨ Vous pouvez dès maintenant :</p>
+                <ul style="margin:0; padding-left:18px;">
+                    <li>Accéder à votre tableau de bord et suivre vos activités,</li>
+                    <li>Organiser vos projets et vos informations,</li>
+                    <li>Bénéficier d’une expérience pensée pour les réalités africaines.</li>
+                </ul>
+            </div>
+
+            <div class="btn-wrapper">
+                <a href="{{ dashboard_url }}" class="btn-primary">Accéder à mon espace</a>
+            </div>
+
+            <p style="margin-top:20px;">
+                Si vous avez la moindre question, notre équipe reste disponible pour vous accompagner.
+            </p>
+            <p>
+                Bien à vous,<br>
+                L’équipe {{ site_name }}
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Besoin d’aide ? Contactez-nous : <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+        <p>© {{ current_year }} {{ site_name }}. Tous droits réservés.</p>
+    </div>
+</body>
+</html>

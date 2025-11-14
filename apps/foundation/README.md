@@ -1,6 +1,6 @@
 # Foundation Module
 
-Le module Foundation est le cœur de la plateforme NoCode, fournissant une architecture robuste, sécurisée et extensible pour la gestion multi-tenant, l'authentification, la facturation, et la vérification des entreprises.
+Module Foundation - Cœur de l'architecture NoCode avec gestion multi-tenant, authentification par rôles, et abonnements.
 
 ## 🏗️ Architecture
 
@@ -9,15 +9,15 @@ Le module Foundation est le cœur de la plateforme NoCode, fournissant une archi
 ```
 foundation/
 ├── models/                 # Modèles de données
-│   ├── base.py            # Modèles de base et mixins
-│   ├── user.py            # Modèles utilisateur (Client, Entreprise)
-│   ├── organization.py    # Modèles d'organisation
-│   ├── billing.py         # Modèles de facturation
-│   └── verification.py    # Modèles de vérification
+│   ├── base.py            # BaseModel avec champs communs
+│   ├── user.py            # User avec rôles (CLIENT/ADMIN)
+│   ├── organization.py    # Organization et OrganizationMember
+│   └── subscription.py    # TypeAbonnement et Abonnement
 ├── services/              # Services métier
-│   ├── base_service.py    # Service de base
-│   ├── event_bus.py       # Bus d'événements
 │   ├── auth_service.py    # Service d'authentification
+│   ├── user_service.py    # Service utilisateur
+│   ├── organization_service.py  # Service organisations
+│   └── event_bus.py       # Bus d'événements
 │   ├── organization_service.py # Service d'organisation
 │   ├── billing_service.py # Service de facturation
 │   └── verification_service.py # Service de vérification

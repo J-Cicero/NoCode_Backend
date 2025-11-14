@@ -103,17 +103,7 @@ class Abonnement(BaseModel):
         on_delete=models.CASCADE,
         related_name='abonnements',
         verbose_name="Utilisateur",
-        help_text="Utilisateur souscripteur (Client ou Owner d'organisation)"
-    )
-    
-    organization = models.ForeignKey(
-        'foundation.Organization',
-        on_delete=models.CASCADE,
-        related_name='abonnements',
-        null=True,
-        blank=True,
-        verbose_name="Organisation",
-        help_text="Si renseigné, c'est un abonnement d'organisation"
+        help_text="Utilisateur souscripteur (propriétaire de l'organisation)"
     )
     
     type_abonnement = models.ForeignKey(

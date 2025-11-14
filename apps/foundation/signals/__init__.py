@@ -1,8 +1,8 @@
 """
-Initialisation du module des signaux.
-Ce fichier permet d'importer tous les signaux définis dans le module.
+Signaux Foundation - Version simplifiée.
+Uniquement le logging utilisateur essentiel.
 """
-from .user_signals import *  # noqa
-from .organization_signals import *  # noqa
 
-# Ce fichier reste vide, les imports ci-dessus sont suffisants pour charger les signaux
+from .user_signals import user_post_save
+
+__all__ = ['user_post_save']

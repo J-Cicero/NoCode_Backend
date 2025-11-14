@@ -2,17 +2,22 @@
 import logging
 import re
 from typing import Dict, Optional, Tuple, List
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
 from django.utils import timezone
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import TokenError
 from .base_service import BaseService, ServiceResult, ValidationException, BusinessLogicException
 from .event_bus import EventBus, FoundationEvents
 from ..models import User, Organization, OrganizationMember
+from ..email import email_service
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -182,6 +187,38 @@ class AuthService(BaseService):
                 
                 # Générer les tokens
                 tokens = self.generate_tokens(user)
+
+                # Envoyer l'email de bienvenue propriétaire d'organisation
+                try:
+                    email_service.send(
+                        template_name="welcome_owner",
+                        to_email=user.email,
+                        context={
+                            "user": user,
+                            "organization": organization,
+                            "dashboard_url": f"{getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')}/org/{organization.tracking_id}/dashboard",
+                            "setup_url": f"{getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')}/org/{organization.tracking_id}/setup",
+                            "subject": f"Votre organisation {organization.name} est créée",
+                        },
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Échec de l'envoi de l'email de bienvenue organisation pour l'utilisateur {user.id}: {e}"
+                    )
+                
+                # Envoyer l'email de bienvenue au client
+                try:
+                    email_service.send(
+                        template_name="welcome_client",
+                        to_email=user.email,
+                        context={
+                            "user": user,
+                            "dashboard_url": f"{getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')}/dashboard",
+                            "subject": f"Bienvenue sur {getattr(settings, 'SITE_NAME', 'Notre plateforme')}",
+                        },
+                    )
+                except Exception as e:
+                    logger.warning(f"Échec de l'envoi de l'email de bienvenue pour l'utilisateur {user.id}: {e}")
                 
                 # Préparer les données de réponse
                 response_data = {
@@ -474,7 +511,7 @@ class AuthService(BaseService):
         """
         try:
             email = email.lower().strip()
-            
+
             try:
                 user = User.objects.get(email=email)
             except User.DoesNotExist:
@@ -482,16 +519,35 @@ class AuthService(BaseService):
                 return ServiceResult.success_result({
                     'message': 'Si cet email existe, un lien de réinitialisation a été envoyé'
                 })
-            
-            # TODO: Générer un token de réinitialisation et envoyer l'email
-            # Pour l'instant, on simule le succès
-            
+
+            # Générer un token sécurisé basé sur Django
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+
+            reset_url = f"{getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')}/reset-password?uid={uidb64}&token={token}"
+
+            try:
+                email_service.send(
+                    template_name="password_reset",
+                    to_email=user.email,
+                    context={
+                        "user": user,
+                        "reset_url": reset_url,
+                        "expires_in": "24 heures",
+                        "subject": "Réinitialisation de votre mot de passe",
+                    },
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Échec de l'envoi de l'email de réinitialisation pour l'utilisateur {user.id}: {e}"
+                )
+
             self.log_activity('password_reset_requested', {'user_id': user.id})
-            
+
             return ServiceResult.success_result({
                 'message': 'Un lien de réinitialisation a été envoyé à votre adresse email'
             })
-            
+
         except Exception as e:
             logger.error(f"Erreur lors de la demande de réinitialisation: {e}", exc_info=True)
             return ServiceResult.error_result("Erreur lors de la demande de réinitialisation")

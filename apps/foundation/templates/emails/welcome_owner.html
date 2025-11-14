@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Votre organisation est créée</title>
+    <style>
+        body { margin:0; padding:0; background:#F5F5DC; font-family:'Segoe UI', Arial, sans-serif; }
+        .header { background: linear-gradient(135deg, #D4AF37, #8B0000); padding:30px; text-align:center; }
+        .header h1 { color:#FFFFFF; margin:0; font-size:28px; }
+        .header p { color:#F5F5DC; margin:10px 0 0 0; font-size:16px; }
+        .container { max-width:600px; margin:30px auto; background:#FFFFFF; border-radius:8px;
+                     box-shadow:0 4px 20px rgba(0,0,0,0.08); overflow:hidden; }
+        .content { padding:30px 35px; color:#2C1810; font-size:15px; line-height:1.6; }
+        .content h2 { color:#8B0000; font-size:22px; margin-top:0; }
+        .highlight-box { background:#F5F5DC; padding:18px; border-radius:6px; margin:20px 0; }
+        .highlight-title { color:#228B22; font-size:16px; margin:0 0 12px 0; }
+        .btn-wrapper { text-align:center; margin:25px 0; }
+        .btn-primary, .btn-secondary {
+            display:inline-block; padding:14px 26px; text-decoration:none; border-radius:6px;
+            font-weight:600; font-size:15px; margin:5px;
+        }
+        .btn-primary { background:#D4AF37; color:#FFFFFF; }
+        .btn-secondary { background:#8B0000; color:#FFFFFF; }
+        .footer { text-align:center; padding:25px; color:#777; font-size:12px; }
+        .footer a { color:#8B0000; text-decoration:none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Votre organisation est prête</h1>
+        <p>Nous sommes heureux de vous accompagner dans la gestion de {{ organization.name }}.</p>
+    </div>
+
+    <div class="container">
+        <div class="content">
+            <h2>Bienvenue dans l’espace gestionnaire</h2>
+            <p>
+                Bonjour {{ user.prenom }},<br><br>
+                Votre organisation <strong>{{ organization.name }}</strong> a été créée avec succès.
+                Vous disposez maintenant d’un espace dédié pour structurer, suivre et développer
+                vos activités avec votre équipe.
+            </p>
+
+            <div class="highlight-box">
+                <p class="highlight-title">🏢 À partir de votre espace organisation :</p>
+                <ul style="margin:0; padding-left:18px;">
+                    <li>Invitez et gérez les membres de votre équipe,</li>
+                    <li>Organisez vos projets et vos processus internes,</li>
+                    <li>Suivez l’activité et les performances de votre organisation,</li>
+                    <li>Gérez vos abonnements et votre facturation.</li>
+                </ul>
+            </div>
+
+            <div class="btn-wrapper">
+                <a href="{{ dashboard_url }}" class="btn-primary">Ouvrir le tableau de bord</a>
+                <a href="{{ setup_url }}" class="btn-secondary">Configurer l’organisation</a>
+            </div>
+
+            <p style="margin-top:20px;">
+                Notre équipe reste disponible pour vous accompagner dans la mise en place
+                de vos premiers espaces de travail.
+            </p>
+            <p>
+                Respectueusement,<br>
+                L’équipe {{ site_name }}
+            </p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Questions ou besoins spécifiques ? Écrivez-nous : <a href="mailto:{{ support_email }}">{{ support_email }}</a></p>
+        <p>© {{ current_year }} {{ site_name }}. Tous droits réservés.</p>
+    </div>
+</body>
+</html>

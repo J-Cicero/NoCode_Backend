@@ -1,0 +1,15 @@
+Bonjour {{ user.prenom }},
+
+Votre paiement pour l’abonnement "{{ subscription_type.nom }}" a bien été reçu.
+
+Montant payé : {{ amount }} €
+Date de début : {{ abonnement.date_debut }}
+Date de fin : {{ abonnement.date_fin }}
+Référence de transaction : {{ abonnement.transaction_reference }}
+
+Vous pouvez consulter vos abonnements et vos factures ici : {{ billing_url }}
+
+En cas de question, contactez-nous à : {{ support_email }}
+
+Cordialement,
+L’équipe {{ site_name }}

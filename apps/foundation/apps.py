@@ -12,49 +12,15 @@ class FoundationConfig(AppConfig):
     verbose_name = 'Foundation'
 
     def ready(self):
+        """Initialisation du module Foundation."""
         try:
-            from .signals import user_signals, organization_signals  # noqa
-            logger.info("Signaux Foundation chargés avec succès")
+            from .signals import user_post_save  # noqa
+            logger.info("Signaux utilisateur Foundation chargés")
         except ImportError as e:
-            logger.warning(f"Impossible de charger les signaux Foundation: {e}")
-
-        try:
-            from . import tasks  # noqa
-            logger.info("Tâches Celery Foundation chargées avec succès")
-        except ImportError as e:
-            logger.warning(f"Impossible de charger les tâches Celery Foundation: {e}")
+            logger.warning(f"Impossible de charger les signaux utilisateur: {e}")
             
-        try:
-            from django.apps import apps
-            from django.db import connection
-            from django.core.management.color import no_style
-            
-            # Vérifier si les tables existent avant d'accéder à la DB
-            if apps.is_installed('django.contrib.auth'):
-                # Vérifier si les migrations ont été appliquées
-                with connection.cursor() as cursor:
-                    try:
-                        cursor.execute("SELECT 1 FROM foundation_organization LIMIT 1")
-                        self._setup_organization_settings()
-                    except Exception:
-                        logger.info("Tables non créées, configuration des paramètres d'organisation reportée")
-        except Exception as e:
-            logger.warning(f"Erreur lors de la configuration des paramètres d'organisation: {e}")
-
-        # Configurer les permissions personnalisées
-        self._setup_permissions()
-
-        # Connecter le signal post_migrate pour les données initiales
+        # Enregistrer le signal post_migrate pour créer les données initiales
         post_migrate.connect(self._create_initial_data, sender=self)
-
-    def _setup_permissions(self):
-        """Configure les permissions personnalisées."""
-        try:
-            # Pour l'instant, on ne fait rien de spécial
-            # Les permissions seront gérées via les modèles Django standard
-            logger.info("Permissions personnalisées configurées")
-        except Exception as e:
-            logger.warning(f"Erreur lors de la configuration des permissions: {e}")
 
     
     def _create_initial_data(self, sender, **kwargs):
@@ -70,105 +36,53 @@ class FoundationConfig(AppConfig):
             logger.error(f"Erreur lors de la création des données initiales: {e}")
 
     def _create_default_subscription_types(self):
+        """Crée les types d'abonnement par défaut."""
         try:
             from .models import TypeAbonnement
 
-            # Type d'abonnement gratuit
+            # Plan FREE
             free_plan, created = TypeAbonnement.objects.get_or_create(
-                nom='Gratuit',
+                nom='FREE',
+                categorie_utilisateur='CLIENT',
                 defaults={
                     'description': 'Plan gratuit avec fonctionnalités de base',
-                    'prix_mensuel': 0.00,
-                    'prix_annuel': 0.00,
-                    'max_users': 1,
-                    'max_projects': 3,
-                    'max_storage_gb': 1,
+                    'tarif': 0.00,
                     'is_active': True
                 }
             )
             if created:
-                logger.info("Plan gratuit créé")
+                logger.info("Plan FREE créé")
 
-            # Type d'abonnement professionnel
-            pro_plan, created = TypeAbonnement.objects.get_or_create(
-                nom='Professionnel',
+            # Plan MENSUEL
+            monthly_plan, created = TypeAbonnement.objects.get_or_create(
+                nom='MENSUEL',
+                categorie_utilisateur='CLIENT', 
                 defaults={
-                    'description': 'Plan professionnel avec fonctionnalités avancées',
-                    'prix_mensuel': 29.99,
-                    'prix_annuel': 299.99,
-                    'max_users': 10,
-                    'max_projects': 50,
-                    'max_storage_gb': 100,
+                    'description': 'Plan mensuel',
+                    'tarif': 29.99,
                     'is_active': True
                 }
             )
             if created:
-                logger.info("Plan professionnel créé")
+                logger.info("Plan MENSUEL créé")
 
-            enterprise_plan, created = TypeAbonnement.objects.get_or_create(
-                nom='Entreprise',
+            # Plan ANNUEL pour organisations
+            yearly_plan, created = TypeAbonnement.objects.get_or_create(
+                nom='ANNUEL',
+                categorie_utilisateur='ORGANIZATION',
                 defaults={
-                    'description': 'Plan entreprise avec fonctionnalités complètes',
-                    'prix_mensuel': 99.99,
-                    'prix_annuel': 999.99,
-                    'max_users': -1,  # Illimité
-                    'max_projects': -1,  # Illimité
-                    'max_storage_gb': 1000,
+                    'description': 'Plan annuel pour organisations',
+                    'tarif': 299.99,
                     'is_active': True
                 }
             )
             if created:
-                logger.info("Plan entreprise créé")
+                logger.info("Plan ANNUEL créé")
 
         except Exception as e:
             logger.error(f"Erreur lors de la création des types d'abonnement: {e}")
 
     def _create_default_notification_preferences(self):
-        try:
-            from django.contrib.auth import get_user_model
-            from .models import NotificationPreference
-
-            User = get_user_model()
-
-            # Créer les préférences pour les utilisateurs qui n'en ont pas
-            users_without_prefs = User.objects.filter(
-                notification_preferences__isnull=True
-            )
-
-            for user in users_without_prefs:
-                NotificationPreference.objects.get_or_create(
-                    user=user,
-                    defaults={
-                        'email_notifications': True,
-                        'push_notifications': True,
-                        'sms_notifications': False,
-                        'marketing_emails': False,
-                        'security_alerts': True,
-                        'billing_notifications': True
-                    }
-                )
-
-            if users_without_prefs.exists():
-                logger.info(f"Préférences de notification créées pour {users_without_prefs.count()} utilisateurs")
-
-        except Exception as e:
-            logger.error(f"Erreur lors de la création des préférences de notification: {e}")
-
-    @staticmethod
-    def get_version():
-        return "1.0.0"
-
-    @staticmethod
-    def get_features():
-        return [
-            'user_management',
-            'organization_management',
-            'subscription_billing',
-            'document_verification',
-            'activity_logging',
-            'notification_system',
-            'admin_interface'
-        ]
-
-    def __str__(self):
-        return f"Foundation App v{self.get_version()}"
+        """Crée les préférences de notification par défaut."""
+        # Pour l'instant, on ne fait rien - à implémenter plus tard
+        

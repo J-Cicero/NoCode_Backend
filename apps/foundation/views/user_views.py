@@ -4,13 +4,17 @@ Expose les APIs pour les profils utilisateur, recherche, statistiques, etc.
 """
 from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from ..services.user_service import UserService
 from ..serializers import (
     UserProfileSerializer, UserUpdateSerializer, UserStatsSerializer
+)
+from ..permissions.role_permissions import (
+    CanAccessOwnDataOrAdmin, IsAdminApp
 )
 
 
@@ -18,14 +22,20 @@ User = get_user_model()
 
 
 class UserProfileView(APIView):
-    """Vue pour le profil utilisateur."""
+    """Vue pour le profil utilisateur avec tracking_id."""
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanAccessOwnDataOrAdmin]
     
-    def get(self, request, user_id=None):
-        """Récupère le profil d'un utilisateur."""
+    def get(self, request, tracking_id=None):
+        """Récupère le profil d'un utilisateur par tracking_id."""
+        if tracking_id:
+            user = get_object_or_404(User, tracking_id=tracking_id)
+            self.check_object_permissions(request, user)
+        else:
+            user = request.user
+            
         user_service = UserService(user=request.user)
-        result = user_service.get_user_profile(user_id)
+        result = user_service.get_user_profile(user.id)
         
         if result.success:
             return Response(result.data, status=status.HTTP_200_OK)

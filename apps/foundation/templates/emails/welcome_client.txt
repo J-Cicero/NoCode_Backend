@@ -1,0 +1,16 @@
+Bonjour {{ user.prenom }} {{ user.nom }},
+
+Bienvenue sur {{ site_name }}.
+
+Votre compte est maintenant créé et votre espace personnel est prêt.
+Vous pouvez y accéder à tout moment pour suivre vos activités
+et profiter des fonctionnalités mises à votre disposition.
+
+Accéder à votre espace : {{ dashboard_url }}
+
+Si vous avez des questions, notre équipe est disponible pour vous accompagner.
+
+Cordialement,
+L’équipe {{ site_name }}
+
+Support : {{ support_email }}
