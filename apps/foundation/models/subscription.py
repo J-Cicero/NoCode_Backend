@@ -5,12 +5,20 @@ from django.core.validators import MinValueValidator
 from django.contrib.auth import get_user_model
 from .base import BaseModel
 from decimal import Decimal
-
+import uuid
 
 User = get_user_model()
 
-
 class TypeAbonnement(BaseModel):
+
+    tracking_id = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        db_index=True,
+        verbose_name="Tracking ID",
+        help_text="Identifiant public unique utilisé dans les URLs et APIs"
+    )
 
     NOM_CHOICES = [
         ('FREE', 'Gratuit'),
@@ -74,6 +82,15 @@ class TypeAbonnement(BaseModel):
 
 class Abonnement(BaseModel):
 
+    tracking_id = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        db_index=True,
+        verbose_name="Tracking ID",
+        help_text="Identifiant public unique utilisé dans les URLs et APIs"
+    )
+
     STATUS_CHOICES = [
         ('EN_ATTENTE', 'En attente'),
         ('ACTIF', 'Actif'),
@@ -130,6 +147,29 @@ class Abonnement(BaseModel):
         help_text="Référence de la transaction de paiement (API bancaire)"
     )
     
+    montant_paye = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name="Montant payé",
+        help_text="Montant réellement payé pour cet abonnement"
+    )
+    
+    date_annulation = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Date d'annulation"
+    )
+    
+    cancelled_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cancelled_subscriptions',
+        verbose_name="Annulé par"
+    )
+    
     class Meta:
         verbose_name = "Abonnement"
         verbose_name_plural = "Abonnements"
@@ -143,9 +183,12 @@ class Abonnement(BaseModel):
     
     def save(self, *args, **kwargs):
         if not self.date_fin and self.type_abonnement:
-            self.date_fin = self.date_debut + timezone.timedelta(
+            from datetime import timedelta
+            self.date_fin = self.date_debut + timedelta(
                 days=self.type_abonnement.duree_en_jours
             )
+        if not self.montant_paye and self.type_abonnement:
+            self.montant_paye = self.type_abonnement.tarif
         super().save(*args, **kwargs)
     
     @property
@@ -172,3 +215,23 @@ class Abonnement(BaseModel):
             return 100
         elapsed = (timezone.now() - self.date_debut).total_seconds()
         return min(100, (elapsed / total) * 100)
+    
+    def cancel(self, reason='', cancelled_by=None):
+        """Annule l'abonnement"""
+        self.status = 'ANNULE'
+        self.date_annulation = timezone.now()
+        if cancelled_by:
+            self.cancelled_by = cancelled_by
+        self.save(update_fields=['status', 'date_annulation', 'cancelled_by'])
+    
+    def check_limit(self, limit_type, current_usage):
+        """Vérifie si une limite est respectée"""
+        # Pour l'instant, retourne toujours True (pas de limites strictes)
+        # À implémenter selon les besoins réels
+        return True
+    
+    def get_limits(self):
+        """Retourne les limites de l'abonnement"""
+        # Retourne un dict vide pour l'instant
+        # À implémenter selon les besoins réels
+        return {}

@@ -7,7 +7,6 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from ..services.event_bus import EventBus
 
-
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
@@ -77,7 +76,6 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
     
     def _should_skip_auth(self, request):
 
-        # Chemins qui n'ont pas besoin d'authentification
         skip_paths = [
             '/api/auth/login/',
             '/api/auth/register/',
@@ -109,9 +107,6 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
         return False
     
     def _update_last_activity(self, user, request):
-        """
-        Met à jour la dernière activité de l'utilisateur.
-        """
         try:
             from django.utils import timezone
             user.last_login = timezone.now()
@@ -215,7 +210,6 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
     
     def process_response(self, request, response):
 
-        # En-têtes de sécurité
         security_headers = {
             'X-Content-Type-Options': 'nosniff',
             'X-Frame-Options': 'DENY',

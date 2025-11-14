@@ -10,8 +10,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import get_user_model
 from ..services.user_service import UserService
 from ..serializers import (
-    UserProfileSerializer, UserUpdateSerializer, UserStatsSerializer,
-    ClientUpdateSerializer
+    UserProfileSerializer, UserUpdateSerializer, UserStatsSerializer
 )
 
 

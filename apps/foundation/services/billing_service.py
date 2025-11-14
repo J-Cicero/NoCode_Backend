@@ -1,7 +1,4 @@
-"""
-Service de gestion de la facturation et des abonnements.
-Gère les souscriptions, paiements, factures et logique métier de facturation.
-"""
+
 import logging
 from typing import Dict, List, Optional
 from decimal import Decimal
@@ -15,10 +12,8 @@ from ..models import (
     TypeAbonnement, Abonnement, Organization, OrganizationMember
 )
 
-
 logger = logging.getLogger(__name__)
 User = get_user_model()
-
 
 class BillingService(BaseService):
     
@@ -143,7 +138,6 @@ class BillingService(BaseService):
                     status='ACTIF',  # Actif dès la création (paiement géré en externe)
                 )
                 
-                # Publier l'événement
                 EventBus.publish(FoundationEvents.SUBSCRIPTION_ACTIVATED, {
                     'subscription_id': subscription.id,
                     'organization_id': organization.id,
@@ -161,7 +155,6 @@ class BillingService(BaseService):
                     }
                 }
                 
-                # Publier l'événement de création
                 EventBus.publish(FoundationEvents.SUBSCRIPTION_CREATED, {
                     'subscription_id': subscription.id,
                     'organization_id': organization.id,
@@ -185,29 +178,22 @@ class BillingService(BaseService):
             return ServiceResult.error_result("Erreur lors de la souscription")
     
     def cancel_subscription(self, subscription_id: int, reason: str = '') -> ServiceResult:
-        """
-        Annule un abonnement.
-        """
+
         try:
-            # Récupérer l'abonnement
             try:
                 subscription = Abonnement.objects.get(id=subscription_id)
             except Abonnement.DoesNotExist:
                 return ServiceResult.error_result("Abonnement introuvable")
             
-            # Vérifier les permissions
             self.organization = subscription.organization
             self.validate_permissions(['manage_billing'])
             
-            # Vérifier si l'abonnement peut être annulé
             if subscription.status not in ['ACTIF', 'EN_ATTENTE']:
                 return ServiceResult.error_result("Cet abonnement ne peut pas être annulé")
             
             with transaction.atomic():
-                # Annuler l'abonnement
                 subscription.cancel(reason=reason, cancelled_by=self.user)
                 
-                # Publier l'événement
                 EventBus.publish(FoundationEvents.SUBSCRIPTION_CANCELLED, {
                     'subscription_id': subscription.id,
                     'organization_id': subscription.organization.id,

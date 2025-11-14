@@ -1,7 +1,4 @@
-"""
-Decorators pour le module Foundation.
-Fournit des decorators utiles pour les vues et fonctions.
-"""
+
 import time
 import functools
 from django.http import JsonResponse
@@ -12,9 +9,7 @@ from ..services.event_bus import EventBus
 
 
 def require_organization_member(view_func):
-    """
-    Decorator qui vérifie que l'utilisateur est membre d'une organisation.
-    """
+
     @functools.wraps(view_func)
     def wrapper(request, *args, **kwargs):
         if not request.user.is_authenticated:

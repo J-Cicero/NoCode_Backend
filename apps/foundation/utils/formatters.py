@@ -1,20 +1,14 @@
-"""
-Formatters pour le module Foundation.
-Fournit des fonctions de formatage pour différents types de données.
-"""
+
 import re
 from datetime import datetime
 from django.utils import timezone
 
 
 def format_phone_number(phone, format_type='international'):
-    """
-    Formate un numéro de téléphone français.
-    """
+
     if not phone:
         return ''
     
-    # Nettoyer le numéro
     clean_phone = re.sub(r'[^\d+]', '', str(phone))
     
     # Normaliser au format français

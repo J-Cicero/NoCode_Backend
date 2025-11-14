@@ -1,33 +1,20 @@
-"""
-Tâches Celery pour la gestion des organisations.
-"""
+
 import logging
 from celery import shared_task
-from django.utils import timezone
-from datetime import timedelta
-from ..models import Organization, OrganizationMember
+
+from ..models import Organization
 from ..services.organization_service import OrganizationService
 from ..services.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
-
-# TÂCHE DÉSACTIVÉE - Modèle OrganizationInvitation supprimé
-# @shared_task
-# def cleanup_expired_invitations():
-#     pass
-
-
 @shared_task(bind=True, max_retries=3)
 def sync_organization_data(self, organization_id):
-    """
-    Synchronise les données d'une organisation.
-    """
+
     try:
         organization = Organization.objects.get(id=organization_id)
         organization_service = OrganizationService()
         
-        # Synchroniser avec les services externes
         result = organization_service.sync_external_data(organization_id)
         
         if not result.success:
@@ -56,14 +43,10 @@ def sync_organization_data(self, organization_id):
 
 @shared_task(bind=True, max_retries=3)
 def generate_organization_report(self, organization_id, report_type='monthly'):
-    """
-    Génère un rapport pour une organisation.
-    """
     try:
         organization = Organization.objects.get(id=organization_id)
         organization_service = OrganizationService()
         
-        # Générer le rapport
         result = organization_service.generate_report(organization_id, report_type)
         
         if not result.success:

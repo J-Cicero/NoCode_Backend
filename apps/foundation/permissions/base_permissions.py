@@ -20,7 +20,6 @@ class IsOrganizationMember(permissions.BasePermission):
         if not request.user.is_authenticated:
             return False
         
-        # Récupérer l'ID de l'organisation depuis l'URL
         org_id = view.kwargs.get('org_id')
         if not org_id:
             return False
@@ -97,7 +96,6 @@ class CanManageBilling(permissions.BasePermission):
         try:
             organization = Organization.objects.get(id=org_id)
             
-            # Seuls les propriétaires et admins peuvent gérer la facturation
             if organization.owner == request.user:
                 return True
             

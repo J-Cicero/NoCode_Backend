@@ -24,11 +24,9 @@ class CanManageBilling(permissions.BasePermission):
         try:
             organization = Organization.objects.get(id=org_id)
             
-            # Le propriétaire peut toujours gérer la facturation
             if organization.owner == request.user:
                 return True
-            
-            # Vérifier si l'utilisateur est admin
+
             try:
                 member = OrganizationMember.objects.get(
                     organization=organization,

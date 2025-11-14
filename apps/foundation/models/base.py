@@ -2,17 +2,12 @@
 from django.db import models
 import uuid
 
-
 class BaseModel(models.Model):
+    """Modèle de base pour toutes les entités avec UUID public"""
 
     id = models.BigAutoField(primary_key=True)
-    tracking_id = models.UUIDField(
-        default=uuid.uuid4, 
-        unique=True, 
-        editable=False,
-        verbose_name="ID de suivi",
-        help_text="Identifiant public unique pour les requêtes API"
-    )
+
+        
     created_by = models.ForeignKey(
         'foundation.User',
         on_delete=models.SET_NULL,
@@ -21,13 +16,10 @@ class BaseModel(models.Model):
         related_name='%(class)s_created',
         verbose_name="Créé par"
     )
+    
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Créé le"
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Modifié le"
     )
 
     class Meta:
@@ -48,13 +40,8 @@ class TimestampedModel(models.Model):
         ordering = ['-created_at']
 
 
-
-
 class UUIDModel(models.Model):
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     class Meta:
         abstract = True
-
-

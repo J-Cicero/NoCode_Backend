@@ -1,11 +1,11 @@
 
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Dict
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db.models import Q, Count
-from .base_service import BaseService, ServiceResult,  BusinessLogicException, PermissionException
+from .base_service import BaseService, ServiceResult, PermissionException
 from .event_bus import EventBus, FoundationEvents
 from ..models import Organization, OrganizationMember
 
@@ -79,7 +79,7 @@ class UserService(BaseService):
                 organizations_data.append({
                     'id': org.id,
                     'name': org.name,
-                    'slug': org.slug,
+                    'tracking_id': org.tracking_id,
                     'role': member.role,
                     'member_count': org.member_count,
                     'is_owner': org.owner == target_user,
@@ -124,12 +124,7 @@ class UserService(BaseService):
                 
                 if updated_fields:
                     target_user.save(update_fields=updated_fields)
-                
-                # Note: Les profils clients sont maintenant intégrés dans User
-                # Les champs nom, prenom, pays sont directement dans User
-                # Les organisations sont gérées via OrganizationService
-                
-                # Publier l'événement
+
                 EventBus.publish(FoundationEvents.USER_PROFILE_UPDATED, {
                     'user_id': target_user.id,
                     'updated_by': self.user.id,
@@ -455,7 +450,7 @@ class UserService(BaseService):
                 organizations_data.append({
                     'id': org.id,
                     'name': org.name,
-                    'slug': org.slug,
+                    'tracking_id': org.tracking_id,
                     'type': org.type,
                     'role': membership.role,
                     'joined_at': membership.joined_at.isoformat(),

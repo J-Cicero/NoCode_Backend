@@ -4,44 +4,35 @@ from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 from ..models import Organization, OrganizationMember
 
-
 logger = logging.getLogger(__name__)
-
 
 class TenantMiddleware(MiddlewareMixin):
 
-    
     def __init__(self, get_response):
         self.get_response = get_response
         super().__init__(get_response)
     
     def process_request(self, request):
 
-        # Ignorer les requêtes qui n'ont pas besoin de contexte tenant
         if self._should_skip_tenant(request):
             return None
         
-        # Ignorer si l'utilisateur n'est pas authentifié
         if not hasattr(request, 'user') or not request.user.is_authenticated:
             return None
         
         try:
-            # Déterminer l'organisation courante
             current_org = self._determine_current_organization(request)
             
             if current_org:
-                # Vérifier que l'utilisateur est membre de cette organisation
                 if not self._is_user_member(request.user, current_org):
                     logger.warning(f"Utilisateur {request.user.id} tente d'accéder à l'organisation {current_org.id} sans être membre")
                     return JsonResponse({
                         'error': 'Accès non autorisé à cette organisation'
                     }, status=403)
                 
-                # Injecter le contexte tenant
                 request.current_organization = current_org
                 request.tenant_id = current_org.id
                 
-                # Récupérer le rôle de l'utilisateur dans cette organisation
                 member = OrganizationMember.objects.get(
                     organization=current_org,
                     user=request.user,
@@ -50,11 +41,9 @@ class TenantMiddleware(MiddlewareMixin):
                 request.user_role = member.role
                 request.user_permissions_in_org = member.permissions or []
                 
-                # Vérifier l'abonnement de l'organisation
                 self._check_organization_subscription(request, current_org)
                 
             else:
-                # Aucune organisation spécifiée - utiliser l'organisation par défaut si applicable
                 default_org = self._get_default_organization(request.user)
                 if default_org:
                     request.current_organization = default_org
@@ -81,9 +70,7 @@ class TenantMiddleware(MiddlewareMixin):
         return None
     
     def _should_skip_tenant(self, request):
-        """
-        Détermine si le contexte tenant doit être ignoré pour cette requête.
-        """
+
         # Chemins qui n'ont pas besoin de contexte tenant
         skip_paths = [
             '/api/auth/',
@@ -100,7 +87,6 @@ class TenantMiddleware(MiddlewareMixin):
         
         path = request.path
         
-        # Vérifier les préfixes
         for skip_path in skip_paths:
             if path.startswith(skip_path):
                 return True
@@ -109,7 +95,6 @@ class TenantMiddleware(MiddlewareMixin):
     
     def _determine_current_organization(self, request):
 
-        # 1. Vérifier l'en-tête X-Organization-ID
         org_id = request.META.get('HTTP_X_ORGANIZATION_ID')
         if org_id:
             try:
@@ -117,7 +102,6 @@ class TenantMiddleware(MiddlewareMixin):
             except (ValueError, Organization.DoesNotExist):
                 pass
         
-        # 2. Vérifier les paramètres d'URL
         org_id = request.GET.get('org_id')
         if org_id:
             try:
@@ -125,7 +109,6 @@ class TenantMiddleware(MiddlewareMixin):
             except (ValueError, Organization.DoesNotExist):
                 pass
         
-        # 3. Vérifier les paramètres d'URL dans le path
         if '/organizations/' in request.path:
             path_parts = request.path.split('/')
             try:
@@ -136,7 +119,6 @@ class TenantMiddleware(MiddlewareMixin):
             except (ValueError, IndexError, Organization.DoesNotExist):
                 pass
         
-        # 4. Vérifier le paramètre org_id dans l'URL
         import re
         org_match = re.search(r'/org/(\d+)/', request.path)
         if org_match:
@@ -204,12 +186,10 @@ class TenantIsolationMiddleware(MiddlewareMixin):
     
     def process_request(self, request):
 
-        # Ignorer si pas de contexte tenant
         if not hasattr(request, 'current_organization'):
             return None
         
         try:
-            # Stocker l'organisation courante dans le thread local
             from threading import local
             if not hasattr(self, '_local'):
                 self._local = local()
@@ -240,8 +220,6 @@ class OrganizationSwitchMiddleware(MiddlewareMixin):
         super().__init__(get_response)
     
     def process_request(self, request):
-
-        # Vérifier si c'est une requête de changement d'organisation
         if request.path == '/api/organizations/switch/' and request.method == 'POST':
             return self._handle_organization_switch(request)
         

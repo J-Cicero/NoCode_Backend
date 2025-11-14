@@ -1,7 +1,4 @@
-"""
-Vues pour l'authentification et la gestion des comptes.
-Expose les APIs pour login, register, password reset, etc.
-"""
+
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -12,18 +9,15 @@ from django.contrib.auth import get_user_model
 from ..services.auth_service import AuthService
 from ..services.user_service import UserService
 from ..serializers import (
-     ClientCreateSerializer,
+     UserCreateSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
     PasswordChangeSerializer, EmailVerificationSerializer
 )
 
-
 User = get_user_model()
 
-
 class LoginView(TokenObtainPairView):
-    """Vue pour la connexion avec JWT."""
-    
+
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         password = request.data.get('password')
@@ -32,8 +26,7 @@ class LoginView(TokenObtainPairView):
             return Response({
                 'error': 'Email et mot de passe requis'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Utiliser AuthService pour la connexion
+
         auth_service = AuthService()
         result = auth_service.login(email, password)
         
@@ -46,15 +39,13 @@ class LoginView(TokenObtainPairView):
 
 
 class RegisterClientView(APIView):
-    """Vue pour l'inscription des clients (personnes physiques)."""
-    
+
     permission_classes = [AllowAny]
     
     def post(self, request):
-        serializer = ClientCreateSerializer(data=request.data)
+        serializer = UserCreateSerializer(data=request.data)
         
         if serializer.is_valid():
-            # Utiliser AuthService pour l'inscription
             auth_service = AuthService()
             result = auth_service.register_client(serializer.validated_data)
             
@@ -71,8 +62,7 @@ class RegisterClientView(APIView):
 
 
 class LogoutView(APIView):
-    """Vue pour la déconnexion."""
-    
+
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
@@ -82,8 +72,6 @@ class LogoutView(APIView):
             return Response({
                 'error': 'Refresh token requis'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Utiliser AuthService pour la déconnexion
         auth_service = AuthService(user=request.user)
         result = auth_service.logout(refresh_token)
         
@@ -94,10 +82,7 @@ class LogoutView(APIView):
                 'error': result.error_message
             }, status=status.HTTP_400_BAD_REQUEST)
 
-
 class RefreshTokenView(TokenRefreshView):
-    """Vue pour le renouvellement des tokens JWT."""
-    
     def post(self, request, *args, **kwargs):
         refresh_token = request.data.get('refresh')
         
@@ -106,7 +91,6 @@ class RefreshTokenView(TokenRefreshView):
                 'error': 'Refresh token requis'
             }, status=status.HTTP_400_BAD_REQUEST)
         
-        # Utiliser AuthService pour le renouvellement
         auth_service = AuthService()
         result = auth_service.refresh_token(refresh_token)
         

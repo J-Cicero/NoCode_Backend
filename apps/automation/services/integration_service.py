@@ -1,6 +1,4 @@
-"""
-Service de gestion des intégrations externes
-"""
+
 import logging
 import requests
 from typing import Dict, Any, Optional
@@ -37,17 +35,7 @@ class IntegrationService:
         params: Dict[str, Any],
         context: Dict[str, Any] = None
     ) -> Dict[str, Any]:
-        """
-        Exécute une intégration.
-        
-        Args:
-            integration: L'intégration à exécuter
-            params: Paramètres pour l'intégration
-            context: Contexte d'exécution
-            
-        Returns:
-            Le résultat de l'intégration
-        """
+
         context = context or {}
         
         # Vérifier le rate limiting
@@ -111,36 +99,7 @@ class IntegrationService:
         # Sinon, SMTP classique
         return self._smtp_send(config, credentials, params)
     
-    def _execute_stripe(
-        self,
-        integration: Integration,
-        params: Dict[str, Any],
-        context: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Exécute une intégration Stripe."""
-        import stripe
-        
-        credentials = self._get_credentials(integration)
-        stripe.api_key = credentials.get('api_key')
-        
-        action = params.get('action')
-        
-        if action == 'create_customer':
-            customer = stripe.Customer.create(
-                email=params.get('email'),
-                name=params.get('name'),
-            )
-            return {'success': True, 'customer_id': customer.id}
-        
-        elif action == 'create_subscription':
-            subscription = stripe.Subscription.create(
-                customer=params.get('customer_id'),
-                items=[{'price': params.get('price_id')}],
-            )
-            return {'success': True, 'subscription_id': subscription.id}
-        
-        # Autres actions Stripe...
-        return {'success': True}
+
     
     def _execute_webhook(
         self,
@@ -253,34 +212,7 @@ class IntegrationService:
             logger.error(f"Erreur API: {e}", exc_info=True)
             raise
     
-    def _sendgrid_send(
-        self,
-        credentials: Dict[str, Any],
-        params: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Envoie un email via SendGrid."""
-        import sendgrid
-        from sendgrid.helpers.mail import Mail
-        
-        sg = sendgrid.SendGridAPIClient(api_key=credentials.get('api_key'))
-        
-        message = Mail(
-            from_email=params.get('from_email'),
-            to_emails=params.get('to'),
-            subject=params.get('subject'),
-            html_content=params.get('html_message') or params.get('message')
-        )
-        
-        try:
-            response = sg.send(message)
-            return {
-                'success': True,
-                'status_code': response.status_code,
-            }
-        except Exception as e:
-            logger.error(f"Erreur SendGrid: {e}", exc_info=True)
-            raise
-    
+
     def _smtp_send(
         self,
         config: Dict[str, Any],
@@ -366,12 +298,7 @@ class IntegrationService:
         return credential
     
     def test_integration(self, integration: Integration) -> tuple[bool, str]:
-        """
-        Teste une intégration.
-        
-        Returns:
-            (success, message)
-        """
+
         try:
             # Test basique selon le type
             if integration.integration_type == 'email':

@@ -19,14 +19,12 @@ from .mixins import (
 # Système d'utilisateurs
 from .user import (
     User,
-    Client,
 )
 
 # Système d'organisations (multi-tenancy)
 from .organization import (
     Organization,
     OrganizationMember,
-    OrganizationSettings,
 )
 
 # Système d'abonnements
@@ -53,12 +51,10 @@ __all__ = [
     
     # Utilisateurs
     'User',
-    'Client',
     
     # Organisations
     'Organization',
     'OrganizationMember',
-    'OrganizationSettings',
     
     # Abonnements
     'TypeAbonnement',

@@ -5,6 +5,7 @@ Convertit les modèles en formats JSON pour les APIs REST.
 """
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
 from .models import UserActivity, SystemMetric, ApplicationMetric, UserMetric, PerformanceMetric
 
 class ContentTypeSerializer(serializers.ModelSerializer):

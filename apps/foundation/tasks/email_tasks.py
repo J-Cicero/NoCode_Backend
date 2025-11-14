@@ -1,6 +1,4 @@
-"""
-Tâches Celery pour l'envoi d'emails asynchrones.
-"""
+
 import logging
 from celery import shared_task
 from django.core.mail import send_mail
@@ -16,9 +14,7 @@ User = get_user_model()
 
 @shared_task(bind=True, max_retries=3)
 def send_welcome_email(self, user_id):
-    """
-    Envoie un email de bienvenue à un nouvel utilisateur.
-    """
+
     try:
         user = User.objects.get(id=user_id)
         

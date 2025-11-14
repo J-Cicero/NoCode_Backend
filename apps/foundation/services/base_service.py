@@ -1,7 +1,4 @@
-"""
-Service de base pour tous les services métier de la plateforme.
-Fournit une structure commune et des fonctionnalités partagées.
-"""
+
 import logging
 from typing import Any, Dict, List, Optional, Union
 from django.utils import timezone

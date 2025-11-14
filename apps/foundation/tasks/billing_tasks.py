@@ -1,11 +1,11 @@
 """
-Tâches Celery pour la gestion de la facturation et des abonnements.
+Tâches Celery pour la gestion   des abonnements.
 """
 import logging
 from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta
-from ..models import Abonnement, Paiement, Facture, Organization
+from ..models import Abonnement, Organization
 from ..services.billing_service import BillingService
 from ..services.event_bus import EventBus
 from .email_tasks import send_billing_notification
@@ -18,9 +18,7 @@ logger = logging.getLogger(__name__)
 
 @shared_task(bind=True, max_retries=3)
 def process_failed_payment(self, payment_id):
-    """
-    Traite un paiement échoué.
-    """
+
     try:
         paiement = Paiement.objects.get(id=payment_id)
         

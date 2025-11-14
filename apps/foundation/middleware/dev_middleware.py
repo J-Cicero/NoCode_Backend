@@ -2,20 +2,17 @@
 from django.http import JsonResponse
 from django.conf import settings
 
-
 class DevCORSMiddleware:
     
     def __init__(self, get_response):
         self.get_response = get_response
     
     def __call__(self, request):
-        # Traiter les requêtes OPTIONS (preflight)
         if request.method == 'OPTIONS':
             response = JsonResponse({'status': 'ok'})
         else:
             response = self.get_response(request)
         
-        # Ajouter les headers CORS permissifs en développement
         if settings.DEBUG:
             response['Access-Control-Allow-Origin'] = '*'
             response['Access-Control-Allow-Methods'] = 'GET, POST, PUT, PATCH, DELETE, OPTIONS'

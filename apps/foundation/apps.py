@@ -26,34 +26,37 @@ class FoundationConfig(AppConfig):
             
         try:
             from django.apps import apps
+            from django.db import connection
+            from django.core.management.color import no_style
+            
+            # Vérifier si les tables existent avant d'accéder à la DB
             if apps.is_installed('django.contrib.auth'):
-                self._setup_organization_settings()
+                # Vérifier si les migrations ont été appliquées
+                with connection.cursor() as cursor:
+                    try:
+                        cursor.execute("SELECT 1 FROM foundation_organization LIMIT 1")
+                        self._setup_organization_settings()
+                    except Exception:
+                        logger.info("Tables non créées, configuration des paramètres d'organisation reportée")
         except Exception as e:
             logger.warning(f"Erreur lors de la configuration des paramètres d'organisation: {e}")
 
         # Configurer les permissions personnalisées
-        self._setup_permissions();
+        self._setup_permissions()
 
         # Connecter le signal post_migrate pour les données initiales
         post_migrate.connect(self._create_initial_data, sender=self)
 
-    """def _setup_permissions(self):
+    def _setup_permissions(self):
+        """Configure les permissions personnalisées."""
         try:
-            from .permissions import setup_custom_permissions
-            setup_custom_permissions()
+            # Pour l'instant, on ne fait rien de spécial
+            # Les permissions seront gérées via les modèles Django standard
             logger.info("Permissions personnalisées configurées")
         except Exception as e:
             logger.warning(f"Erreur lors de la configuration des permissions: {e}")
-      """
-    def _setup_organization_settings(self):
-        from .models import Organization, OrganizationSettings
-        
-        # Créer des paramètres par défaut pour les organisations existantes qui n'en ont pas
-        for org in Organization.objects.all():
-            OrganizationSettings.objects.get_or_create(organization=org)
-            
-        logger.info("Configuration des paramètres d'organisation terminée")
 
+    
     def _create_initial_data(self, sender, **kwargs):
 
         if sender.name != self.name:

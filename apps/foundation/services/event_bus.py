@@ -1,7 +1,4 @@
-"""
-EventBus pour la communication inter-modules.
-Permet aux modules de publier et écouter des événements de manière découplée.
-"""
+
 import logging
 from typing import Any, Dict, List, Callable, Optional
 from django.utils import timezone
@@ -12,7 +9,6 @@ from django.contrib.auth import get_user_model
 from threading import Lock
 import json
 import uuid
-
 
 User = get_user_model()
 logger = logging.getLogger(__name__)

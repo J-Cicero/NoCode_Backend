@@ -1,7 +1,4 @@
-"""
-Utilitaires de sécurité pour le module Foundation.
-Fournit des fonctions de chiffrement, hachage et validation sécurisée.
-"""
+
 import hashlib
 import hmac
 import secrets
@@ -13,9 +10,7 @@ from django.conf import settings
 
 
 def hash_sensitive_data(data, salt=None):
-    """
-    Hache des données sensibles avec un salt.
-    """
+
     if not data:
         return None
     
@@ -67,11 +62,8 @@ def verify_hashed_data(data, hashed_data):
     except Exception:
         return False
 
-
 def encrypt_data(data, key=None):
-    """
-    Chiffre des données avec Fernet (AES 128).
-    """
+
     if not data:
         return None
     
@@ -101,9 +93,6 @@ def encrypt_data(data, key=None):
 
 
 def decrypt_data(encrypted_data, key=None):
-    """
-    Déchiffre des données chiffrées avec Fernet.
-    """
     if not encrypted_data:
         return None
     
@@ -138,24 +127,17 @@ def decrypt_data(encrypted_data, key=None):
 
 
 def generate_secure_token(length=32):
-    """
-    Génère un token sécurisé.
-    """
     return secrets.token_urlsafe(length)
 
 
 def generate_api_key(prefix='sk_', length=32):
-    """
-    Génère une clé API sécurisée.
-    """
+
     random_part = secrets.token_urlsafe(length)
     return f"{prefix}{random_part}"
 
 
 def validate_signature(data, signature, secret_key):
-    """
-    Valide une signature HMAC.
-    """
+
     if not data or not signature or not secret_key:
         return False
     
@@ -180,9 +162,7 @@ def validate_signature(data, signature, secret_key):
 
 
 def create_signature(data, secret_key):
-    """
-    Crée une signature HMAC pour des données.
-    """
+
     if isinstance(data, str):
         data = data.encode('utf-8')
     if isinstance(secret_key, str):
@@ -196,9 +176,7 @@ def create_signature(data, secret_key):
 
 
 def sanitize_input(input_string, max_length=1000):
-    """
-    Nettoie et sécurise une entrée utilisateur.
-    """
+
     if not input_string:
         return ''
     
@@ -212,16 +190,12 @@ def sanitize_input(input_string, max_length=1000):
 
 
 def generate_csrf_token():
-    """
-    Génère un token CSRF sécurisé.
-    """
+
     return secrets.token_hex(32)
 
 
 def constant_time_compare(a, b):
-    """
-    Compare deux chaînes en temps constant pour éviter les attaques de timing.
-    """
+
     if not isinstance(a, str) or not isinstance(b, str):
         return False
     
@@ -229,9 +203,6 @@ def constant_time_compare(a, b):
 
 
 def hash_password_simple(password, salt=None):
-    """
-    Hache un mot de passe de manière simple (pour les cas où Django n'est pas disponible).
-    """
     if salt is None:
         salt = secrets.token_hex(16)
     
@@ -244,9 +215,7 @@ def hash_password_simple(password, salt=None):
 
 
 def verify_password_simple(password, hashed_password):
-    """
-    Vérifie un mot de passe contre son hash simple.
-    """
+
     try:
         salt, hash_value = hashed_password.split(':', 1)
         
@@ -261,16 +230,12 @@ def verify_password_simple(password, hashed_password):
 
 
 def generate_otp(length=6):
-    """
-    Génère un code OTP numérique.
-    """
+
     return ''.join([str(secrets.randbelow(10)) for _ in range(length)])
 
 
 def mask_email(email):
-    """
-    Masque une adresse email pour l'affichage.
-    """
+
     if not email or '@' not in email:
         return email
     
@@ -285,9 +250,7 @@ def mask_email(email):
 
 
 def mask_phone(phone):
-    """
-    Masque un numéro de téléphone pour l'affichage.
-    """
+
     if not phone:
         return phone
     

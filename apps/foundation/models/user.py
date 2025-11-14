@@ -1,33 +1,39 @@
-
 from django.contrib.auth.models import AbstractUser
-
-from django.core.validators import RegexValidator
 from django.db import models
+from django.core.validators import RegexValidator
 import uuid
+from .base import BaseModel
 
-
-class User(AbstractUser):
+class User(BaseModel, AbstractUser):
+    """Utilisateur du système (CLIENT ou ADMIN)"""
     username = None
     first_name = None
     last_name = None
+    
+    ROLE_CHOICES = [
+        ('CLIENT', 'Client'),
+        ('ADMIN', 'Administrateur'),
+    ]
     
     tracking_id = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
-        verbose_name="ID de suivi",
-        help_text="Identifiant public unique pour les requêtes API"
+        db_index=True,
+        verbose_name="Tracking ID",
+        help_text="Identifiant public unique utilisé dans les URLs et APIs"
+    )
+    
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='CLIENT',
+        verbose_name="Rôle"
     )
     
     email = models.EmailField(
         unique=True,
         verbose_name="Adresse email",
-        validators=[
-            RegexValidator(
-                regex=r'^[a-zA-Z0-9._%+-]+@gmail\.com$',
-                message="Seules les adresses Gmail sont autorisées."
-            )
-        ],
         help_text="L'adresse email est utilisée comme identifiant de connexion."
     )
     
@@ -41,26 +47,19 @@ class User(AbstractUser):
         verbose_name="Prénom"
     )
     
-    pays = models.CharField(
-        max_length=100,
-        blank=False,
-        null=True,
-        verbose_name="Pays"
-    )
-
-    telephone = models.CharField(
-        max_length=10,
+    numero_telephone = models.CharField(
+        max_length=20,
         validators=[
             RegexValidator(
                 regex=r'^\+?\d{8,15}$',
-            message="Le numéro de téléphone doit contenir exactement 10 chiffres.",
+                message="Le numéro de téléphone doit contenir entre 8 et 15 chiffres.",
                 code='invalid_phone'
             )
         ],
         verbose_name="Numéro de téléphone",
         unique=True
     )
-
+    
     pays = models.CharField(
         max_length=100,
         blank=True,
@@ -75,50 +74,31 @@ class User(AbstractUser):
         verbose_name = "Utilisateur"
         verbose_name_plural = "Utilisateurs"
         db_table = 'foundation_user'
+        indexes = [
+            models.Index(fields=['tracking_id']),
+            models.Index(fields=['email']),
+        ]
     
     def __str__(self):
         return self.email
     
     @property
     def full_name(self):
-        return f"{self.prenom}' ' {self.nom}"
+        return f"{self.prenom} {self.nom}"
     
     @property
-    def user_type(self):
-        if hasattr(self, 'client') and self.client:
-            return 'CLIENT'
-        return 'UNKNOWN'
+    def is_admin(self):
+        """Vérifie si l'utilisateur est admin"""
+        return self.role == 'ADMIN' or self.is_superuser
+    
+    @property
+    def is_client(self):
+        """Vérifie si l'utilisateur est client"""
+        return self.role == 'CLIENT'
     
     def get_display_name(self):
         return self.full_name
     
-    def can_access_organization_features(self):
-        return hasattr(self, 'organization_members') and self.organization_members.exists()
-
-
-class Client(models.Model):
-
-    user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
-        primary_key=True,
-        related_name='client'
-    )
-    
-    class Meta:
-        verbose_name = "Client"
-        verbose_name_plural = "Clients"
-        db_table = 'foundation_client'
-    
-    def __str__(self):
-        return f"{self.user.prenom} {self.user.nom}"
-    
-    @property
-    def nom_complet(self):
-        return f"{self.user.prenom} {self.user.nom}"
-    
-    @property
-    def nom_affichage(self):
-        return self.nom_complet
-
-
+    def get_organizations(self):
+        """Retourne les organisations dont l'utilisateur est membre"""
+        return self.organization_memberships.filter(status='ACTIVE').select_related('organization')

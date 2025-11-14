@@ -1,12 +1,11 @@
 """
 Serializers pour les modèles utilisateur du module Foundation.
-Gère la sérialisation des User et Client pour les APIs.
+Gère la sérialisation des User pour les APIs.
 """
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
-from ..models import Client
 
 
 User = get_user_model()
@@ -96,102 +95,24 @@ class PasswordChangeSerializer(serializers.Serializer):
         return value
 
 
-class ClientSerializer(serializers.ModelSerializer):
-    """Serializer pour les clients (personnes physiques)."""
-    
-    user = UserBaseSerializer(read_only=True)
-    age = serializers.IntegerField(read_only=True)
-    
-    class Meta:
-        model = Client
-        fields = [
-            'id', 'user', 'date_naissance', 'age', 'genre', 'profession',
-            'adresse_complete', 'ville', 'code_postal', 'pays',
-            'situation_familiale', 'nombre_enfants', 'revenus_annuels',
-            'created_at', 'updated_at'
-        ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'age']
 
 
-class ClientCreateSerializer(serializers.ModelSerializer):
-    """Serializer pour la création de clients."""
-    
-    # Données utilisateur
-    email = serializers.EmailField(write_only=True)
-    password = serializers.CharField(write_only=True, validators=[validate_password])
-    password_confirm = serializers.CharField(write_only=True)
-    first_name = serializers.CharField(write_only=True)
-    last_name = serializers.CharField(write_only=True)
-    numero_telephone = serializers.CharField(write_only=True, required=False)
-    langue_preferee = serializers.CharField(write_only=True, required=False, default='fr')
-    
-    class Meta:
-        model = Client
-        fields = [
-            # Champs utilisateur
-            'email', 'password', 'password_confirm', 'nom', 'prenom', 'pays',
-            # Champs client
-            'date_naissance', 'genre', 'profession', 'adresse_complete',
-            'ville', 'code_postal', 'situation_familiale',
-            'nombre_enfants', 'revenus_annuels'
-        ]
-    
-    def validate(self, attrs):
-        """Validation des données de création."""
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({
-                'password_confirm': 'Les mots de passe ne correspondent pas.'
-            })
-        
-        attrs.pop('password_confirm')
-        return attrs
-    
-    def create(self, validated_data):
-        """Création d'un client avec son utilisateur associé."""
-        # Séparer les données utilisateur et client
-        user_data = {
-            'email': validated_data.pop('email'),
-            'password': validated_data.pop('password'),
-            'nom': validated_data.pop('nom'),
-            'prenom': validated_data.pop('prenom'),
-            'pays': validated_data.pop('pays'),
-            'is_active': True,  # Client actif dès la création
-        }
-        
-        # Créer l'utilisateur
-        password = user_data.pop('password')
-        user = User.objects.create_user(password=password, **user_data)
-        
-        # Créer le client
-        client = Client.objects.create(user=user, **validated_data)
-        return client
 
 
-class ClientUpdateSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Client
-        fields = [
-            'date_naissance', 'genre', 'profession', 'adresse_complete',
-            'ville', 'code_postal', 'situation_familiale',
-            'nombre_enfants', 'revenus_annuels'
-        ]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
     """Serializer pour le profil complet d'un utilisateur."""
     
-    client_profile = ClientSerializer(source='client', read_only=True)
-    
     class Meta:
         model = User
         fields = [
-            'id', 'email', 'first_name', 'last_name', 'full_name',
-            'user_type', 'is_active', 'date_joined', 'last_login',
-            'client_profile'
+            'id', 'tracking_id', 'email', 'nom', 'prenom', 'full_name',
+            'role', 'numero_telephone', 'pays', 'is_active', 
+            'date_joined', 'last_login'
         ]
         read_only_fields = [
-            'id', 'date_joined', 'last_login', 'full_name'
+            'id', 'tracking_id', 'date_joined', 'last_login', 'full_name'
         ]
 
 

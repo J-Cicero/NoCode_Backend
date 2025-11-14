@@ -1,7 +1,4 @@
-"""
-Serializers pour les modèles de facturation du module Foundation.
-Gère la sérialisation des TypeAbonnement, Abonnement, Paiement, Facture, etc.
-"""
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -17,8 +14,7 @@ User = get_user_model()
 
 
 class TypeAbonnementSerializer(serializers.ModelSerializer):
-    """Serializer pour les types d'abonnement."""
-    
+
     tarif_mensuel_equivalent = serializers.DecimalField(
         max_digits=10, decimal_places=2, read_only=True
     )
@@ -41,7 +37,6 @@ class TypeAbonnementSerializer(serializers.ModelSerializer):
         ]
     
     def get_can_subscribe(self, obj):
-        """Vérifie si l'utilisateur peut souscrire à ce plan."""
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
             return True  # Pour les utilisateurs non connectés

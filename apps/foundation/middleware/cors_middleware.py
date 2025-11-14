@@ -4,16 +4,13 @@ from django.http import HttpResponse
 from django.utils.deprecation import MiddlewareMixin
 from django.conf import settings
 
-
 logger = logging.getLogger(__name__)
-
 
 class CORSMiddleware(MiddlewareMixin):
     
     def __init__(self, get_response):
         self.get_response = get_response
-        
-        # Configuration CORS par défaut
+
         self.allowed_origins = getattr(settings, 'CORS_ALLOWED_ORIGINS', [
             'http://localhost:3000',
             'http://localhost:8080',
@@ -45,7 +42,6 @@ class CORSMiddleware(MiddlewareMixin):
     def process_request(self, request):
         origin = request.META.get('HTTP_ORIGIN')
         
-        # Gérer les requêtes preflight OPTIONS
         if request.method == 'OPTIONS':
             return self._handle_preflight_request(request, origin)
         
@@ -62,7 +58,6 @@ class CORSMiddleware(MiddlewareMixin):
             if self.allow_credentials:
                 response['Access-Control-Allow-Credentials'] = 'true'
             
-            # En-têtes exposés (pour que le client puisse les lire)
             exposed_headers = [
                 'Content-Length',
                 'Content-Type',
@@ -71,7 +66,6 @@ class CORSMiddleware(MiddlewareMixin):
             ]
             response['Access-Control-Expose-Headers'] = ', '.join(exposed_headers)
             
-            # Vary header pour le cache
             vary_header = response.get('Vary', '')
             if 'Origin' not in vary_header:
                 response['Vary'] = f"{vary_header}, Origin".strip(', ')
@@ -83,12 +77,10 @@ class CORSMiddleware(MiddlewareMixin):
         if not origin or not self._is_origin_allowed(origin):
             return HttpResponse(status=403)
         
-        # Vérifier la méthode demandée
         requested_method = request.META.get('HTTP_ACCESS_CONTROL_REQUEST_METHOD')
         if requested_method and requested_method not in self.allowed_methods:
             return HttpResponse(status=405)
         
-        # Vérifier les en-têtes demandés
         requested_headers = request.META.get('HTTP_ACCESS_CONTROL_REQUEST_HEADERS', '')
         if requested_headers:
             requested_headers_list = [h.strip().lower() for h in requested_headers.split(',')]
@@ -98,7 +90,6 @@ class CORSMiddleware(MiddlewareMixin):
                 if header not in allowed_headers_lower:
                     return HttpResponse(status=400)
         
-        # Créer la réponse preflight
         response = HttpResponse()
         response['Access-Control-Allow-Origin'] = origin
         response['Access-Control-Allow-Methods'] = ', '.join(self.allowed_methods)
@@ -114,14 +105,11 @@ class CORSMiddleware(MiddlewareMixin):
         if not origin:
             return False
         
-        # Vérifier les origines exactes
         if origin in self.allowed_origins:
             return True
         
-        # Vérifier les patterns avec wildcards
         for allowed_origin in self.allowed_origins:
             if '*' in allowed_origin:
-                # Convertir le pattern en regex simple
                 pattern = allowed_origin.replace('*', '.*')
                 import re
                 if re.match(f'^{pattern}$', origin):

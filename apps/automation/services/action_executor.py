@@ -1,6 +1,4 @@
-"""
-Exécuteur d'actions pour les workflows
-"""
+
 import logging
 import json
 import requests
@@ -15,10 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class ActionExecutor:
-    """
-    Exécute les différentes actions définies dans les workflows.
-    """
-    
     def __init__(self):
         self.integration_service = IntegrationService()
     
@@ -29,21 +23,9 @@ class ActionExecutor:
         integration: Optional[Integration] = None,
         context: Dict[str, Any] = None
     ) -> Any:
-        """
-        Exécute une action selon son type.
-        
-        Args:
-            action_type: Type d'action à exécuter
-            params: Paramètres de l'action
-            integration: Intégration à utiliser (si applicable)
-            context: Contexte d'exécution
-            
-        Returns:
-            Le résultat de l'action
-        """
+
         context = context or {}
         
-        # Mapper les types d'actions aux méthodes
         action_map = {
             'validate_data': self._validate_data,
             'database_save': self._database_save,
@@ -64,8 +46,6 @@ class ActionExecutor:
             raise ValueError(f"Type d'action inconnu: {action_type}")
         
         logger.info(f"Exécution de l'action: {action_type}")
-        
-        # Exécuter l'action
         result = action_func(params, integration, context)
         
         return result
@@ -76,9 +56,6 @@ class ActionExecutor:
         integration: Optional[Integration],
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Valide des données selon un schéma.
-        """
         from jsonschema import validate, ValidationError
         
         data = params.get('data', {})
@@ -111,9 +88,7 @@ class ActionExecutor:
         integration: Optional[Integration],
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Sauvegarde des données dans une table.
-        """
+
         table_name = params.get('table')
         data = params.get('data', {})
         
@@ -121,7 +96,6 @@ class ActionExecutor:
             raise ValueError("Le paramètre 'table' est requis")
         
         try:
-            # Construire la requête d'insertion
             columns = ', '.join(data.keys())
             placeholders = ', '.join(['%s'] * len(data))
             values = list(data.values())
@@ -150,9 +124,6 @@ class ActionExecutor:
         integration: Optional[Integration],
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Exécute une requête sur la base de données.
-        """
         query = params.get('query')
         query_params = params.get('params', [])
         
@@ -190,23 +161,18 @@ class ActionExecutor:
         integration: Optional[Integration],
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Appelle une intégration externe.
-        """
         if not integration:
             raise ValueError("Une intégration est requise pour cette action")
         
         return self.integration_service.execute(integration, params, context)
-    
+
+
     def _send_email(
         self,
         params: Dict[str, Any],
         integration: Optional[Integration],
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Envoie un email.
-        """
         to = params.get('to')
         subject = params.get('subject', 'Notification')
         message = params.get('message', '')
@@ -217,13 +183,11 @@ class ActionExecutor:
             raise ValueError("Le paramètre 'to' est requis")
         
         try:
-            # Si on a une intégration email, l'utiliser
             if integration and integration.integration_type == 'email':
                 return self.integration_service.send_email_via_integration(
                     integration, to, subject, message, html_message
                 )
-            
-            # Sinon, utiliser le système Django par défaut
+
             send_mail(
                 subject=subject,
                 message=message,
@@ -250,9 +214,6 @@ class ActionExecutor:
         integration: Optional[Integration],
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Envoie un webhook HTTP.
-        """
         url = params.get('url')
         method = params.get('method', 'POST').upper()
         headers = params.get('headers', {})
@@ -263,11 +224,9 @@ class ActionExecutor:
             raise ValueError("Le paramètre 'url' est requis")
         
         try:
-            # Ajouter les headers par défaut
             if 'Content-Type' not in headers:
                 headers['Content-Type'] = 'application/json'
-            
-            # Faire la requête
+
             if method == 'GET':
                 response = requests.get(url, headers=headers, params=data, timeout=timeout)
             elif method == 'POST':
@@ -298,9 +257,6 @@ class ActionExecutor:
         integration: Optional[Integration],
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Transforme des données selon des règles.
-        """
         data = params.get('data', {})
         transformations = params.get('transformations', [])
         
@@ -310,19 +266,19 @@ class ActionExecutor:
             transform_type = transformation.get('type')
             
             if transform_type == 'map':
-                # Mapper des clés
+
                 mapping = transformation.get('mapping', {})
                 if isinstance(result, dict):
                     result = {mapping.get(k, k): v for k, v in result.items()}
             
             elif transform_type == 'filter':
-                # Filtrer des données
+
                 filter_func = transformation.get('filter')
                 if isinstance(result, list):
                     result = [item for item in result if self._eval_filter(item, filter_func)]
             
             elif transform_type == 'format':
-                # Formatter une valeur
+
                 field = transformation.get('field')
                 format_string = transformation.get('format')
                 if isinstance(result, dict) and field in result:
@@ -339,14 +295,11 @@ class ActionExecutor:
         integration: Optional[Integration],
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Exécute une logique conditionnelle.
-        """
+
         condition = params.get('condition', {})
         if_true = params.get('if_true', {})
         if_false = params.get('if_false', {})
-        
-        # Évaluer la condition (simplifié)
+
         condition_result = self._eval_condition(condition, context)
         
         return {
@@ -360,15 +313,11 @@ class ActionExecutor:
         integration: Optional[Integration],
         context: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Exécute une boucle sur un ensemble de données.
-        """
         items = params.get('items', [])
         action = params.get('action', {})
         
         results = []
         for item in items:
-            # Créer un contexte temporaire avec l'item
             temp_context = context.copy()
             temp_context['loop_item'] = item
             

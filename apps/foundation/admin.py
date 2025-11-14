@@ -4,7 +4,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils import timezone
 
 from .models import (
-    User, Client, Organization, OrganizationMember,
+    User, Organization, OrganizationMember,
     TypeAbonnement, Abonnement
 )
 
@@ -33,41 +33,6 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
-@admin.register(Client)
-class ClientAdmin(admin.ModelAdmin):
-
-    list_display = ('user', 'get_nom', 'get_prenom', 'get_pays', 'get_email', 'is_active')
-    list_filter = ('user__pays', 'user__is_active', 'user__date_joined')
-    search_fields = ('user__nom', 'user__prenom', 'user__email', 'user__pays')
-    raw_id_fields = ('user',)
-
-    def get_nom(self, obj):
-        return obj.user.nom
-    get_nom.short_description = 'Nom'
-    get_nom.admin_order_field = 'user__nom'
-
-    def get_prenom(self, obj):
-        return obj.user.prenom
-    get_prenom.short_description = 'Prénom'
-    get_prenom.admin_order_field = 'user__prenom'
-
-    def get_pays(self, obj):
-        return obj.user.pays
-    get_pays.short_description = 'Pays'
-    get_pays.admin_order_field = 'user__pays'
-
-    def get_email(self, obj):
-        return obj.user.email
-
-    get_email.short_description = 'Email'
-    get_email.admin_order_field = 'user__email'
-
-    def is_active(self, obj):
-        return obj.user.is_active
-
-    is_active.boolean = True
-    is_active.short_description = 'Actif'
-    is_active.admin_order_field = 'user__is_active'
 
 
 @admin.register(Organization)

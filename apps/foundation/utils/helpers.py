@@ -1,6 +1,4 @@
-"""
-Fonctions utilitaires et helpers pour le module Foundation.
-"""
+
 import os
 import re
 import uuid
@@ -13,23 +11,16 @@ from django.conf import settings
 
 
 def generate_unique_token(length=32):
-    """
-    Génère un token unique sécurisé.
-    """
+
     return secrets.token_urlsafe(length)
 
 
 def generate_uuid():
-    """
-    Génère un UUID4 unique.
-    """
+
     return str(uuid.uuid4())
 
 
 def format_currency(amount, currency='EUR'):
-    """
-    Formate un montant en devise.
-    """
     if not isinstance(amount, (int, float, Decimal)):
         return "0,00 €"
     
@@ -42,9 +33,7 @@ def format_currency(amount, currency='EUR'):
 
 
 def calculate_tax(amount_ht, tax_rate=0.20):
-    """
-    Calcule la TVA et le montant TTC.
-    """
+
     if not isinstance(amount_ht, (int, float, Decimal)):
         amount_ht = 0
     
@@ -63,16 +52,10 @@ def calculate_tax(amount_ht, tax_rate=0.20):
 
 
 def sanitize_filename(filename):
-    """
-    Nettoie un nom de fichier pour le rendre sûr.
-    """
     if not filename:
         return 'unnamed_file'
-    
-    # Supprimer les caractères dangereux
     filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
     
-    # Limiter la longueur
     name, ext = os.path.splitext(filename)
     if len(name) > 100:
         name = name[:100]
@@ -81,9 +64,7 @@ def sanitize_filename(filename):
 
 
 def extract_file_metadata(file):
-    """
-    Extrait les métadonnées d'un fichier.
-    """
+
     metadata = {
         'name': file.name if hasattr(file, 'name') else 'unknown',
         'size': file.size if hasattr(file, 'size') else 0,
@@ -106,9 +87,7 @@ def extract_file_metadata(file):
 
 
 def generate_invoice_number(organization_id=None, date=None):
-    """
-    Génère un numéro de facture unique.
-    """
+
     if date is None:
         date = django_timezone.now()
     

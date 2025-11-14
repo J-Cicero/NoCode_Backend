@@ -26,7 +26,6 @@ IsOrgAdmin = IsOrganizationAdmin
 from .organization_permissions import (
     OrganizationPermission,
     OrganizationMemberPermission,
-    CanManageOrganizationSettings,
     CanViewOrganizationStats,
     OrganizationContextPermission,
 )
@@ -45,22 +44,6 @@ from .billing_permissions import (
     SubscriptionLimitPermission,
 )
 
-# Verification permissions
-from .verification_permissions import (
-    CanStartVerification,
-    CanViewVerificationStatus,
-    CanUploadDocuments,
-    CanReviewDocuments,
-    CanCompleteVerification,
-    CanViewPendingVerifications,
-    CanViewVerificationStats,
-    IsVerifiedOrganization,
-    CanAccessVerificationData,
-    VerificationStatusPermission,
-)
-
-# Alias pour compatibilité
-IsVerifiedEntreprise = IsVerifiedOrganization
 
 # Exports pour faciliter les imports
 __all__ = [
@@ -87,7 +70,6 @@ __all__ = [
     # Organization permissions
     'OrganizationPermission',
     'OrganizationMemberPermission',
-    'CanManageOrganizationSettings',
     'CanViewOrganizationStats',
     'OrganizationContextPermission',
     
@@ -103,15 +85,5 @@ __all__ = [
     'CanViewBillingStats',
     'SubscriptionLimitPermission',
     
-    # Verification permissions
-    'CanStartVerification',
-    'CanViewVerificationStatus',
-    'CanUploadDocuments',
-    'CanReviewDocuments',
-    'CanCompleteVerification',
-    'CanViewPendingVerifications',
-    'CanViewVerificationStats',
-    'IsVerifiedOrganization',
-    'CanAccessVerificationData',
-    'VerificationStatusPermission',
+
 ]

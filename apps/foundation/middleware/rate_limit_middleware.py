@@ -11,12 +11,11 @@ from ..services.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
-
 class RateLimitMiddleware(MiddlewareMixin):
 
     def __init__(self, get_response):
         self.get_response = get_response
-        
+
         self.default_limits = getattr(settings, 'RATE_LIMIT_DEFAULTS', {
             'requests_per_minute': 60,
             'requests_per_hour': 1000,
@@ -81,12 +80,10 @@ class RateLimitMiddleware(MiddlewareMixin):
 
         path = request.path
         
-        # Vérifier les chemins exemptés
         for exempt_path in self.exempt_paths:
             if path.startswith(exempt_path):
                 return True
         
-        # Exempter les superutilisateurs en développement
         if settings.DEBUG and hasattr(request, 'user') and request.user.is_superuser:
             return True
         

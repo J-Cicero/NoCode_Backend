@@ -1,7 +1,7 @@
 
 import logging
 import re
-from typing import Dict, List, Optional, Tuple, List
+from typing import Dict, Optional, Tuple, List
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.hashers import make_password, check_password
 from django.core.exceptions import ValidationError
@@ -81,7 +81,6 @@ class AuthService(BaseService):
                 'email': user.email,
                 'user_type': user.user_type,
                 'full_name': user.full_name,
-                'is_verified': user.can_access_enterprise_features() if user.user_type == 'ENTREPRISE' else True,
             }
             
             # Récupérer les organisations de l'utilisateur
@@ -95,7 +94,7 @@ class AuthService(BaseService):
                 organizations.append({
                     'id': membership.organization.id,
                     'name': membership.organization.name,
-                    'slug': membership.organization.slug,
+                    'tracking_id': membership.organization.tracking_id,
                     'role': membership.role,
                     'is_owner': membership.role == 'OWNER',
                 })
@@ -198,7 +197,7 @@ class AuthService(BaseService):
                     'organization': {
                         'id': organization.id,
                         'name': organization.name,
-                        'slug': organization.slug,
+                        'tracking_id': organization.tracking_id,
                         'type': organization.type,
                     }
                 }
@@ -289,15 +288,14 @@ class AuthService(BaseService):
                     'user': {
                         'id': user.id,
                         'email': user.email,
-                        'user_type': 'BUSINESS',
+                        'user_type': 'CLIENT',
                         'full_name': organization.name,
-                        'is_verified': False,
                     },
                     'tokens': tokens,
                     'organization': {
                         'id': organization.id,
                         'name': organization.name,
-                        'slug': organization.slug,
+                        'tracking_id': organization.tracking_id,
                         'type': organization.type,
                     },
                 }
@@ -400,7 +398,7 @@ class AuthService(BaseService):
         for membership in memberships:
             organizations.append({
                 'id': membership.organization.id,
-                'slug': membership.organization.slug,
+                'tracking_id': membership.organization.tracking_id,
                 'role': membership.role,
             })
         

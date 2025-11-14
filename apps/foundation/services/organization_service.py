@@ -1,7 +1,4 @@
-"""
-Service de gestion des organisations pour le multi-tenancy.
-Gère les organisations, membres, invitations et paramètres.
-"""
+
 import logging
 from typing import Dict, List, Optional
 from django.db import transaction
@@ -21,10 +18,6 @@ User = get_user_model()
 
 
 class OrganizationService(BaseService):
-    """
-    Service de gestion des organisations.
-    Gère toutes les opérations liées aux organisations et au multi-tenancy.
-    """
     
     def __init__(self, user: User = None, organization: Organization = None):
         super().__init__(user, organization)
@@ -115,13 +108,6 @@ class OrganizationService(BaseService):
                     status='ACTIVE'
                 )
                 
-                # Créer les paramètres par défaut
-                OrganizationSettings.objects.create(
-                    organization=organization,
-                    default_user_role='VIEWER',
-                    allow_public_signup=False
-                )
-                
                 # Publier l'événement
                 EventBus.publish(FoundationEvents.ORGANIZATION_CREATED, {
                     'organization_id': organization.id,
@@ -140,7 +126,7 @@ class OrganizationService(BaseService):
                     'organization': {
                         'id': organization.id,
                         'name': organization.name,
-                        'slug': organization.slug,
+                        'tracking_id': organization.tracking_id,
                         'type': organization.type,
                         'status': organization.status,
                         'created_at': organization.created_at.isoformat(),
@@ -152,9 +138,6 @@ class OrganizationService(BaseService):
             return ServiceResult.error_result("Erreur lors de la création de l'organisation")
     
     def update_organization(self, organization_id: int, data: Dict) -> ServiceResult:
-        """
-        Met à jour une organisation.
-        """
         try:
             # Récupérer l'organisation
             try:
@@ -195,9 +178,8 @@ class OrganizationService(BaseService):
                     'organization': {
                         'id': organization.id,
                         'name': organization.name,
-                        'slug': organization.slug,
+                        'tracking_id': organization.tracking_id,
                         'description': organization.description,
-                        'updated_at': organization.updated_at.isoformat(),
                     }
                 })
                 
@@ -354,7 +336,7 @@ class OrganizationService(BaseService):
                     'organization': {
                         'id': invitation.organization.id,
                         'name': invitation.organization.name,
-                        'slug': invitation.organization.slug,
+                        'tracking_id': invitation.organization.tracking_id,
                         'type': invitation.organization.type,
                     },
                     'membership': {

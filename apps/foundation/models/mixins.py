@@ -2,15 +2,12 @@
 from django.db import models
 from django.utils import timezone
 
-
-
 class TimestampMixin(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Modifié le")
 
     class Meta:
         abstract = True
-
 
 class SoftDeleteMixin(models.Model):
 
@@ -33,7 +30,6 @@ class SoftDeleteMixin(models.Model):
     @property
     def is_active(self):
         return not self.is_deleted
-
 
 class StatusMixin(models.Model):
 

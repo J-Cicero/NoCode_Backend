@@ -1,37 +1,65 @@
 
-import uuid
-from datetime import timedelta
 from django.db import models
 from django.utils import timezone
 from django.utils.text import slugify
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.conf import settings
 from .base import BaseModel
-
+import uuid
 
 User = get_user_model()
 
-
 class Organization(BaseModel):
+    
+    tracking_id = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        db_index=True,
+        verbose_name="Tracking ID",
+        help_text="Identifiant public unique utilisé dans les URLs et APIs"
+    )
+    
+    TYPE_CHOICES = [
+        ('PERSONAL', 'Personnel'),
+        ('BUSINESS', 'Entreprise'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active'),
+        ('INACTIVE', 'Inactive'),
+        ('SUSPENDED', 'Suspendue'),
+    ]
 
     name = models.CharField(
         max_length=100,
         verbose_name="Nom de l'organisation"
     )
     
-    slug = models.SlugField(
-        blank=True,
-        max_length=100,
-        unique=True,
-        verbose_name="Slug",
-        help_text="Identifiant unique pour les URLs (généré automatiquement)"
+    type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+        default='PERSONAL',
+        verbose_name="Type d'organisation"
+    )
+    
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='ACTIVE',
+        verbose_name="Statut"
     )
     
     description = models.TextField(
         blank=True,
         verbose_name="Description"
+    )
+    
+    city = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name="Ville",
+        help_text="Ville où est basée l'organisation"
     )
     
     owner = models.ForeignKey(
@@ -66,29 +94,27 @@ class Organization(BaseModel):
         verbose_name="Date de vérification"
     )
     
+    max_members = models.PositiveIntegerField(
+        default=5,
+        verbose_name="Nombre maximum de membres",
+        help_text="Limite définie par l'abonnement"
+    )
+    
+    max_projects = models.PositiveIntegerField(
+        default=3,
+        verbose_name="Nombre maximum de projets",
+        help_text="Limite définie par l'abonnement"
+    )
+    
     class Meta:
         verbose_name = "Organisation"
         verbose_name_plural = "Organisations"
         db_table = 'foundation_organization'
         ordering = ['name']
-    
+
+
     def __str__(self):
         return self.name
-    
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            base_slug = slugify(self.name)
-            slug = base_slug
-            counter = 1
-            
-            # Assurer l'unicité du slug
-            while Organization.objects.filter(slug=slug).exclude(pk=self.pk).exists():
-                slug = f"{base_slug}-{counter}"
-                counter += 1
-            
-            self.slug = slug
-        
-        super().save(*args, **kwargs)
     
     def activate(self):
         self.is_active = True
@@ -118,11 +144,28 @@ class Organization(BaseModel):
             return "Active et vérifiée"
 
 
+
 class OrganizationMember(BaseModel):
+
+    tracking_id = models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        db_index=True,
+        verbose_name="Tracking ID",
+        help_text="Identifiant public unique utilisé dans les URLs et APIs"
+    )
 
     ROLE_CHOICES = [
         ('OWNER', 'Propriétaire'),
+        ('ADMIN', 'Administrateur'),
         ('MEMBER', 'Membre'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Actif'),
+        ('INACTIVE', 'Inactif'),
+        ('PENDING', 'En attente'),
     ]
     
     organization = models.ForeignKey(
@@ -146,6 +189,13 @@ class OrganizationMember(BaseModel):
         verbose_name="Rôle"
     )
     
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='ACTIVE',
+        verbose_name="Statut"
+    )
+    
     joined_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Rejoint le"
@@ -162,52 +212,4 @@ class OrganizationMember(BaseModel):
         return f"{self.user.email} - {self.organization.name} ({self.get_role_display()})"
 
 
-class OrganizationSettings(BaseModel):
 
-    organization = models.OneToOneField(
-        Organization,
-        on_delete=models.CASCADE,
-        related_name='settings',
-        verbose_name="Organisation"
-    )
-    
-    session_timeout = models.PositiveIntegerField(
-        default=24,
-        verbose_name="Délai d'expiration de session (heures)",
-        help_text="Durée d'inactivité avant déconnexion automatique"
-    )
-    
-    custom_logo = models.URLField(
-        blank=True,
-        null=True,
-        verbose_name="Logo personnalisé",
-        help_text="URL du logo de l'organisation"
-    )
-    
-    custom_theme = models.JSONField(
-        default=dict,
-        blank=True,
-        verbose_name="Thème personnalisé",
-        help_text="Configuration du thème de l'interface (couleurs, polices, etc.)"
-    )
-    
-    email_notifications = models.BooleanField(
-        default=True,
-        verbose_name="Activer les notifications par email"
-    )
-    
-    class Meta:
-        verbose_name = "Paramètres d'organisation"
-        verbose_name_plural = "Paramètres des organisations"
-        db_table = 'foundation_organization_settings'
-    
-    def __str__(self):
-        return f"Paramètres - {self.organization.name}"
-    
-    def save(self, *args, **kwargs):
-        if self.session_timeout > 720:
-            self.session_timeout = 720
-        elif self.session_timeout < 1:
-            self.session_timeout = 1
-            
-        super().save(*args, **kwargs)

@@ -3,8 +3,6 @@ Moteur d'exécution des workflows
 """
 import logging
 from typing import Dict, Any, Optional
-from django.utils import timezone
-from django.db import transaction
 from ..models import Workflow, WorkflowExecution, WorkflowExecutionLog, WorkflowStep
 from .action_executor import ActionExecutor
 from apps.foundation.services.event_bus import EventBus
@@ -29,17 +27,7 @@ class WorkflowEngine:
         triggered_by: Optional['User'] = None,
         trigger: Optional['Trigger'] = None
     ) -> WorkflowExecution:
-        """
-        Exécute le workflow avec les données d'entrée fournies.
-        
-        Args:
-            input_data: Données d'entrée pour le workflow
-            triggered_by: Utilisateur qui a déclenché l'exécution
-            trigger: Déclencheur qui a lancé l'exécution
-            
-        Returns:
-            L'instance WorkflowExecution
-        """
+
         # Vérifier que le workflow est actif
         if not self.workflow.is_active:
             raise ValueError(f"Le workflow {self.workflow.name} n'est pas actif")
@@ -62,8 +50,7 @@ class WorkflowEngine:
         try:
             # Initialiser le contexte
             self._initialize_context(input_data or {})
-            
-            # Marquer comme démarré
+
             self.execution.mark_as_started()
             
             # Récupérer toutes les étapes ordonnées
@@ -149,12 +136,7 @@ class WorkflowEngine:
         self.execution.save(update_fields=['context'])
     
     def _execute_step(self, step: WorkflowStep):
-        """
-        Exécute une étape du workflow.
-        
-        Args:
-            step: L'étape à exécuter
-        """
+
         self._log(
             'INFO',
             f"Exécution de l'étape: {step.name}",
@@ -207,13 +189,7 @@ class WorkflowEngine:
             raise
     
     def _handle_step_error(self, step: WorkflowStep, error: Exception):
-        """
-        Gère les erreurs d'une étape selon sa configuration.
-        
-        Args:
-            step: L'étape qui a échoué
-            error: L'erreur levée
-        """
+
         self._log(
             'ERROR',
             f"Erreur dans l'étape {step.name}: {str(error)}",
@@ -249,20 +225,9 @@ class WorkflowEngine:
         
         # Par défaut: stop
         raise error
-    
+
     def _evaluate_condition(self, condition: Dict[str, Any]) -> bool:
-        """
-        Évalue une condition.
-        
-        Args:
-            condition: La condition à évaluer
-            
-        Returns:
-            True si la condition est satisfaite, False sinon
-        """
-        # Implémentation simple de conditions
-        # Format attendu: {'field': 'variable_name', 'operator': '==', 'value': 'expected_value'}
-        
+
         if not condition:
             return True
         
@@ -303,15 +268,7 @@ class WorkflowEngine:
             return False
     
     def _prepare_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Prépare les paramètres en substituant les variables.
-        
-        Args:
-            params: Paramètres bruts avec variables
-            
-        Returns:
-            Paramètres avec variables substituées
-        """
+
         if not params:
             return {}
         
@@ -338,15 +295,7 @@ class WorkflowEngine:
         return prepared
     
     def _get_context_value(self, path: str) -> Any:
-        """
-        Récupère une valeur du contexte via un chemin.
-        
-        Args:
-            path: Chemin vers la valeur (ex: 'input.form_data', 'steps.validate.result')
-            
-        Returns:
-            La valeur trouvée ou None
-        """
+
         parts = path.split('.')
         value = self.context
         
@@ -365,15 +314,7 @@ class WorkflowEngine:
         step: Optional[WorkflowStep] = None,
         details: Dict[str, Any] = None
     ):
-        """
-        Enregistre un log d'exécution.
-        
-        Args:
-            level: Niveau du log (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-            message: Message du log
-            step: Étape concernée (optionnel)
-            details: Détails supplémentaires (optionnel)
-        """
+
         if not self.execution:
             return
         
@@ -392,18 +333,11 @@ class WorkflowEngine:
 
 
 class WorkflowValidator:
-    """
-    Valide la configuration d'un workflow avant son exécution.
-    """
+
     
     @staticmethod
     def validate(workflow: Workflow) -> tuple[bool, list[str]]:
-        """
-        Valide un workflow.
-        
-        Returns:
-            (is_valid, errors)
-        """
+
         errors = []
         
         # Vérifier qu'il y a au moins une étape

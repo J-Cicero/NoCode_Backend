@@ -1,9 +1,4 @@
-"""
-Utilitaires de vérification et maintenance pour la plateforme NoCode.
 
-Ces outils aident à diagnostiquer et résoudre les problèmes
-courants dans la plateforme.
-"""
 import os
 import sys
 import logging
@@ -14,7 +9,6 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 class NoCodePlatformChecker:
-    """Outil de vérification de l'état de la plateforme NoCode."""
 
     def __init__(self):
         self.project_root = Path(__file__).parent.parent.parent.parent.parent
