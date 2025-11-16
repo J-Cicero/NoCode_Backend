@@ -264,6 +264,98 @@ class Command(BaseCommand):
                     'border_radius': '0px',
                     'max_width': 'none'
                 }
+            },
+            {
+                'name': 'data_table',
+                'display_name': 'Table de données',
+                'description': 'Affichage tabulaire des données d\'un schéma',
+                'category': 'data',
+                'icon': 'table',
+                'properties': {
+                    'schema': {
+                        'type': 'string',
+                        'label': 'Schéma source',
+                        'default': '',
+                        'required': True
+                    },
+                    'columns': {
+                        'type': 'string',
+                        'label': 'Colonnes (JSON)',
+                        'default': '[]',
+                        'required': False
+                    },
+                    'page_size': {
+                        'type': 'number',
+                        'label': 'Lignes par page',
+                        'default': 20,
+                        'required': False
+                    },
+                    'can_filter': {
+                        'type': 'boolean',
+                        'label': 'Activer les filtres',
+                        'default': True,
+                        'required': False
+                    },
+                    'can_sort': {
+                        'type': 'boolean',
+                        'label': 'Activer le tri',
+                        'default': True,
+                        'required': False
+                    }
+                },
+                'validation_rules': {
+                    'page_size': {
+                        'min': 1,
+                        'max': 100
+                    }
+                },
+                'default_config': {
+                    'schema': '',
+                    'columns': '[]',
+                    'page_size': 20,
+                    'can_filter': True,
+                    'can_sort': True
+                }
+            },
+            {
+                'name': 'form',
+                'display_name': 'Formulaire',
+                'description': 'Formulaire de création/édition lié à un schéma',
+                'category': 'forms',
+                'icon': 'file-text',
+                'properties': {
+                    'schema': {
+                        'type': 'string',
+                        'label': 'Schéma source',
+                        'default': '',
+                        'required': True
+                    },
+                    'fields': {
+                        'type': 'string',
+                        'label': 'Champs (JSON)',
+                        'default': '[]',
+                        'required': False
+                    },
+                    'submit_label': {
+                        'type': 'string',
+                        'label': 'Texte du bouton',
+                        'default': 'Enregistrer',
+                        'required': False
+                    },
+                    'success_message': {
+                        'type': 'string',
+                        'label': 'Message de succès',
+                        'default': 'Enregistrement réussi',
+                        'required': False
+                    }
+                },
+                'validation_rules': {},
+                'default_config': {
+                    'schema': '',
+                    'fields': '[]',
+                    'submit_label': 'Enregistrer',
+                    'success_message': 'Enregistrement réussi'
+                }
             }
         ]
 

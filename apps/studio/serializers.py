@@ -2,33 +2,60 @@ from rest_framework import serializers
 from .models import Project, DataSchema, Page, Component
 from apps.foundation.serializers import OrganizationBaseSerializer
 
+
 class ProjectSerializer(serializers.ModelSerializer):
+    tracking_id = serializers.UUIDField(read_only=True)
     organization_name = serializers.CharField(source='organization.name', read_only=True)
+    organization_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
     
     class Meta:
         model = Project
         fields = [
-            'id', 'name', 'organization', 'organization_name',
-            'schema_name', 'created_by', 'created_by_username',
+            'tracking_id', 'name',
+            'organization_id', 'organization_name',
+            'schema_name', 'created_by_username',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['schema_name', 'created_by', 'created_at', 'updated_at']
-        extra_kwargs = {
-            'organization': {'required': True}
-        }
+        read_only_fields = ['tracking_id', 'schema_name', 'created_at', 'updated_at', 'created_by_username']
     
     def validate_name(self, value):
-        # Vérifie que le nom du projet est unique pour cette organisation
-        user = self.context['request'].user
-        org = self.initial_data.get('organization')
-        
-        if Project.objects.filter(
-            organization=org,
-            name__iexact=value
-        ).exists():
-            raise serializers.ValidationError("Un projet avec ce nom existe déjà dans cette organisation.")
+        # Vérifie que le nom du projet est unique pour cette organisation (ou pour les projets personnels)
+        org_id = self.initial_data.get('organization_id')
+        qs = Project.objects.all()
+        if org_id:
+            qs = qs.filter(organization__tracking_id=org_id)
+        else:
+            qs = qs.filter(organization__isnull=True)
+
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+
+        if qs.filter(name__iexact=value).exists():
+            raise serializers.ValidationError("Un projet avec ce nom existe déjà pour cette portée.")
         return value
+
+    def create(self, validated_data):
+        # Lier éventuellement à une organisation via organization_id, laissé à la vue/service pour valider les droits
+        organization_id = validated_data.pop('organization_id', None)
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+
+        project = Project(
+            name=validated_data['name'],
+            created_by=user,
+        )
+
+        if organization_id:
+            try:
+                from apps.foundation.models import Organization
+                org = Organization.objects.get(tracking_id=organization_id)
+                project.organization = org
+            except Organization.DoesNotExist:
+                raise serializers.ValidationError({'organization_id': "Organisation introuvable."})
+
+        project.save()
+        return project
 
 
 class DataSchemaSerializer(serializers.ModelSerializer):
@@ -47,20 +74,44 @@ class DataSchemaSerializer(serializers.ModelSerializer):
         return value
     
     def validate_fields_config(self, value):
-        # Validation de base de la configuration des champs
+        """Valide la configuration des champs (fields_config).
+
+        Format attendu : liste de dicts
+        [
+            {
+                "name": "field_name",          # obligatoire
+                "type": "string|integer|...",  # obligatoire
+                "label": "Libellé",           # optionnel
+                "required": true/false,         # optionnel
+                "unique": true/false,           # optionnel
+                "default": any                  # optionnel
+            },
+            ...
+        ]
+        """
         if not isinstance(value, list):
             raise serializers.ValidationError("La configuration des champs doit être une liste.")
-        
-        required_fields = {'name', 'type'}
+
+        allowed_types = {"string", "text", "integer", "float", "boolean", "date", "datetime", "json"}
+        required_fields = {"name", "type"}
+
         for field in value:
             if not isinstance(field, dict):
                 raise serializers.ValidationError("Chaque champ doit être un objet.")
-            
+
             missing_fields = required_fields - set(field.keys())
             if missing_fields:
                 raise serializers.ValidationError(
-                    f"Les champs suivants sont obligatoires : {', '.join(missing_fields)}"
+                    f"Les champs suivants sont obligatoires : {', '.join(sorted(missing_fields))}"
                 )
+
+            field_type = field.get("type")
+            if field_type not in allowed_types:
+                raise serializers.ValidationError(
+                    f"Type de champ invalide pour '{field.get('name')}': '{field_type}'. "
+                    f"Types autorisés: {', '.join(sorted(allowed_types))}."
+                )
+
         return value
 
 

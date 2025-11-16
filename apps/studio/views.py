@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from .models import Project, DataSchema, Page, Component
 from .serializers import (
@@ -12,11 +13,15 @@ from .serializers import (
     PageSerializer,
     ComponentSerializer
 )
-from .schema_manager import SchemaManager
+from apps.studio.services.project_service import ProjectService
+from apps.studio.services.schema_service import SchemaService
+from apps.foundation.models import OrganizationMember
 from apps.foundation.permissions import IsOrgMember, IsOrgAdmin
 import logging
 
 logger = logging.getLogger(__name__)
+
+
 class ProjectViewSet(viewsets.ModelViewSet):
     """
     API endpoint pour gérer les projets NoCode
@@ -25,44 +30,42 @@ class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOrgMember]
     
     def get_queryset(self):
-        # Ne retourne que les projets de l'organisation de l'utilisateur
+        """Retourne les projets accessibles à l'utilisateur.
+
+        - Projets personnels : organization is null et created_by = user
+        - Projets d'organisation : organisations dont l'utilisateur est membre
+        """
         user = self.request.user
-        return Project.objects.filter(organization__members=user).select_related('organization', 'created_by')
+
+        org_ids = OrganizationMember.objects.filter(
+            user=user,
+            status='ACTIVE'
+        ).values_list('organization_id', flat=True)
+
+        return Project.objects.filter(
+            Q(organization__isnull=True, created_by=user) |
+            Q(organization_id__in=org_ids)
+        ).select_related('organization', 'created_by')
     
     def perform_create(self, serializer):
-        # Crée un nouveau projet et son schéma associé
-        with transaction.atomic():
-            # Sauvegarde le projet
-            project = serializer.save(
-                created_by=self.request.user,
-                organization=self.request.user.organization  # Supposant que l'utilisateur a une organisation
-            )
-            
-            # Crée le schéma dans PostgreSQL
-            schema_manager = SchemaManager()
-            schema_name = schema_manager.create_project_schema(project.id)
-            
-            # Met à jour le projet avec le nom du schéma
-            project.schema_name = schema_name
-            project.save(update_fields=['schema_name'])
-            
-            # Crée une page d'accueil par défaut
-            Page.objects.create(
-                project=project,
-                name="Accueil",
-                route="home",
-                is_home=True,
-                config={
-                    "title": "Bienvenue sur votre nouveau site",
-                    "sections": [
-                        {
-                            "type": "hero",
-                            "title": "Bienvenue sur votre nouveau site",
-                            "subtitle": "Commencez par créer votre première page"
-                        }
-                    ]
-                }
-            )
+        """Crée un nouveau projet (personnel ou d'organisation) et son schéma associé.
+
+        - Projet personnel : aucun organization_id fourni → organization = NULL
+        - Projet d'organisation : organization_id fourni →
+            - require que l'utilisateur soit OWNER de cette organisation
+        """
+        user = self.request.user
+        org_tracking_id = serializer.validated_data.get('organization_id')
+
+        # Vérifie les droits si le projet est lié à une organisation
+        if org_tracking_id and not ProjectService.user_can_create_for_org(user, org_tracking_id):
+            raise PermissionDenied("Seul le propriétaire de l'organisation peut créer un projet pour celle-ci.")
+
+        # Sauvegarde le projet (le serializer gère l'association éventuelle à l'organisation)
+        project = serializer.save()
+
+        # Bootstrap du schéma PostgreSQL et de la page d'accueil via le service
+        ProjectService.bootstrap_project_with_schema_and_homepage(project)
     
     @action(detail=True, methods=['post'])
     def add_table(self, request, pk=None):
@@ -78,60 +81,24 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 {"error": "Les champs 'table_name' et 'fields' sont obligatoires"},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
         try:
-            # Crée d'abord l'entrée dans DataSchema
-            schema_serializer = DataSchemaSerializer(data={
-                'project': project.id,
-                'table_name': table_name,
-                'display_name': request.data.get('display_name', table_name),
-                'fields_config': fields
-            }, context={'request': request})
-            
-            if not schema_serializer.is_valid():
-                return Response(schema_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
-            with transaction.atomic():
-                data_schema = schema_serializer.save()
-                
-                schema_manager = SchemaManager()
+            data_schema = SchemaService.add_table_to_project(
+                project=project,
+                table_name=table_name,
+                display_name=request.data.get('display_name', table_name),
+                fields=fields,
+                serializer_context={'request': request},
+            )
 
-                # Convertit la configuration des champs en format pour SQL
-                columns = [
-                    (field['name'], self._get_sql_type(field['type']), 
-                     'NOT NULL' if field.get('required', False) else '')
-                    for field in fields
-                ]
-                
-                schema_manager.create_table(
-                    schema_name=project.schema_name,
-                    table_name=table_name,
-                    columns=columns
-                )
-                
-                return Response(
-                    DataSchemaSerializer(data_schema).data,
-                    status=status.HTTP_201_CREATED
-                )
-                
+            return Response(
+                DataSchemaSerializer(data_schema).data,
+                status=status.HTTP_201_CREATED,
+            )
         except Exception as e:
             return Response(
                 {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
-    
-    def _get_sql_type(self, field_type):
-        type_mapping = {
-            'string': 'VARCHAR(255)',
-            'text': 'TEXT',
-            'integer': 'INTEGER',
-            'float': 'FLOAT',
-            'boolean': 'BOOLEAN',
-            'date': 'DATE',
-            'datetime': 'TIMESTAMP WITH TIME ZONE',
-            'json': 'JSONB'
-        }
-        return type_mapping.get(field_type, 'TEXT')
     
     @action(detail=True, methods=['get'])
     def tables(self, request, pk=None):
