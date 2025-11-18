@@ -67,7 +67,7 @@ class GeneratedAppSerializer(serializers.ModelSerializer):
     """Sérialiseur pour les applications générées."""
     
     project = ProjectSerializer(read_only=True)
-    project_id = serializers.UUIDField(write_only=True)
+    project_tracking_id = serializers.UUIDField(write_only=True)
     
     status_display = serializers.CharField(
         source='get_status_display',
@@ -84,7 +84,7 @@ class GeneratedAppSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneratedApp
         fields = [
-            'id', 'project', 'project_id', 'version', 'status', 'status_display',
+            'id', 'project', 'project_tracking_id', 'version', 'status', 'status_display',
             'deployment_target', 'deployment_target_display', 'api_base_url',
             'admin_url', 'created_at', 'updated_at', 'last_deployed_at',
             'last_deployment', 'config'
@@ -101,20 +101,32 @@ class GeneratedAppSerializer(serializers.ModelSerializer):
             return DeploymentLogSerializer(last_deployment).data
         return None
     
-    def validate_project_id(self, value):
+    def validate_project_tracking_id(self, value):
         """Vérifie que le projet existe et que l'utilisateur y a accès."""
         from apps.studio.models import Project
+        from apps.foundation.models import OrganizationMember
         
         try:
-            project = Project.objects.get(id=value)
-            
-            # Vérifier que l'utilisateur a accès à ce projet
+            project = Project.objects.get(tracking_id=value)
             user = self.context['request'].user
-            if not user.is_superuser and project.organization != user.organization:
+
+            if user.is_superuser:
+                return value
+
+            if project.organization is None:
+                if project.created_by_id != user.id:
+                    raise ValidationError("Vous n'avez pas accès à ce projet.")
+                return value
+
+            org_ids = OrganizationMember.objects.filter(
+                user=user,
+                status='ACTIVE'
+            ).values_list('organization_id', flat=True)
+
+            if project.organization_id not in org_ids:
                 raise ValidationError("Vous n'avez pas accès à ce projet.")
-                
+
             return value
-            
         except Project.DoesNotExist:
             raise ValidationError("Projet introuvable.")
     
@@ -122,14 +134,12 @@ class GeneratedAppSerializer(serializers.ModelSerializer):
         """Crée une nouvelle application générée."""
         from apps.studio.models import Project
         
-        # Récupérer le projet
-        project = Project.objects.get(id=validated_data.pop('project_id'))
+        project_tracking_id = validated_data.pop('project_tracking_id')
+        project = Project.objects.get(tracking_id=project_tracking_id)
         
-        # Vérifier qu'une application n'existe pas déjà pour ce projet
         if GeneratedApp.objects.filter(project=project).exists():
-            raise ValidationError({"project_id": "Une application existe déjà pour ce projet."})
+            raise ValidationError({"project_tracking_id": "Une application existe déjà pour ce projet."})
         
-        # Créer l'application
         app = GeneratedApp.objects.create(
             project=project,
             **validated_data

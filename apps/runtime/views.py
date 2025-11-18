@@ -24,6 +24,7 @@ from .serializers import (
     AppLogsSerializer
 )
 from .services import AppGenerator, DeploymentManager, KubernetesDeployment, LocalDeployment
+from apps.foundation.models import OrganizationMember
 
 logger = logging.getLogger(__name__)
 
@@ -82,19 +83,25 @@ class GeneratedAppViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        """Filtre les applications par utilisateur et organisation."""
+        """Filtre les applications par utilisateur et organisations où il est membre."""
+        user = self.request.user
         queryset = super().get_queryset()
-        
-        # Filtrage par organisation si l'utilisateur en fait partie
-        if hasattr(self.request.user, 'organization'):
-            return queryset.filter(project__organization=self.request.user.organization)
-            
-        # Pour les superutilisateurs, retourner toutes les applications
-        if self.request.user.is_superuser:
+
+        if user.is_superuser:
             return queryset
-            
-        # Sinon, retourner uniquement les applications créées par l'utilisateur
-        return queryset.filter(project__created_by=self.request.user)
+
+        # Apps de projets perso créés par l’utilisateur
+        personal_qs = queryset.filter(project__organization__isnull=True, project__created_by=user)
+
+        # Apps de projets des organisations où l’utilisateur est membre
+        org_ids = OrganizationMember.objects.filter(
+            user=user,
+            status='ACTIVE'
+        ).values_list('organization_id', flat=True)
+
+        org_qs = queryset.filter(project__organization_id__in=org_ids)
+
+        return personal_qs.union(org_qs)
     
     def perform_create(self, serializer):
         """Crée une nouvelle application générée."
@@ -172,13 +179,26 @@ class GeneratedAppViewSet(viewsets.ModelViewSet):
             Response: Réponse JSON avec le statut du déploiement
         """
         app = self.get_object()
-        
+        user = request.user
+
         # Vérifier les permissions
-        if not request.user.is_superuser and app.project.organization != request.user.organization:
-            return Response(
-                {"detail": "Vous n'avez pas la permission de déployer cette application."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        if not user.is_superuser:
+            if app.project.organization is None:
+                if app.project.created_by_id != user.id:
+                    return Response(
+                        {"detail": "Vous n'avez pas la permission de déployer cette application."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            else:
+                org_ids = OrganizationMember.objects.filter(
+                    user=user,
+                    status='ACTIVE'
+                ).values_list('organization_id', flat=True)
+                if app.project.organization_id not in org_ids:
+                    return Response(
+                        {"detail": "Vous n'avez pas la permission de déployer cette application."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
         
         # Vérifier que l'application est dans un état déployable
         if app.status not in ['generated', 'deployment_failed']:
@@ -262,13 +282,26 @@ class GeneratedAppViewSet(viewsets.ModelViewSet):
             Response: Les informations de statut de l'application
         """
         app = self.get_object()
-        
+        user = request.user
+
         # Vérifier les permissions
-        if not request.user.is_superuser and app.project.organization != request.user.organization:
-            return Response(
-                {"detail": "Accès non autorisé."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        if not user.is_superuser:
+            if app.project.organization is None:
+                if app.project.created_by_id != user.id:
+                    return Response(
+                        {"detail": "Accès non autorisé."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            else:
+                org_ids = OrganizationMember.objects.filter(
+                    user=user,
+                    status='ACTIVE'
+                ).values_list('organization_id', flat=True)
+                if app.project.organization_id not in org_ids:
+                    return Response(
+                        {"detail": "Accès non autorisé."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
         
         try:
             manager = DeploymentManager(app)
@@ -444,16 +477,23 @@ class DeploymentLogViewSet(viewsets.ReadOnlyModelViewSet):
         if status:
             queryset = queryset.filter(status=status)
         
-        # Filtrage par organisation si l'utilisateur en fait partie
-        if hasattr(self.request.user, 'organization'):
-            return queryset.filter(app__project__organization=self.request.user.organization)
-            
-        # Pour les superutilisateurs, retourner tous les journaux
-        if self.request.user.is_superuser:
+        user = self.request.user
+
+        if user.is_superuser:
             return queryset
-            
-        # Par défaut, retourner uniquement les journaux des applications créées par l'utilisateur
-        return queryset.filter(app__project__created_by=self.request.user)
+
+        # Journaux des apps de projets perso créés par l’utilisateur
+        personal_qs = queryset.filter(app__project__organization__isnull=True, app__project__created_by=user)
+
+        # Journaux des apps des organisations où l’utilisateur est membre
+        org_ids = OrganizationMember.objects.filter(
+            user=user,
+            status='ACTIVE'
+        ).values_list('organization_id', flat=True)
+
+        org_qs = queryset.filter(app__project__organization_id__in=org_ids)
+
+        return personal_qs.union(org_qs)
         
     @extend_schema(
         methods=['post'],
