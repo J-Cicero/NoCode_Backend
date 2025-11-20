@@ -4,17 +4,14 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 from sentry_sdk.integrations.celery import CeleryIntegration
 
-# Debug désactivé en production
 DEBUG = False
 
-# Hosts autorisés strictement définis
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
     default='nocode.com,www.nocode.com,api.nocode.com',
     cast=lambda v: [s.strip() for s in v.split(',')]
 )
 
-# Configuration de sécurité renforcée
 SECURE_SSL_REDIRECT = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_HSTS_SECONDS = 31536000
@@ -26,7 +23,6 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 X_FRAME_OPTIONS = 'DENY'
 
-# Configuration base de données optimisée pour production
 DATABASES['default'].update({
     'CONN_MAX_AGE': 60,
     'OPTIONS': {
@@ -36,12 +32,10 @@ DATABASES['default'].update({
     }
 })
 
-# Configuration Redis avec authentification
 REDIS_URL = config('REDIS_URL', default='redis://localhost:6379')
 if config('REDIS_PASSWORD', default=None):
     REDIS_URL = REDIS_URL.replace('redis://', f'redis://:{config("REDIS_PASSWORD")}@')
 
-# Cache optimisé pour production
 CACHES['default'].update({
     'TIMEOUT': 300,
     'OPTIONS': {
@@ -55,7 +49,6 @@ CACHES['default'].update({
     }
 })
 
-# Configuration Celery pour production
 CELERY_BROKER_URL = REDIS_URL
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ACKS_LATE = True
@@ -63,7 +56,6 @@ CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
 CELERY_TASK_COMPRESSION = 'gzip'
 CELERY_RESULT_COMPRESSION = 'gzip'
 
-# Logging pour production avec rotation
 LOGGING.update({
     'handlers': {
         'file': {
@@ -103,7 +95,6 @@ LOGGING.update({
     },
 })
 
-# Configuration Email avec SendGrid ou SMTP
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.sendgrid.net')
 EMAIL_PORT = config('EMAIL_PORT', default=587)
@@ -111,13 +102,11 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='apikey')
 EMAIL_HOST_PASSWORD = config('SENDGRID_API_KEY', default='')
 
-# Configuration des admins pour les emails d'erreur
 ADMINS = [
     ('Admin', config('ADMIN_EMAIL', default='prudencioworou2006@gmail.com')),
 ]
 MANAGERS = ADMINS
 
-# Configuration Sentry pour le monitoring des erreurs
 SENTRY_DSN = config('SENTRY_DSN', default='')
 if SENTRY_DSN:
     sentry_sdk.init(

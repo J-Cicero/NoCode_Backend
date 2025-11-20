@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Script pour créer un superutilisateur par défaut pour le développement
-"""
+
 import os
 import sys
 import django
@@ -43,7 +41,6 @@ def create_superuser():
         user.set_password(password)
         user.save()
 
-        # Ajouter aux groupes admin si nécessaire
         try:
             admin_group = Group.objects.get(name='Administrateurs')
             user.groups.add(admin_group)

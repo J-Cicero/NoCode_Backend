@@ -3,20 +3,15 @@ import os
 from pathlib import Path
 from decouple import config
 
-# Chemins du projet
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# Clé secrète
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
 
-# Mode debug
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-# Hôtes autorisés
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', 
                       cast=lambda v: [s.strip() for s in v.split(',')])
 
-# Applications installées
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -25,13 +20,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Third-party apps
     'rest_framework',
     'corsheaders',
     'drf_spectacular',
     'channels',
     
-    # Project apps
     'apps.foundation',
     'apps.studio',
     'apps.runtime',
@@ -39,7 +32,7 @@ INSTALLED_APPS = [
     'apps.automation',
 ]
 
-# Middleware
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -50,15 +43,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-    # Middleware Insights pour le tracking automatique
     'apps.insights.middleware.InsightsMiddleware',
     'apps.insights.middleware.MetricsCollectionMiddleware',
 ]
 
-# Configuration des URLs
 ROOT_URLCONF = 'config.urls'
 
-# Configuration de drf-spectacular
 SPECTACULAR_SETTINGS = {
     'TITLE': 'NoCode Platform API',
     'DESCRIPTION': 'API pour la plateforme NoCode',
@@ -84,7 +74,6 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-# Configuration de DRF
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -100,7 +89,6 @@ REST_FRAMEWORK = {
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
 }
 
-# Configuration de la base de données
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -166,18 +154,14 @@ LOGGING = {
     },
 }
 
-# Configuration par défaut des champs
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Configuration des sites Django
 SITE_ID = 1
 
-# Sécurité
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
-# Configuration plateforme NoCode spécifique
 NOCODE_CONFIG = {
     'MAX_TABLES_PER_PROJECT': config('MAX_TABLES_PER_PROJECT', default=50, cast=int),
     'MAX_FIELDS_PER_TABLE': config('MAX_FIELDS_PER_TABLE', default=100, cast=int),
@@ -188,14 +172,11 @@ NOCODE_CONFIG = {
     'DEFAULT_SUBDOMAIN': config('DEFAULT_SUBDOMAIN', default='app.nocode.local'),
 }
 
-# Créer les dossiers nécessaires
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
 os.makedirs(NOCODE_CONFIG['GENERATED_APPS_DIR'], exist_ok=True)
 
-# Modèle utilisateur personnalisé
 AUTH_USER_MODEL = 'foundation.User'
 
-# Configuration email générique (Gmail/SMTP en développement)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)

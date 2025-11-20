@@ -103,7 +103,6 @@ class RefreshTokenView(TokenRefreshView):
 
 
 class PasswordChangeView(APIView):
-    """Vue pour le changement de mot de passe."""
     
     permission_classes = [IsAuthenticated]
     
@@ -114,7 +113,6 @@ class PasswordChangeView(APIView):
         )
         
         if serializer.is_valid():
-            # Utiliser AuthService pour le changement de mot de passe
             auth_service = AuthService(user=request.user)
             result = auth_service.change_password(
                 current_password=serializer.validated_data['current_password'],

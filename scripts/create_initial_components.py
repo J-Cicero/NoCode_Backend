@@ -1,11 +1,8 @@
-"""
-Données initiales pour le catalogue de composants Studio
-"""
+
 from django.db import transaction
 from apps.studio.models import Component
 
 def create_initial_components():
-    """Crée les composants de base pour le catalogue"""
 
     components_data = [
         {
@@ -269,10 +266,10 @@ def create_initial_components():
     ]
 
     with transaction.atomic():
-        for comp_data in components_data:
+        for components in components_data:
             Component.objects.get_or_create(
-                name=comp_data['name'],
-                defaults=comp_data
+                name=components['name'],
+                defaults=components
             )
 
     print(f"Créé {len(components_data)} composants de base")

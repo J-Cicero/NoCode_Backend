@@ -22,7 +22,6 @@ class UserService(BaseService):
     def get_user_profile(self, user_id: int = None) -> ServiceResult:
 
         try:
-            # Utiliser l'utilisateur actuel si aucun ID n'est fourni
             target_user = self.user
             if user_id:
                 try:
@@ -30,14 +29,12 @@ class UserService(BaseService):
                 except User.DoesNotExist:
                     return ServiceResult.error_result("Utilisateur introuvable")
                 
-                # Vérifier les permissions pour consulter un autre profil
                 if target_user != self.user and not self.user.is_staff:
                     raise PermissionException("Vous ne pouvez pas consulter ce profil")
             
             if not target_user:
                 return ServiceResult.error_result("Aucun utilisateur spécifié")
             
-            # Récupérer les informations de base
             profile_data = {
                 'id': target_user.id,
                 'email': target_user.email,
@@ -59,9 +56,7 @@ class UserService(BaseService):
                     'numero_telephone': target_user.numero_telephone,
                 }
             
-            # Note: Le type ENTREPRISE a été supprimé, les organisations sont gérées via OrganizationMember
-            
-            # Récupérer les organisations
+        
             organizations = Organization.objects.filter(
                 members__user=target_user,
                 members__status='ACTIVE'
@@ -96,22 +91,17 @@ class UserService(BaseService):
             return ServiceResult.error_result("Erreur lors de la récupération du profil")
     
     def update_user_profile(self, user_id: int, profile_data: Dict) -> ServiceResult:
-        """
-        Met à jour le profil d'un utilisateur.
-        """
+
         try:
-            # Récupérer l'utilisateur
             try:
                 target_user = User.objects.get(id=user_id)
             except User.DoesNotExist:
                 return ServiceResult.error_result("Utilisateur introuvable")
             
-            # Vérifier les permissions
             if target_user != self.user and not self.user.is_staff:
                 raise PermissionException("Vous ne pouvez pas modifier ce profil")
             
             with transaction.atomic():
-                # Mettre à jour les champs utilisateur
                 user_fields = [
                     'nom', 'prenom', 'pays'
                 ]

@@ -215,7 +215,6 @@ class EditLock(models.Model):
         return False
     
     def extend_lock(self, minutes=5):
-        """Prolonge la durée du verrou."""
         from django.utils import timezone
         from datetime import timedelta
         self.expires_at = timezone.now() + timedelta(minutes=minutes)
@@ -223,9 +222,6 @@ class EditLock(models.Model):
 
 
 class CollaborationSession(models.Model):
-    """
-    Suivi des sessions de collaboration actives sur un projet.
-    """
     
     project = models.ForeignKey(
         Project,

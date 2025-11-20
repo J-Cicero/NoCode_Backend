@@ -5,39 +5,31 @@ import subprocess
 import argparse
 from pathlib import Path
 
-# Ajouter le répertoire racine au path Python
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
 
 def run_command(command, check=True):
-    """Exécuter une commande shell"""
     print(f"Exécution: {command}")
     result = subprocess.run(command, shell=True, check=check)
     return result.returncode == 0
 
 
 def deploy_development():
-    """Déploiement développement"""
     print("🚀 Déploiement développement...")
 
-    # Installer les dépendances
     run_command("pip install -r requirements/development.txt")
 
-    # Appliquer les migrations
     run_command("python manage.py migrate")
 
-    # Collecter les fichiers statiques
     run_command("python manage.py collectstatic --noinput")
 
-    # Créer le cache
     run_command("python manage.py createcachetable")
 
     print("✅ Déploiement développement terminé!")
 
 
 def deploy_production():
-    """Déploiement production"""
     print("🚀 Déploiement production...")
 
     # Vérifications pré-déploiement
@@ -49,22 +41,18 @@ def deploy_production():
         print("❌ DEBUG ne doit pas être activé en production!")
         return False
 
-    # Build Docker
     run_command("docker-compose -f docker-compose.prod.yml build")
 
-    # Migrations
     run_command("""
         docker-compose -f docker-compose.prod.yml run --rm web 
         python manage.py migrate --settings=config.settings.production
     """)
 
-    # Collecter les fichiers statiques
     run_command("""
         docker-compose -f docker-compose.prod.yml run --rm web 
         python manage.py collectstatic --noinput --settings=config.settings.production
     """)
 
-    # Démarrer les services
     run_command("docker-compose -f docker-compose.prod.yml up -d")
 
     print("✅ Déploiement production terminé!")
@@ -72,7 +60,6 @@ def deploy_production():
 
 
 def backup_database():
-    """Sauvegarder la base de données"""
     print("💾 Sauvegarde de la base de données...")
 
     db_name = os.environ.get('DB_NAME', 'nocode_platform')
@@ -87,7 +74,6 @@ def backup_database():
 
 
 def check_health():
-    """Vérifier l'état des services"""
     print("🔍 Vérification de l'état des services...")
 
     services = [

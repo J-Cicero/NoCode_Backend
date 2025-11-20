@@ -207,7 +207,6 @@ class Abonnement(BaseModel):
         return min(100, (elapsed / total) * 100)
     
     def cancel(self, reason='', cancelled_by=None):
-        """Annule l'abonnement"""
         self.status = 'ANNULE'
         self.date_annulation = timezone.now()
         if cancelled_by:
@@ -221,7 +220,5 @@ class Abonnement(BaseModel):
         return True
     
     def get_limits(self):
-        """Retourne les limites de l'abonnement"""
-        # Retourne un dict vide pour l'instant
-        # À implémenter selon les besoins réels
+        
         return {}

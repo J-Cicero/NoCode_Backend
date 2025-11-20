@@ -247,7 +247,6 @@ class AppGenerator:
         self.app_dir = os.path.join(settings.BASE_DIR, 'generated_apps', self.app_name)
         
     def generate(self):
-        """Génère l'application complète."""
         try:
             # Création du répertoire de l'application
             os.makedirs(self.app_dir, exist_ok=True)

@@ -1,11 +1,4 @@
-"""
-Modèles pour le module Insights.
 
-Ce module définit les modèles pour :
-- Système d'audit (UserActivity, AuditLog)
-- Collecte de métriques (SystemMetric, ApplicationMetric, UserMetric)
-- Monitoring des performances (PerformanceMetric)
-"""
 import uuid
 from django.db import models
 from django.conf import settings
@@ -13,12 +6,7 @@ from django.utils import timezone
 from .base import BaseModel
 
 class UserActivity(BaseModel):
-    """
-    Journal des activités des utilisateurs.
 
-    Permet de tracer toutes les actions importantes effectuées
-    par les utilisateurs sur la plateforme.
-    """
     ACTIVITY_TYPES = [
         # Actions utilisateur
         ('user.login', 'Connexion utilisateur'),
@@ -62,7 +50,6 @@ class UserActivity(BaseModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Utilisateur qui a effectué l'action (peut être null pour les actions système)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -72,7 +59,6 @@ class UserActivity(BaseModel):
         verbose_name="Utilisateur"
     )
 
-    # Organisation concernée
     organization = models.ForeignKey(
         'foundation.Organization',
         on_delete=models.CASCADE,
@@ -80,27 +66,23 @@ class UserActivity(BaseModel):
         verbose_name="Organisation"
     )
 
-    # Type d'activité
     activity_type = models.CharField(
         max_length=50,
         choices=ACTIVITY_TYPES,
         verbose_name="Type d'activité"
     )
 
-    # Description de l'activité
     description = models.TextField(
         blank=True,
         verbose_name="Description"
     )
 
-    # Données supplémentaires (JSON)
     metadata = models.JSONField(
         default=dict,
         blank=True,
         verbose_name="Métadonnées"
     )
 
-    # Objet concerné (generic foreign key)
     content_type = models.ForeignKey(
         'contenttypes.ContentType',
         on_delete=models.SET_NULL,
@@ -108,22 +90,24 @@ class UserActivity(BaseModel):
         blank=True,
         verbose_name="Type de contenu"
     )
+
     object_id = models.UUIDField(
         null=True,
         blank=True,
         verbose_name="ID de l'objet"
     )
 
-    # Informations techniques
     ip_address = models.GenericIPAddressField(
         null=True,
         blank=True,
         verbose_name="Adresse IP"
     )
+
     user_agent = models.TextField(
         blank=True,
         verbose_name="User Agent"
     )
+
     session_id = models.CharField(
         max_length=255,
         blank=True,
@@ -157,12 +141,7 @@ class UserActivity(BaseModel):
 
 
 class SystemMetric(BaseModel):
-    """
-    Métriques système collectées automatiquement.
 
-    Collecte les métriques de performance et d'utilisation
-    du système pour le monitoring.
-    """
     METRIC_TYPES = [
         ('cpu.usage', 'Utilisation CPU (%)'),
         ('memory.usage', 'Utilisation mémoire (%)'),
@@ -179,7 +158,6 @@ class SystemMetric(BaseModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Type de métrique
     metric_type = models.CharField(
         max_length=50,
         choices=METRIC_TYPES,
@@ -191,26 +169,24 @@ class SystemMetric(BaseModel):
         verbose_name="Valeur"
     )
 
-    # Unité de mesure
     unit = models.CharField(
         max_length=20,
         blank=True,
         verbose_name="Unité"
     )
 
-    # Tags pour filtrage (JSON)
     tags = models.JSONField(
         default=dict,
         blank=True,
         verbose_name="Étiquettes"
     )
 
-    # Informations système
     hostname = models.CharField(
         max_length=255,
         blank=True,
         verbose_name="Nom d'hôte"
     )
+
     service = models.CharField(
         max_length=100,
         blank=True,
@@ -229,12 +205,7 @@ class SystemMetric(BaseModel):
 
 
 class ApplicationMetric(BaseModel):
-    """
-    Métriques spécifiques aux applications générées.
 
-    Suit les performances et l'utilisation des applications
-    déployées sur la plateforme.
-    """
     METRIC_TYPES = [
         ('response.time', 'Temps de réponse (ms)'),
         ('requests.count', 'Nombre de requêtes'),
@@ -249,7 +220,6 @@ class ApplicationMetric(BaseModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Application concernée
     app = models.ForeignKey(
         'runtime.GeneratedApp',
         on_delete=models.CASCADE,
@@ -257,33 +227,28 @@ class ApplicationMetric(BaseModel):
         verbose_name="Application"
     )
 
-    # Type de métrique
     metric_type = models.CharField(
         max_length=50,
         choices=METRIC_TYPES,
         verbose_name="Type de métrique"
     )
 
-    # Valeur de la métrique
     value = models.FloatField(
         verbose_name="Valeur"
     )
 
-    # Unité de mesure
     unit = models.CharField(
         max_length=20,
         blank=True,
         verbose_name="Unité"
     )
 
-    # Environnement (production, staging, etc.)
     environment = models.CharField(
         max_length=50,
         default='production',
         verbose_name="Environnement"
     )
 
-    # Métadonnées supplémentaires
     metadata = models.JSONField(
         default=dict,
         blank=True,
@@ -303,12 +268,6 @@ class ApplicationMetric(BaseModel):
 
 
 class UserMetric(BaseModel):
-    """
-    Métriques d'utilisation par utilisateur.
-
-    Analyse le comportement et l'engagement des utilisateurs
-    sur la plateforme.
-    """
     METRIC_TYPES = [
         ('session.duration', 'Durée de session (minutes)'),
         ('pages.visited', 'Pages visitées'),
@@ -321,7 +280,6 @@ class UserMetric(BaseModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Utilisateur concerné
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -329,33 +287,27 @@ class UserMetric(BaseModel):
         verbose_name="Utilisateur"
     )
 
-    # Organisation
     organization = models.ForeignKey(
-        'foundation.Organization',
         on_delete=models.CASCADE,
         related_name='user_metrics',
         verbose_name="Organisation"
     )
 
-    # Type de métrique
     metric_type = models.CharField(
         max_length=50,
         choices=METRIC_TYPES,
         verbose_name="Type de métrique"
     )
 
-    # Valeur de la métrique
     value = models.FloatField(
         verbose_name="Valeur"
     )
 
-    # Période concernée (date)
     date = models.DateField(
         default=timezone.now,
         verbose_name="Date"
     )
 
-    # Métadonnées contextuelles
     context = models.JSONField(
         default=dict,
         blank=True,
@@ -376,12 +328,7 @@ class UserMetric(BaseModel):
 
 
 class PerformanceMetric(BaseModel):
-    """
-    Métriques de performance détaillées.
-
-    Collecte des données de performance avancées pour
-    l'analyse et l'optimisation.
-    """
+    
     METRIC_CATEGORIES = [
         ('frontend', 'Interface utilisateur'),
         ('backend', 'Serveur backend'),
@@ -392,38 +339,32 @@ class PerformanceMetric(BaseModel):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Catégorie de métrique
     category = models.CharField(
         max_length=20,
         choices=METRIC_CATEGORIES,
         verbose_name="Catégorie"
     )
 
-    # Nom de la métrique
     name = models.CharField(
         max_length=100,
         verbose_name="Nom de la métrique"
     )
 
-    # Valeur de la métrique
     value = models.FloatField(
         verbose_name="Valeur"
     )
 
-    # Unité de mesure
     unit = models.CharField(
         max_length=20,
         blank=True,
         verbose_name="Unité"
     )
 
-    # Timestamp précis
     timestamp = models.DateTimeField(
         default=timezone.now,
         verbose_name="Horodatage"
     )
 
-    # Contexte (organisation, utilisateur, application, etc.)
     organization = models.ForeignKey(
         'foundation.Organization',
         on_delete=models.CASCADE,
@@ -442,7 +383,6 @@ class PerformanceMetric(BaseModel):
         verbose_name="Utilisateur"
     )
 
-    # Métadonnées techniques
     metadata = models.JSONField(
         default=dict,
         blank=True,

@@ -29,25 +29,20 @@ LOGGING = {
     },
 }
 
-#pour l'envoie d'email
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
-#Cors configuraion
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-#configurisaion avec le CSRF
 CSRF_COOKIE_SECURE = False
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
 ]
 
-# Session cookies
 SESSION_COOKIE_SECURE = False
 
-# Configuration pour le debug toolbar
 INTERNAL_IPS = [
     '127.0.0.1',
     'localhost',
@@ -57,7 +52,7 @@ NOCODE_CONFIG.update({
     'ENABLE_CODE_GENERATION_DEBUG': True,
     'ENABLE_WEBSOCKET_DEBUG': True,
 })
-# Désactiver les vérifications HTTPS en dev
+
 SECURE_SSL_REDIRECT = False
 SECURE_BROWSER_XSS_FILTER = False
 SECURE_CONTENT_TYPE_NOSNIFF = False

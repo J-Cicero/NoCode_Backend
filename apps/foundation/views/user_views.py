@@ -1,7 +1,4 @@
-"""
-Vues pour la gestion des utilisateurs.
-Expose les APIs pour les profils utilisateur, recherche, statistiques, etc.
-"""
+
 from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -27,7 +24,6 @@ class UserProfileView(APIView):
     permission_classes = [IsAuthenticated, CanAccessOwnDataOrAdmin]
     
     def get(self, request, tracking_id=None):
-        """Récupère le profil d'un utilisateur par tracking_id."""
         if tracking_id:
             user = get_object_or_404(User, tracking_id=tracking_id)
             self.check_object_permissions(request, user)
@@ -60,10 +56,7 @@ class UserProfileView(APIView):
 
 
 class UserSearchView(APIView):
-    """Vue pour la recherche d'utilisateurs."""
-    
-    permission_classes = [IsAdminUser]
-    
+        
     def get(self, request):
         """Recherche des utilisateurs."""
         query = request.query_params.get('q', '')
@@ -81,13 +74,8 @@ class UserSearchView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserStatsView(APIView):
-    """Vue pour les statistiques des utilisateurs."""
-    
-    permission_classes = [IsAdminUser]
-    
+class UserStatsView(APIView):        
     def get(self, request):
-        """Récupère les statistiques des utilisateurs."""
         user_service = UserService(user=request.user)
         result = user_service.get_user_stats()
         
@@ -99,13 +87,9 @@ class UserStatsView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserDeactivateView(APIView):
-    """Vue pour la désactivation d'utilisateurs."""
-    
-    permission_classes = [IsAdminUser]
+class UserDeactivateView(APIView):    
     
     def post(self, request, user_id):
-        """Désactive un utilisateur."""
         reason = request.data.get('reason', '')
         
         user_service = UserService(user=request.user)
@@ -119,13 +103,10 @@ class UserDeactivateView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserOrganizationsView(APIView):
-    """Vue pour les organisations d'un utilisateur."""
-    
+class UserOrganizationsView(APIView):    
     permission_classes = [IsAuthenticated]
     
     def get(self, request, user_id=None):
-        """Récupère les organisations d'un utilisateur."""
         user_service = UserService(user=request.user)
         result = user_service.get_user_organizations(user_id)
         
@@ -140,7 +121,6 @@ class UserOrganizationsView(APIView):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def current_user_profile(request):
-    """Récupère le profil de l'utilisateur connecté."""
     user_service = UserService(user=request.user)
     result = user_service.get_user_profile()
     
@@ -155,7 +135,6 @@ def current_user_profile(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_current_user_profile(request):
-    """Met à jour le profil de l'utilisateur connecté."""
     user_service = UserService(user=request.user)
     result = user_service.update_user_profile(request.user.id, request.data)
     
@@ -170,7 +149,6 @@ def update_current_user_profile(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def current_user_organizations(request):
-    """Récupère les organisations de l'utilisateur connecté."""
     user_service = UserService(user=request.user)
     result = user_service.get_user_organizations()
     
