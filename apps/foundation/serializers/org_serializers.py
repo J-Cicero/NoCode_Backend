@@ -20,8 +20,7 @@ class OrganizationBaseSerializer(serializers.ModelSerializer):
         model = Organization
         fields = [
             'id', 'tracking_id', 'name', 'description', 'type', 'status',
-            'city', 'logo', 'website', 'phone', 'billing_email',
-            'member_count', 'is_owner', 'user_role',
+            'city', 'member_count', 'is_owner', 'user_role',
             'created_at'
         ]
         read_only_fields = ['id', 'tracking_id', 'created_at']
@@ -53,8 +52,7 @@ class OrganizationDetailSerializer(OrganizationBaseSerializer):
     
     class Meta(OrganizationBaseSerializer.Meta):
         fields = OrganizationBaseSerializer.Meta.fields + [
-            'owner', 'max_members', 'industry',
-            'country', 'timezone', 'language'
+            'owner', 'max_members'
         ]
 
 
@@ -63,8 +61,7 @@ class OrganizationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = [
-            'name', 'description', 'type', 'website', 'phone',
-            'billing_email', 'industry', 'country', 'timezone', 'language'
+            'name', 'description', 'type'
         ]
     
     def validate_name(self, value):
@@ -87,8 +84,7 @@ class OrganizationUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = [
-            'name', 'description', 'logo', 'website', 'phone',
-            'billing_email', 'industry', 'country', 'timezone', 'language'
+            'name', 'description'
         ]
     
     def validate_name(self, value):
@@ -173,7 +169,7 @@ class OrganizationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = [
-            'id', 'tracking_id', 'name', 'type', 'status', 'logo',
+            'id', 'tracking_id', 'name', 'type', 'status',
             'member_count', 'user_role', 'created_at'
         ]
         read_only_fields = ['id', 'tracking_id', 'created_at']

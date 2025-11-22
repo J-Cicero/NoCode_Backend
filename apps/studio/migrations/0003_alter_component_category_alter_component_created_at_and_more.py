@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('studio', '0002_add_component_model'),
+        ('studio', '0001_initial'),
     ]
 
     operations = [

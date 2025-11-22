@@ -5,11 +5,16 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-DATABASES['default'].update({
-    'OPTIONS': {
-        'sslmode': 'disable',
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'nocode',
+        'USER': 'nocode_user',
+        'PASSWORD':'cicero',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
-})
+}
 
 LOGGING = {
     'version': 1,

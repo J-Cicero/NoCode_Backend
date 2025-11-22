@@ -161,7 +161,6 @@ class Migration(migrations.Migration):
             name='WorkflowExecutionLog',
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('step_id', models.CharField(blank=True, max_length=100, verbose_name="ID de l'étape")),
                 ('level', models.CharField(choices=[('DEBUG', 'Debug'), ('INFO', 'Info'), ('WARNING', 'Warning'), ('ERROR', 'Error'), ('CRITICAL', 'Critical')], default='INFO', max_length=20, verbose_name='Niveau')),
                 ('message', models.TextField(verbose_name='Message')),
                 ('details', models.JSONField(blank=True, default=dict, verbose_name='Détails')),
