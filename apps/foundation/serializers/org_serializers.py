@@ -105,7 +105,7 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
         model = OrganizationMember
         fields = [
             'id', 'user', 'organization', 'role', 'status',
-            'permissions', 'joined_at', 'is_current_user',
+            'joined_at', 'is_current_user',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'joined_at', 'created_at', 'updated_at']
@@ -122,7 +122,7 @@ class OrganizationMemberUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrganizationMember
-        fields = ['role', 'permissions']
+        fields = ['role']
     
     def validate_role(self, value):
 
