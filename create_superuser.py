@@ -14,12 +14,12 @@ from django.db import IntegrityError
 User = get_user_model()
 
 def create_superuser():
-    """Crée un superutilisateur par défaut"""
+    
     username = 'admin'
     email = 'admin@nocode.local'
     password = 'admin123'
-    first_name = 'Admin'
-    last_name = 'NoCode'
+    nom = 'Admin'
+    prenom = 'Super'
 
     # Vérifier si l'utilisateur existe déjà
     if User.objects.filter(email=email).exists():
@@ -32,10 +32,12 @@ def create_superuser():
 
         user = User.objects.create(
             email=email,
-            first_name=first_name,
-            last_name=last_name,
-            is_staff=True,
+            nom=nom,
+            prenom=prenom,
+            pays='France',
+            numero_telephone='0123456789',
             is_superuser=True,
+            is_staff=True,
             is_active=True
         )
         user.set_password(password)

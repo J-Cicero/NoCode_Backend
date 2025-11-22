@@ -42,7 +42,7 @@ class OrganizationAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'is_verified', 'created_at')
     search_fields = ('name', 'description', 'owner__email')
     raw_id_fields = ('owner',)
-    readonly_fields = ('created_at', 'updated_at', 'verified_at')
+    readonly_fields = ('created_at', 'verified_at')
 
     fieldsets = (
         ('Informations générales', {
@@ -101,7 +101,7 @@ class OrganizationMemberAdmin(admin.ModelAdmin):
     list_filter = ('role', 'joined_at')
     search_fields = ('user__email', 'organization__name')
     raw_id_fields = ('user', 'organization')
-    readonly_fields = ('created_at', 'updated_at', 'user_is_active')
+    readonly_fields = ('created_at', 'user_is_active')
     
     def user_is_active(self, obj):
         return obj.user.is_active if obj.user else False
@@ -136,11 +136,11 @@ class TypeAbonnementAdmin(admin.ModelAdmin):
 @admin.register(Abonnement)
 class AbonnementAdmin(admin.ModelAdmin):
 
-    list_display = ('user', 'organization', 'type_abonnement', 'status', 'date_debut', 'date_fin', 'is_active_subscription')
+    list_display = ('user', 'type_abonnement', 'status', 'date_debut', 'date_fin', 'is_active_subscription')
     list_filter = ('status', 'type_abonnement__nom', 'date_debut', 'date_fin')
-    search_fields = ('user__email', 'organization__name', 'type_abonnement__nom', 'transaction_reference')
-    raw_id_fields = ('user', 'organization', 'type_abonnement')
-    readonly_fields = ('created_at', 'updated_at', 'transaction_reference')
+    search_fields = ('user__email', 'type_abonnement__nom', 'tracking_id')
+    raw_id_fields = ('user', 'type_abonnement')
+    readonly_fields = ('created_at', 'tracking_id')
     
     def is_active_subscription(self, obj):
         return obj.status == 'ACTIF' and (obj.date_fin is None or obj.date_fin > timezone.now())

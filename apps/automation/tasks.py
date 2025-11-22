@@ -1,6 +1,4 @@
-"""
-Tâches asynchrones Celery pour le module Automation
-"""
+
 from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta

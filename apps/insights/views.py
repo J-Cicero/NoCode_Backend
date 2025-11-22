@@ -74,17 +74,24 @@ class UserActivityViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Filtre les activités par organisation de l'utilisateur."""
         queryset = UserActivity.objects.select_related('user', 'organization')
+        user = self.request.user
 
-        # Filtrage par organisation
-        if hasattr(self.request.user, 'organization'):
-            queryset = queryset.filter(organization=self.request.user.organization)
+        # Staff voit tout
+        if user.is_staff or user.is_superuser:
+            return queryset
 
-        # Superutilisateurs voient tout
-        elif self.request.user.is_superuser:
-            pass
+        # Récupérer les organisations dont l'utilisateur est membre
+        from apps.foundation.permissions import get_user_organizations
+        org_ids = get_user_organizations(user)
+        
+        if org_ids:
+            # Activités de ses organisations + ses propres activités
+            queryset = queryset.filter(
+                Q(organization_id__in=org_ids) | Q(user=user)
+            )
         else:
-            # Utilisateurs normaux voient seulement leurs propres activités
-            queryset = queryset.filter(user=self.request.user)
+            # Seulement ses propres activités
+            queryset = queryset.filter(user=user)
 
         return queryset
 
@@ -220,10 +227,21 @@ class ApplicationMetricViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Filtre par organisation si nécessaire."""
         queryset = super().get_queryset()
+        user = self.request.user
 
-        # Filtrage par organisation via les applications
-        if hasattr(self.request.user, 'organization'):
-            queryset = queryset.filter(app__project__organization=self.request.user.organization)
+        # Staff voit tout
+        if user.is_staff or user.is_superuser:
+            return queryset
+
+        # Récupérer les organisations dont l'utilisateur est membre
+        from apps.foundation.permissions import get_user_organizations
+        org_ids = get_user_organizations(user)
+        
+        # Filtrer par projets des organisations + projets perso
+        queryset = queryset.filter(
+            Q(app__project__organization_id__in=org_ids) | 
+            Q(app__project__organization__isnull=True, app__project__created_by=user)
+        )
 
         return queryset
 
@@ -254,9 +272,20 @@ class UserMetricViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         """Filtre par organisation de l'utilisateur."""
         queryset = super().get_queryset()
+        user = self.request.user
 
-        if hasattr(self.request.user, 'organization'):
-            queryset = queryset.filter(organization=self.request.user.organization)
+        # Staff voit tout
+        if user.is_staff or user.is_superuser:
+            return queryset
+
+        # Récupérer les organisations dont l'utilisateur est membre
+        from apps.foundation.permissions import get_user_organizations
+        org_ids = get_user_organizations(user)
+        
+        # Métriques de ses organisations + ses propres métriques
+        queryset = queryset.filter(
+            Q(organization_id__in=org_ids) | Q(user=user)
+        )
 
         return queryset
 
@@ -320,10 +349,20 @@ def track_event(request):
     data = serializer.validated_data
 
     try:
+        # Récupérer la première organisation active de l'utilisateur
+        from apps.foundation.models import OrganizationMember
+        
+        membership = OrganizationMember.objects.filter(
+            user=request.user,
+            status='ACTIVE'
+        ).select_related('organization').first()
+        
+        organization = membership.organization if membership else None
+        
         # Créer l'activité de tracking
         activity = UserActivity.objects.create(
             user=request.user if request.user.is_authenticated else None,
-            organization=request.user.organization if hasattr(request.user, 'organization') else None,
+            organization=organization,
             activity_type=f"tracking.{data['event_type']}",
             description=f"Événement personnalisé: {data['event_type']}",
             metadata=data['event_data'],
@@ -336,7 +375,7 @@ def track_event(request):
         MetricsCollector.collect_event_metric(
             event_type=data['event_type'],
             user=request.user,
-            organization=request.user.organization if hasattr(request.user, 'organization') else None,
+            organization=organization,
             metadata=data['event_data']
         )
 
@@ -459,12 +498,23 @@ def performance_report(request):
         app = get_object_or_404(GeneratedApp, id=data['app_id'])
 
         # Vérifier les permissions
-        if not request.user.is_superuser:
-            if not hasattr(request.user, 'organization') or app.project.organization != request.user.organization:
-                return Response(
-                    {'error': 'Accès non autorisé à cette application'},
-                    status=status.HTTP_403_FORBIDDEN
-                )
+        if not (request.user.is_staff or request.user.is_superuser):
+            from apps.foundation.permissions import is_org_member
+            
+            # Vérifier si c'est un projet perso
+            if not app.project.organization:
+                if app.project.created_by != request.user:
+                    return Response(
+                        {'error': 'Accès non autorisé à cette application'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            else:
+                # Vérifier membership de l'organisation
+                if not is_org_member(request.user, app.project.organization):
+                    return Response(
+                        {'error': 'Accès non autorisé à cette application'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
 
         # Générer le rapport de performance
         report = AnalyticsService.generate_performance_report(

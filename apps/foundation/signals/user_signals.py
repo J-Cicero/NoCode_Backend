@@ -10,4 +10,4 @@ logger = logging.getLogger(__name__)
 def user_post_save(sender, instance, created, **kwargs):
 
     if created:
-        logger.info(f"Nouvel utilisateur créé : {instance.email} (rôle: {instance.role})")
+        logger.info(f"Nouvel utilisateur créé : {instance.email}")

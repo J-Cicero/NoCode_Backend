@@ -636,7 +636,7 @@ class WorkflowExecutionLog(models.Model):
         related_name='execution_logs',
         verbose_name='Étape'
     )
-    step_id = models.CharField(max_length=100, blank=True, verbose_name='ID de l\'étape')
+    step_identifier = models.CharField(max_length=100, blank=True, verbose_name='ID de l\'étape')
     
     # Log
     level = models.CharField(
@@ -731,3 +731,54 @@ class ActionTemplate(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.get_category_display()})"
+
+
+
+class Node(models.Model):
+    """Node dans le graphe visuel des workflows."""
+    NODE_TYPES = [
+        ('trigger', 'Déclencheur'),
+        ('action', 'Action'),
+        ('condition', 'Condition'),
+        ('math', 'Math'),
+        ('string', 'String'),
+        ('data', 'Data'),
+        ('api', 'API'),
+        ('email', 'Email'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name='nodes')
+    node_id = models.CharField(max_length=100)
+    node_type = models.CharField(max_length=50, choices=NODE_TYPES)
+    label = models.CharField(max_length=255)
+    position_x = models.FloatField(default=0)
+    position_y = models.FloatField(default=0)
+    config = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = [['workflow', 'node_id']]
+    
+    def __str__(self):
+        return f"{self.label} ({self.node_type}) - {self.workflow.name}"
+
+
+class Edge(models.Model):
+    """Connexion entre les nœuds dans le graphe visuel."""
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE, related_name='edges')
+    source_node = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='outgoing_edges')
+    target_node = models.ForeignKey(Node, on_delete=models.CASCADE, related_name='incoming_edges')
+    source_port = models.CharField(max_length=50, default='output')
+    target_port = models.CharField(max_length=50, default='input')
+    label = models.CharField(max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = [['workflow', 'source_node', 'target_node', 'source_port', 'target_port']]
+    
+    def __str__(self):
+        return f"{self.source_node.label} → {self.target_node.label}"

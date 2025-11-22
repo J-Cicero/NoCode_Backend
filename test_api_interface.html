@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test APIs NoCode Platform</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; }
+        input, textarea, button { width: 100%; padding: 10px; margin: 5px 0; }
+        button { background: #007cba; color: white; border: none; cursor: pointer; }
+        .response { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test APIs NoCode Platform</h1>
+    
+    <div class="section">
+        <h2>1. Inscription</h2>
+        <input type="email" id="register-email" placeholder="Email" value="test@example.com">
+        <input type="password" id="register-password" placeholder="Mot de passe" value="TestPass123@">
+        <input type="text" id="register-nom" placeholder="Nom" value="Test">
+        <input type="text" id="register-prenom" placeholder="Prénom" value="User">
+        <input type="text" id="register-pays" placeholder="Pays" value="France">
+        <input type="text" id="register-phone" placeholder="Téléphone" value="0123456789">
+        <button onclick="register()">S'inscrire</button>
+        <div id="register-response" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>2. Connexion</h2>
+        <input type="email" id="login-email" placeholder="Email" value="test@example.com">
+        <input type="password" id="login-password" placeholder="Mot de passe" value="TestPass123@">
+        <button onclick="login()">Se connecter</button>
+        <div id="login-response" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>3. Créer Workflow</h2>
+        <input type="text" id="workflow-name" placeholder="Nom du workflow" value="Test Workflow Node/Edge">
+        <textarea id="workflow-desc" placeholder="Description">Workflow pour tester Node/Edge</textarea>
+        <button onclick="createWorkflow()">Créer Workflow</button>
+        <div id="workflow-response" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>4. Créer Nœud</h2>
+        <input type="text" id="node-workflow" placeholder="Workflow ID" value="">
+        <select id="node-type">
+            <option value="trigger">Trigger</option>
+            <option value="action">Action</option>
+            <option value="condition">Condition</option>
+        </select>
+        <input type="text" id="node-label" placeholder="Label" value="Test Node">
+        <input type="number" id="node-x" placeholder="Position X" value="100">
+        <input type="number" id="node-y" placeholder="Position Y" value="100">
+        <button onclick="createNode()">Créer Nœud</button>
+        <div id="node-response" class="response"></div>
+    </div>
+
+    <div class="section">
+        <h2>5. Voir Graphe</h2>
+        <input type="text" id="graph-workflow" placeholder="Workflow ID" value="">
+        <button onclick="viewGraph()">Voir Graphe</button>
+        <div id="graph-response" class="response"></div>
+    </div>
+
+    <script>
+        let authToken = '';
+        const BASE_URL = 'http://127.0.0.1:8000/api/v1';
+
+        function showResponse(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = `response ${isError ? 'error' : 'success'}`;
+            element.textContent = typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+        }
+
+        async function register() {
+            const data = {
+                email: document.getElementById('register-email').value,
+                password: document.getElementById('register-password').value,
+                password_confirm: document.getElementById('register-password').value,
+                nom: document.getElementById('register-nom').value,
+                prenom: document.getElementById('register-prenom').value,
+                pays: document.getElementById('register-pays').value,
+                numero_telephone: document.getElementById('register-phone').value
+            };
+
+            try {
+                const response = await fetch(`${BASE_URL}/foundation/auth/register/client/`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                showResponse('register-response', result, !response.ok);
+            } catch (error) {
+                showResponse('register-response', error.message, true);
+            }
+        }
+
+        async function login() {
+            const data = {
+                email: document.getElementById('login-email').value,
+                password: document.getElementById('login-password').value
+            };
+
+            try {
+                const response = await fetch(`${BASE_URL}/foundation/auth/login/`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok && result.access) {
+                    authToken = result.access;
+                    showResponse('login-response', '✅ Connecté! Token sauvegardé.', false);
+                } else {
+                    showResponse('login-response', result, true);
+                }
+            } catch (error) {
+                showResponse('login-response', error.message, true);
+            }
+        }
+
+        async function createWorkflow() {
+            const data = {
+                name: document.getElementById('workflow-name').value,
+                description: document.getElementById('workflow-desc').value,
+                is_active: true
+            };
+
+            try {
+                const response = await fetch(`${BASE_URL}/automation/workflows/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (response.ok && result.id) {
+                    document.getElementById('node-workflow').value = result.id;
+                    document.getElementById('graph-workflow').value = result.id;
+                    showResponse('workflow-response', `✅ Workflow créé! ID: ${result.id}`, false);
+                } else {
+                    showResponse('workflow-response', result, true);
+                }
+            } catch (error) {
+                showResponse('workflow-response', error.message, true);
+            }
+        }
+
+        async function createNode() {
+            const workflowId = document.getElementById('node-workflow').value;
+            const data = {
+                node_type: document.getElementById('node-type').value,
+                label: document.getElementById('node-label').value,
+                position_x: parseFloat(document.getElementById('node-x').value),
+                position_y: parseFloat(document.getElementById('node-y').value),
+                config: {test: true}
+            };
+
+            try {
+                const response = await fetch(`${BASE_URL}/automation/workflows/${workflowId}/nodes/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                showResponse('node-response', result, !response.ok);
+            } catch (error) {
+                showResponse('node-response', error.message, true);
+            }
+        }
+
+        async function viewGraph() {
+            const workflowId = document.getElementById('graph-workflow').value;
+
+            try {
+                const response = await fetch(`${BASE_URL}/automation/workflows/${workflowId}/graph/`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                const result = await response.json();
+                showResponse('graph-response', result, !response.ok);
+            } catch (error) {
+                showResponse('graph-response', error.message, true);
+            }
+        }
+    </script>
+</body>
+</html>

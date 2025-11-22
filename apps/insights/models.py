@@ -288,6 +288,7 @@ class UserMetric(BaseModel):
     )
 
     organization = models.ForeignKey(
+        'foundation.Organization',
         on_delete=models.CASCADE,
         related_name='user_metrics',
         verbose_name="Organisation"

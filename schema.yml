@@ -1,0 +1,6405 @@
+openapi: 3.0.3
+info:
+  title: NoCode Platform API
+  version: 1.0.0
+  description: API pour la plateforme NoCode
+paths:
+  /automation/action-templates/:
+    get:
+      operationId: automation_action_templates_list
+      description: API pour gérer les templates d'actions.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedActionTemplateList'
+          description: ''
+    post:
+      operationId: automation_action_templates_create
+      description: API pour gérer les templates d'actions.
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ActionTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ActionTemplateRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionTemplate'
+          description: ''
+  /automation/action-templates/{id}/:
+    get:
+      operationId: automation_action_templates_retrieve
+      description: API pour gérer les templates d'actions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionTemplate'
+          description: ''
+    put:
+      operationId: automation_action_templates_update
+      description: API pour gérer les templates d'actions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ActionTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ActionTemplateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionTemplate'
+          description: ''
+    patch:
+      operationId: automation_action_templates_partial_update
+      description: API pour gérer les templates d'actions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedActionTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedActionTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedActionTemplateRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionTemplate'
+          description: ''
+    delete:
+      operationId: automation_action_templates_destroy
+      description: API pour gérer les templates d'actions.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      responses:
+        '204':
+          description: No response body
+  /automation/executions/:
+    get:
+      operationId: automation_executions_list
+      description: API pour consulter les exécutions de workflows.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWorkflowExecutionListList'
+          description: ''
+  /automation/executions/{id}/:
+    get:
+      operationId: automation_executions_retrieve
+      description: API pour consulter les exécutions de workflows.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowExecutionDetail'
+          description: ''
+  /automation/executions/{id}/cancel/:
+    post:
+      operationId: automation_executions_cancel_create
+      description: Annule une exécution en cours.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowExecutionDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkflowExecutionDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkflowExecutionDetailRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowExecutionDetail'
+          description: ''
+  /automation/executions/{id}/logs/:
+    get:
+      operationId: automation_executions_logs_retrieve
+      description: Récupère les logs d'une exécution.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowExecutionDetail'
+          description: ''
+  /automation/integrations/:
+    get:
+      operationId: automation_integrations_list
+      description: |-
+        API pour gérer les intégrations.
+
+        Endpoints:
+        - GET /api/automation/integrations/ : Liste des intégrations
+        - GET /api/automation/integrations/available/ : Intégrations disponibles
+        - POST /api/automation/integrations/configure/ : Configurer une intégration
+        - POST /api/automation/integrations/{id}/test/ : Tester une intégration
+        - POST /api/automation/integrations/{id}/execute/ : Exécuter une action
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedIntegrationList'
+          description: ''
+    post:
+      operationId: automation_integrations_create
+      description: |-
+        API pour gérer les intégrations.
+
+        Endpoints:
+        - GET /api/automation/integrations/ : Liste des intégrations
+        - GET /api/automation/integrations/available/ : Intégrations disponibles
+        - POST /api/automation/integrations/configure/ : Configurer une intégration
+        - POST /api/automation/integrations/{id}/test/ : Tester une intégration
+        - POST /api/automation/integrations/{id}/execute/ : Exécuter une action
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Integration'
+          description: ''
+  /automation/integrations/{id}/:
+    get:
+      operationId: automation_integrations_retrieve
+      description: |-
+        API pour gérer les intégrations.
+
+        Endpoints:
+        - GET /api/automation/integrations/ : Liste des intégrations
+        - GET /api/automation/integrations/available/ : Intégrations disponibles
+        - POST /api/automation/integrations/configure/ : Configurer une intégration
+        - POST /api/automation/integrations/{id}/test/ : Tester une intégration
+        - POST /api/automation/integrations/{id}/execute/ : Exécuter une action
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Integration'
+          description: ''
+    put:
+      operationId: automation_integrations_update
+      description: |-
+        API pour gérer les intégrations.
+
+        Endpoints:
+        - GET /api/automation/integrations/ : Liste des intégrations
+        - GET /api/automation/integrations/available/ : Intégrations disponibles
+        - POST /api/automation/integrations/configure/ : Configurer une intégration
+        - POST /api/automation/integrations/{id}/test/ : Tester une intégration
+        - POST /api/automation/integrations/{id}/execute/ : Exécuter une action
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Integration'
+          description: ''
+    patch:
+      operationId: automation_integrations_partial_update
+      description: |-
+        API pour gérer les intégrations.
+
+        Endpoints:
+        - GET /api/automation/integrations/ : Liste des intégrations
+        - GET /api/automation/integrations/available/ : Intégrations disponibles
+        - POST /api/automation/integrations/configure/ : Configurer une intégration
+        - POST /api/automation/integrations/{id}/test/ : Tester une intégration
+        - POST /api/automation/integrations/{id}/execute/ : Exécuter une action
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedIntegrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedIntegrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedIntegrationRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Integration'
+          description: ''
+    delete:
+      operationId: automation_integrations_destroy
+      description: |-
+        API pour gérer les intégrations.
+
+        Endpoints:
+        - GET /api/automation/integrations/ : Liste des intégrations
+        - GET /api/automation/integrations/available/ : Intégrations disponibles
+        - POST /api/automation/integrations/configure/ : Configurer une intégration
+        - POST /api/automation/integrations/{id}/test/ : Tester une intégration
+        - POST /api/automation/integrations/{id}/execute/ : Exécuter une action
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      responses:
+        '204':
+          description: No response body
+  /automation/integrations/{id}/execute/:
+    post:
+      operationId: automation_integrations_execute_create
+      description: Exécute une action sur l'intégration.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Integration'
+          description: ''
+  /automation/integrations/{id}/test/:
+    post:
+      operationId: automation_integrations_test_create
+      description: Teste une intégration.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Integration'
+          description: ''
+  /automation/integrations/available/:
+    get:
+      operationId: automation_integrations_available_retrieve
+      description: Liste les types d'intégrations disponibles.
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Integration'
+          description: ''
+  /automation/integrations/configure/:
+    post:
+      operationId: automation_integrations_configure_create
+      description: Configure une nouvelle intégration.
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/IntegrationRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Integration'
+          description: ''
+  /automation/workflows/:
+    get:
+      operationId: automation_workflows_list
+      description: |-
+        API pour gérer les workflows.
+
+        Endpoints:
+        - GET /api/automation/workflows/ : Liste des workflows
+        - POST /api/automation/workflows/ : Créer un workflow
+        - GET /api/automation/workflows/{id}/ : Détails d'un workflow
+        - PUT /api/automation/workflows/{id}/ : Mettre à jour un workflow
+        - DELETE /api/automation/workflows/{id}/ : Supprimer un workflow
+        - POST /api/automation/workflows/{id}/execute/ : Exécuter un workflow
+        - GET /api/automation/workflows/{id}/executions/ : Historique d'exécutions
+        - POST /api/automation/workflows/{id}/validate/ : Valider un workflow
+        - POST /api/automation/workflows/{id}/duplicate/ : Dupliquer un workflow
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWorkflowListList'
+          description: ''
+    post:
+      operationId: automation_workflows_create
+      description: |-
+        API pour gérer les workflows.
+
+        Endpoints:
+        - GET /api/automation/workflows/ : Liste des workflows
+        - POST /api/automation/workflows/ : Créer un workflow
+        - GET /api/automation/workflows/{id}/ : Détails d'un workflow
+        - PUT /api/automation/workflows/{id}/ : Mettre à jour un workflow
+        - DELETE /api/automation/workflows/{id}/ : Supprimer un workflow
+        - POST /api/automation/workflows/{id}/execute/ : Exécuter un workflow
+        - GET /api/automation/workflows/{id}/executions/ : Historique d'exécutions
+        - POST /api/automation/workflows/{id}/validate/ : Valider un workflow
+        - POST /api/automation/workflows/{id}/duplicate/ : Dupliquer un workflow
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkflowCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkflowCreateRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowCreate'
+          description: ''
+  /automation/workflows/{id}/:
+    get:
+      operationId: automation_workflows_retrieve
+      description: |-
+        API pour gérer les workflows.
+
+        Endpoints:
+        - GET /api/automation/workflows/ : Liste des workflows
+        - POST /api/automation/workflows/ : Créer un workflow
+        - GET /api/automation/workflows/{id}/ : Détails d'un workflow
+        - PUT /api/automation/workflows/{id}/ : Mettre à jour un workflow
+        - DELETE /api/automation/workflows/{id}/ : Supprimer un workflow
+        - POST /api/automation/workflows/{id}/execute/ : Exécuter un workflow
+        - GET /api/automation/workflows/{id}/executions/ : Historique d'exécutions
+        - POST /api/automation/workflows/{id}/validate/ : Valider un workflow
+        - POST /api/automation/workflows/{id}/duplicate/ : Dupliquer un workflow
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDetail'
+          description: ''
+    put:
+      operationId: automation_workflows_update
+      description: |-
+        API pour gérer les workflows.
+
+        Endpoints:
+        - GET /api/automation/workflows/ : Liste des workflows
+        - POST /api/automation/workflows/ : Créer un workflow
+        - GET /api/automation/workflows/{id}/ : Détails d'un workflow
+        - PUT /api/automation/workflows/{id}/ : Mettre à jour un workflow
+        - DELETE /api/automation/workflows/{id}/ : Supprimer un workflow
+        - POST /api/automation/workflows/{id}/execute/ : Exécuter un workflow
+        - GET /api/automation/workflows/{id}/executions/ : Historique d'exécutions
+        - POST /api/automation/workflows/{id}/validate/ : Valider un workflow
+        - POST /api/automation/workflows/{id}/duplicate/ : Dupliquer un workflow
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDetail'
+          description: ''
+    patch:
+      operationId: automation_workflows_partial_update
+      description: |-
+        API pour gérer les workflows.
+
+        Endpoints:
+        - GET /api/automation/workflows/ : Liste des workflows
+        - POST /api/automation/workflows/ : Créer un workflow
+        - GET /api/automation/workflows/{id}/ : Détails d'un workflow
+        - PUT /api/automation/workflows/{id}/ : Mettre à jour un workflow
+        - DELETE /api/automation/workflows/{id}/ : Supprimer un workflow
+        - POST /api/automation/workflows/{id}/execute/ : Exécuter un workflow
+        - GET /api/automation/workflows/{id}/executions/ : Historique d'exécutions
+        - POST /api/automation/workflows/{id}/validate/ : Valider un workflow
+        - POST /api/automation/workflows/{id}/duplicate/ : Dupliquer un workflow
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkflowDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkflowDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedWorkflowDetailRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDetail'
+          description: ''
+    delete:
+      operationId: automation_workflows_destroy
+      description: |-
+        API pour gérer les workflows.
+
+        Endpoints:
+        - GET /api/automation/workflows/ : Liste des workflows
+        - POST /api/automation/workflows/ : Créer un workflow
+        - GET /api/automation/workflows/{id}/ : Détails d'un workflow
+        - PUT /api/automation/workflows/{id}/ : Mettre à jour un workflow
+        - DELETE /api/automation/workflows/{id}/ : Supprimer un workflow
+        - POST /api/automation/workflows/{id}/execute/ : Exécuter un workflow
+        - GET /api/automation/workflows/{id}/executions/ : Historique d'exécutions
+        - POST /api/automation/workflows/{id}/validate/ : Valider un workflow
+        - POST /api/automation/workflows/{id}/duplicate/ : Dupliquer un workflow
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      responses:
+        '204':
+          description: No response body
+  /automation/workflows/{id}/duplicate/:
+    post:
+      operationId: automation_workflows_duplicate_create
+      description: Duplique un workflow.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDetail'
+          description: ''
+  /automation/workflows/{id}/edges/:
+    get:
+      operationId: automation_workflows_edges_list
+      description: ViewSet pour les opérations CRUD sur les arêtes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - automation
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEdgeList'
+          description: ''
+    post:
+      operationId: automation_workflows_edges_create
+      description: ViewSet pour les opérations CRUD sur les arêtes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+  /automation/workflows/{id}/edges/{id}/:
+    get:
+      operationId: automation_workflows_edges_retrieve
+      description: ViewSet pour les opérations CRUD sur les arêtes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+    put:
+      operationId: automation_workflows_edges_update
+      description: ViewSet pour les opérations CRUD sur les arêtes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EdgeRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+    patch:
+      operationId: automation_workflows_edges_partial_update
+      description: ViewSet pour les opérations CRUD sur les arêtes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEdgeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEdgeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEdgeRequest'
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Edge'
+          description: ''
+    delete:
+      operationId: automation_workflows_edges_destroy
+      description: ViewSet pour les opérations CRUD sur les arêtes.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /automation/workflows/{id}/execute/:
+    post:
+      operationId: automation_workflows_execute_create
+      description: |-
+        Exécute un workflow.
+
+        Body:
+        {
+            "input_data": {...},
+            "async_execution": true
+        }
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDetail'
+          description: ''
+  /automation/workflows/{id}/executions/:
+    get:
+      operationId: automation_workflows_executions_retrieve
+      description: Récupère l'historique des exécutions d'un workflow.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDetail'
+          description: ''
+  /automation/workflows/{id}/graph/{id}/graph/:
+    get:
+      operationId: automation_workflows_graph_graph_retrieve
+      description: Retourne le graphe complet du workflow.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /automation/workflows/{id}/nodes/:
+    get:
+      operationId: automation_workflows_nodes_list
+      description: ViewSet pour les opérations CRUD sur les nœuds.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - automation
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNodeList'
+          description: ''
+    post:
+      operationId: automation_workflows_nodes_create
+      description: ViewSet pour les opérations CRUD sur les nœuds.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+  /automation/workflows/{id}/nodes/{id}/:
+    get:
+      operationId: automation_workflows_nodes_retrieve
+      description: ViewSet pour les opérations CRUD sur les nœuds.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+    put:
+      operationId: automation_workflows_nodes_update
+      description: ViewSet pour les opérations CRUD sur les nœuds.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+    patch:
+      operationId: automation_workflows_nodes_partial_update
+      description: ViewSet pour les opérations CRUD sur les nœuds.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNodeRequest'
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+    delete:
+      operationId: automation_workflows_nodes_destroy
+      description: ViewSet pour les opérations CRUD sur les nœuds.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /automation/workflows/{id}/nodes/batch_create/:
+    post:
+      operationId: automation_workflows_nodes_batch_create_create
+      description: Crée plusieurs nœuds en une seule opération.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NodeRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+          description: ''
+  /automation/workflows/{id}/validate/:
+    post:
+      operationId: automation_workflows_validate_create
+      description: Valide la configuration d'un workflow.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - automation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/WorkflowDetailRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowDetail'
+          description: ''
+  /foundation/auth/change-password/:
+    post:
+      operationId: foundation_auth_change_password_create
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/auth/login/:
+    post:
+      operationId: foundation_auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - foundation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /foundation/auth/logout/:
+    post:
+      operationId: foundation_auth_logout_create
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/auth/password-reset/:
+    post:
+      operationId: foundation_auth_password_reset_create
+      tags:
+      - foundation
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /foundation/auth/password-reset/confirm/:
+    post:
+      operationId: foundation_auth_password_reset_confirm_create
+      tags:
+      - foundation
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /foundation/auth/refresh/:
+    post:
+      operationId: foundation_auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - foundation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /foundation/auth/register/client/:
+    post:
+      operationId: foundation_auth_register_client_create
+      tags:
+      - foundation
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /foundation/organizations/:
+    get:
+      operationId: foundation_organizations_retrieve
+      description: Liste les organisations de l'utilisateur.
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: foundation_organizations_create
+      description: Crée une nouvelle organisation.
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/organizations/{org_id}/:
+    get:
+      operationId: foundation_organizations_retrieve_2
+      description: Récupère les détails d'une organisation.
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: foundation_organizations_update
+      description: Met à jour une organisation.
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: foundation_organizations_destroy
+      description: Supprime une organisation.
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '204':
+          description: No response body
+  /foundation/organizations/{org_id}/leave/:
+    post:
+      operationId: foundation_organizations_leave_create
+      description: Quitte une organisation.
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/organizations/{org_id}/members/:
+    get:
+      operationId: foundation_organizations_members_retrieve
+      description: Liste les membres d'une organisation.
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/organizations/{org_id}/members/{member_id}/:
+    put:
+      operationId: foundation_organizations_members_update
+      description: Met à jour un membre d'organisation.
+      parameters:
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: org_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: foundation_organizations_members_destroy
+      description: Supprime un membre d'une organisation.
+      parameters:
+      - in: path
+        name: member_id
+        schema:
+          type: integer
+        required: true
+      - in: path
+        name: org_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '204':
+          description: No response body
+  /foundation/organizations/{org_id}/stats/:
+    get:
+      operationId: foundation_organizations_stats_retrieve
+      description: Récupère les statistiques d'une organisation.
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/organizations/{org_id}/transfer-ownership/:
+    post:
+      operationId: foundation_organizations_transfer_ownership_create
+      description: Transfère la propriété d'une organisation.
+      parameters:
+      - in: path
+        name: org_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/payment-methods/:
+    get:
+      operationId: foundation_payment_methods_retrieve
+      description: Liste les moyens de paiement de l'utilisateur.
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: foundation_payment_methods_create
+      description: Ajoute un nouveau moyen de paiement.
+      tags:
+      - foundation
+      responses:
+        '201':
+          description: No response body
+  /foundation/subscription-plans/:
+    get:
+      operationId: foundation_subscription_plans_list
+      description: API pour consulter les plans d'abonnement disponibles.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - foundation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTypeAbonnementList'
+          description: ''
+  /foundation/subscription-plans/{id}/:
+    get:
+      operationId: foundation_subscription_plans_retrieve
+      description: API pour consulter les plans d'abonnement disponibles.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Type d'abonnement.
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TypeAbonnement'
+          description: ''
+  /foundation/subscription-plans/compare/:
+    get:
+      operationId: foundation_subscription_plans_compare_retrieve
+      description: Compare tous les plans disponibles.
+      tags:
+      - foundation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TypeAbonnement'
+          description: ''
+  /foundation/subscriptions/:
+    get:
+      operationId: foundation_subscriptions_list
+      description: API pour consulter et gérer les abonnements.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - foundation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAbonnementList'
+          description: ''
+  /foundation/subscriptions/{id}/:
+    get:
+      operationId: foundation_subscriptions_retrieve
+      description: API pour consulter et gérer les abonnements.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Abonnement'
+          description: ''
+  /foundation/subscriptions/{id}/cancel/:
+    post:
+      operationId: foundation_subscriptions_cancel_create
+      description: Annule un abonnement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - foundation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbonnementRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AbonnementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AbonnementRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Abonnement'
+          description: ''
+  /foundation/subscriptions/{id}/upgrade/:
+    post:
+      operationId: foundation_subscriptions_upgrade_create
+      description: Met à niveau un abonnement vers un plan supérieur.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - foundation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbonnementRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AbonnementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AbonnementRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Abonnement'
+          description: ''
+  /foundation/subscriptions/{id}/usage/:
+    get:
+      operationId: foundation_subscriptions_usage_retrieve
+      description: Retourne l'utilisation actuelle de l'abonnement.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Abonnement'
+          description: ''
+  /foundation/subscriptions/create_subscription/:
+    post:
+      operationId: foundation_subscriptions_create_subscription_create
+      description: Crée un nouvel abonnement pour l'utilisateur.
+      tags:
+      - foundation
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AbonnementRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AbonnementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AbonnementRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Abonnement'
+          description: ''
+  /foundation/subscriptions/current/:
+    get:
+      operationId: foundation_subscriptions_current_retrieve
+      description: Retourne l'abonnement actif de l'utilisateur.
+      tags:
+      - foundation
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Abonnement'
+          description: ''
+  /foundation/users/{user_id}/deactivate/:
+    post:
+      operationId: foundation_users_deactivate_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /foundation/users/{user_id}/organizations/:
+    get:
+      operationId: foundation_users_organizations_retrieve
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/users/profile/:
+    get:
+      operationId: foundation_users_profile_retrieve
+      description: Vue pour le profil utilisateur avec tracking_id.
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: foundation_users_profile_update
+      description: Met à jour le profil d'un utilisateur.
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/users/profile/{user_id}/:
+    get:
+      operationId: foundation_users_profile_retrieve_2
+      description: Vue pour le profil utilisateur avec tracking_id.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: foundation_users_profile_update_2
+      description: Met à jour le profil d'un utilisateur.
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - foundation
+      responses:
+        '200':
+          description: No response body
+  /foundation/users/search/:
+    get:
+      operationId: foundation_users_search_retrieve
+      description: Recherche des utilisateurs.
+      tags:
+      - foundation
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /foundation/users/stats/:
+    get:
+      operationId: foundation_users_stats_retrieve
+      tags:
+      - foundation
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /insights/activities/:
+    get:
+      operationId: insights_activities_list
+      description: Retourne la liste des activités utilisateur pour l'organisation
+        courante.
+      summary: Liste des activités utilisateur
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserActivityList'
+          description: ''
+        '403':
+          description: Accès non autorisé
+  /insights/activities/{id}/:
+    get:
+      operationId: insights_activities_retrieve
+      description: Retourne les détails d'une activité utilisateur spécifique.
+      summary: Détails d'une activité
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserActivity'
+          description: ''
+        '404':
+          description: Activité non trouvée
+  /insights/activities/filter/:
+    get:
+      operationId: insights_activities_filter_list
+      description: Filtre les activités par type, utilisateur, date, etc.
+      summary: Filtrer les activités
+      parameters:
+      - in: query
+        name: activity_type
+        schema:
+          type: string
+        description: Type d'activité à filtrer
+      - in: query
+        name: end_date
+        schema:
+          type: string
+        description: Date de fin (YYYY-MM-DD)
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: start_date
+        schema:
+          type: string
+        description: Date de début (YYYY-MM-DD)
+      - in: query
+        name: user_id
+        schema:
+          type: string
+        description: ID utilisateur à filtrer
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserActivityList'
+          description: ''
+  /insights/analytics/:
+    post:
+      operationId: insights_analytics_create
+      description: Génère un rapport d'analytics pour une organisation.
+      summary: Rapport d'analytics
+      tags:
+      - insights
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsReportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnalyticsReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnalyticsReportRequest'
+        required: true
+      responses:
+        '200':
+          description: Rapport généré avec succès
+        '400':
+          description: Paramètres invalides
+        '403':
+          description: Accès non autorisé
+  /insights/analytics/{organization_id}/:
+    post:
+      operationId: insights_analytics_create_2
+      description: Génère un rapport d'analytics pour une organisation.
+      summary: Rapport d'analytics
+      parameters:
+      - in: path
+        name: organization_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - insights
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnalyticsReportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AnalyticsReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AnalyticsReportRequest'
+        required: true
+      responses:
+        '200':
+          description: Rapport généré avec succès
+        '400':
+          description: Paramètres invalides
+        '403':
+          description: Accès non autorisé
+  /insights/application-metrics/:
+    get:
+      operationId: insights_application_metrics_list
+      description: Retourne les métriques des applications générées.
+      summary: Liste des métriques d'application
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedApplicationMetricList'
+          description: ''
+  /insights/application-metrics/{id}/:
+    get:
+      operationId: insights_application_metrics_retrieve
+      description: Retourne les détails d'une métrique d'application spécifique.
+      summary: Détails d'une métrique d'application
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Métrique d'application.
+        required: true
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApplicationMetric'
+          description: ''
+        '404':
+          description: Métrique non trouvée
+  /insights/performance/:
+    post:
+      operationId: insights_performance_create
+      description: Génère un rapport de performance pour une application spécifique.
+      summary: Rapport de performance d'application
+      tags:
+      - insights
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformanceReportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PerformanceReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PerformanceReportRequest'
+        required: true
+      responses:
+        '200':
+          description: Rapport généré avec succès
+        '400':
+          description: Paramètres invalides
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Application non trouvée
+  /insights/performance-metrics/:
+    get:
+      operationId: insights_performance_metrics_list
+      description: Retourne les métriques de performance détaillées.
+      summary: Liste des métriques de performance
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPerformanceMetricList'
+          description: ''
+  /insights/performance-metrics/{id}/:
+    get:
+      operationId: insights_performance_metrics_retrieve
+      description: Retourne les détails d'une métrique de performance spécifique.
+      summary: Détails d'une métrique de performance
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Métrique de performance.
+        required: true
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceMetric'
+          description: ''
+        '404':
+          description: Métrique non trouvée
+  /insights/performance/{app_id}/:
+    post:
+      operationId: insights_performance_create_2
+      description: Génère un rapport de performance pour une application spécifique.
+      summary: Rapport de performance d'application
+      parameters:
+      - in: path
+        name: app_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - insights
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformanceReportRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PerformanceReportRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PerformanceReportRequest'
+        required: true
+      responses:
+        '200':
+          description: Rapport généré avec succès
+        '400':
+          description: Paramètres invalides
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Application non trouvée
+  /insights/system-metrics/:
+    get:
+      operationId: insights_system_metrics_list
+      description: Retourne les métriques système collectées.
+      summary: Liste des métriques système
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSystemMetricList'
+          description: ''
+  /insights/system-metrics/{id}/:
+    get:
+      operationId: insights_system_metrics_retrieve
+      description: Retourne les détails d'une métrique système spécifique.
+      summary: Détails d'une métrique système
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Métrique système.
+        required: true
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemMetric'
+          description: ''
+        '404':
+          description: Métrique non trouvée
+  /insights/track/:
+    post:
+      operationId: insights_track_create
+      description: Permet d'envoyer un événement personnalisé pour le tracking.
+      summary: Tracker un événement personnalisé
+      tags:
+      - insights
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventTrackingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EventTrackingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventTrackingRequest'
+        required: true
+      responses:
+        '201':
+          description: Événement tracké avec succès
+        '400':
+          description: Données invalides
+        '403':
+          description: Accès non autorisé
+  /insights/user-metrics/:
+    get:
+      operationId: insights_user_metrics_list
+      description: Retourne les métriques d'utilisation par utilisateur.
+      summary: Liste des métriques utilisateur
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserMetricList'
+          description: ''
+  /insights/user-metrics/{id}/:
+    get:
+      operationId: insights_user_metrics_retrieve
+      description: Retourne les détails d'une métrique utilisateur spécifique.
+      summary: Détails d'une métrique utilisateur
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Métrique utilisateur.
+        required: true
+      tags:
+      - insights
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserMetric'
+          description: ''
+        '404':
+          description: Métrique non trouvée
+  /runtime/apps/:
+    get:
+      operationId: runtime_apps_list
+      description: Retourne la liste des applications générées par l'utilisateur courant.
+      summary: Lister les applications générées
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - runtime
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGeneratedAppList'
+          description: ''
+        '403':
+          description: Accès non autorisé
+    post:
+      operationId: runtime_apps_create
+      description: Crée une nouvelle application générée.
+      summary: Créer une nouvelle application
+      tags:
+      - runtime
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneratedAppRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GeneratedAppRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GeneratedAppRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedApp'
+          description: ''
+        '400':
+          description: Données invalides
+        '403':
+          description: Accès non autorisé
+  /runtime/apps/{id}/:
+    get:
+      operationId: runtime_apps_retrieve
+      description: Récupère les détails d'une application générée.
+      summary: Récupérer une application
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Application générée.
+        required: true
+      tags:
+      - runtime
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedApp'
+          description: ''
+        '404':
+          description: Application non trouvée
+    put:
+      operationId: runtime_apps_update
+      description: Met à jour les informations d'une application générée.
+      summary: Mettre à jour une application
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Application générée.
+        required: true
+      tags:
+      - runtime
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeneratedAppRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/GeneratedAppRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/GeneratedAppRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedApp'
+          description: ''
+        '400':
+          description: Données invalides
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Application non trouvée
+    patch:
+      operationId: runtime_apps_partial_update
+      description: API endpoint qui permet de gérer les applications générées.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Application générée.
+        required: true
+      tags:
+      - runtime
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGeneratedAppRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedGeneratedAppRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedGeneratedAppRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeneratedApp'
+          description: ''
+    delete:
+      operationId: runtime_apps_destroy
+      description: Supprime une application générée.
+      summary: Supprimer une application
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Application générée.
+        required: true
+      tags:
+      - runtime
+      responses:
+        '204':
+          description: No response body
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Application non trouvée
+  /runtime/apps/{id}/deploy/:
+    post:
+      operationId: runtime_apps_deploy_create
+      description: Lance le déploiement d'une application générée sur l'environnement
+        cible.
+      summary: Déployer une application
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Application générée.
+        required: true
+      tags:
+      - runtime
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeploymentActionRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DeploymentActionRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DeploymentActionRequest'
+      responses:
+        '202':
+          description: Déploiement démarré avec succès
+        '400':
+          description: L'application n'est pas dans un état déployable
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Application non trouvée
+        '500':
+          description: Erreur lors du démarrage du déploiement
+  /runtime/apps/{id}/logs/:
+    get:
+      operationId: runtime_apps_logs_retrieve
+      description: Récupère l'historique des journaux de déploiement pour une application
+        spécifique.
+      summary: Obtenir les journaux d'une application
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Application générée.
+        required: true
+      tags:
+      - runtime
+      responses:
+        '200':
+          description: Journaux récupérés avec succès
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Application non trouvée
+        '500':
+          description: Erreur lors de la récupération des journaux
+  /runtime/apps/{id}/status/:
+    get:
+      operationId: runtime_apps_status_retrieve
+      description: Récupère les informations de statut d'une application générée,
+        y compris son état de déploiement.
+      summary: Obtenir le statut d'une application
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Application générée.
+        required: true
+      tags:
+      - runtime
+      responses:
+        '200':
+          description: Statut de l'application récupéré avec succès
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Application non trouvée
+        '500':
+          description: Erreur lors de la récupération du statut
+  /runtime/deployment-logs/:
+    get:
+      operationId: runtime_deployment_logs_list
+      description: Retourne la liste des journaux de déploiement pour les applications
+        de l'utilisateur.
+      summary: Lister les journaux de déploiement
+      parameters:
+      - in: query
+        name: app_id
+        schema:
+          type: string
+          format: uuid
+        description: Filtrer par ID d'application
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - failed
+          - in_progress
+          - pending
+          - success
+        description: 'Filtrer par statut (ex: ''success'', ''failed'', ''pending'')'
+      tags:
+      - runtime
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDeploymentLogList'
+          description: ''
+        '400':
+          description: Paramètres de requête invalides
+        '403':
+          description: Accès non autorisé
+  /runtime/deployment-logs/{id}/:
+    get:
+      operationId: runtime_deployment_logs_retrieve
+      description: Récupère les détails d'un journal de déploiement spécifique par
+        son ID.
+      summary: Récupérer un journal de déploiement
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - runtime
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentLog'
+          description: ''
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Journal de déploiement non trouvé
+  /runtime/deployment-logs/{id}/retry/:
+    post:
+      operationId: runtime_deployment_logs_retry_create
+      description: Relance un déploiement qui a échoué précédemment en créant une
+        nouvelle entrée de journal.
+      summary: Relancer un déploiement échoué
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - runtime
+      responses:
+        '202':
+          description: Relance du déploiement démarrée avec succès
+        '400':
+          description: Le déploiement ne peut pas être relancé
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Journal de déploiement non trouvé
+        '500':
+          description: Erreur lors de la relance du déploiement
+  /studio/components/:
+    get:
+      operationId: studio_components_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedComponentList'
+          description: ''
+  /studio/components/{id}/:
+    get:
+      operationId: studio_components_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Composant.
+        required: true
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+          description: ''
+  /studio/components/{id}/properties_schema/:
+    get:
+      operationId: studio_components_properties_schema_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Composant.
+        required: true
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+          description: ''
+  /studio/components/categories/:
+    get:
+      operationId: studio_components_categories_retrieve
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+          description: ''
+  /studio/pages/:
+    get:
+      operationId: studio_pages_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPageList'
+          description: ''
+    post:
+      operationId: studio_pages_create
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PageRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+  /studio/pages/{id}/:
+    get:
+      operationId: studio_pages_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+    put:
+      operationId: studio_pages_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PageRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+    patch:
+      operationId: studio_pages_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPageRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+          description: ''
+    delete:
+      operationId: studio_pages_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      responses:
+        '204':
+          description: No response body
+  /studio/projects/:
+    get:
+      operationId: studio_projects_list
+      description: API endpoint pour gérer les projets NoCode
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProjectList'
+          description: ''
+    post:
+      operationId: studio_projects_create
+      description: API endpoint pour gérer les projets NoCode
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+  /studio/projects/{id}/:
+    get:
+      operationId: studio_projects_retrieve
+      description: API endpoint pour gérer les projets NoCode
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    put:
+      operationId: studio_projects_update
+      description: API endpoint pour gérer les projets NoCode
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    patch:
+      operationId: studio_projects_partial_update
+      description: API endpoint pour gérer les projets NoCode
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProjectRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    delete:
+      operationId: studio_projects_destroy
+      description: API endpoint pour gérer les projets NoCode
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      responses:
+        '204':
+          description: No response body
+  /studio/projects/{id}/add_table/:
+    post:
+      operationId: studio_projects_add_table_create
+      description: API endpoint pour gérer les projets NoCode
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+  /studio/projects/{id}/export_project/:
+    get:
+      operationId: studio_projects_export_project_retrieve
+      description: API endpoint pour gérer les projets NoCode
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+  /studio/projects/{id}/tables/:
+    get:
+      operationId: studio_projects_tables_retrieve
+      description: API endpoint pour gérer les projets NoCode
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+  /studio/projects/import_project/:
+    post:
+      operationId: studio_projects_import_project_create
+      description: API endpoint pour gérer les projets NoCode
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+  /studio/schemas/:
+    get:
+      operationId: studio_schemas_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDataSchemaList'
+          description: ''
+    post:
+      operationId: studio_schemas_create
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSchemaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DataSchemaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DataSchemaRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSchema'
+          description: ''
+  /studio/schemas/{id}/:
+    get:
+      operationId: studio_schemas_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSchema'
+          description: ''
+    put:
+      operationId: studio_schemas_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSchemaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DataSchemaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DataSchemaRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSchema'
+          description: ''
+    patch:
+      operationId: studio_schemas_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDataSchemaRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDataSchemaRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDataSchemaRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSchema'
+          description: ''
+    delete:
+      operationId: studio_schemas_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - studio
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    Abonnement:
+      type: object
+      description: Serializer pour les abonnements
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        user:
+          allOf:
+          - $ref: '#/components/schemas/UserBase'
+          readOnly: true
+        type_abonnement:
+          allOf:
+          - $ref: '#/components/schemas/TypeAbonnement'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AbonnementStatusEnum'
+          title: Statut
+        date_debut:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date de début
+        date_fin:
+          type: string
+          format: date-time
+          title: Date de fin
+      required:
+      - date_debut
+      - date_fin
+      - id
+      - type_abonnement
+      - user
+    AbonnementRequest:
+      type: object
+      description: Serializer pour les abonnements
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/AbonnementStatusEnum'
+          title: Statut
+        date_fin:
+          type: string
+          format: date-time
+          title: Date de fin
+      required:
+      - date_fin
+    AbonnementStatusEnum:
+      enum:
+      - EN_ATTENTE
+      - ACTIF
+      - EXPIRE
+      - ANNULE
+      type: string
+      description: |-
+        * `EN_ATTENTE` - En attente
+        * `ACTIF` - Actif
+        * `EXPIRE` - Expiré
+        * `ANNULE` - Annulé
+    ActionTemplate:
+      type: object
+      description: Serializer pour les templates d'actions.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          title: Nom du template
+          maxLength: 255
+        description:
+          type: string
+        category:
+          allOf:
+          - $ref: '#/components/schemas/ActionTemplateCategoryEnum'
+          title: Catégorie
+        action_type:
+          type: string
+          title: Type d'action
+          maxLength: 50
+        default_params:
+          type: object
+          additionalProperties: {}
+          title: Paramètres par défaut
+        param_schema:
+          type: object
+          additionalProperties: {}
+          title: Schéma de validation
+          description: JSON Schema pour valider les paramètres
+        is_public:
+          type: boolean
+          title: Public
+        is_system:
+          type: boolean
+          readOnly: true
+          title: Template système
+        organization:
+          type: integer
+          nullable: true
+          title: Organisation
+        organization_name:
+          type: string
+          readOnly: true
+          nullable: true
+        icon:
+          type: string
+          title: Icône
+          maxLength: 50
+        tags:
+          type: object
+          additionalProperties: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Modifié le
+      required:
+      - action_type
+      - category
+      - created_at
+      - description
+      - id
+      - is_system
+      - name
+      - organization_name
+      - updated_at
+    ActionTemplateCategoryEnum:
+      enum:
+      - data
+      - communication
+      - integration
+      - logic
+      - utility
+      type: string
+      description: |-
+        * `data` - Données
+        * `communication` - Communication
+        * `integration` - Intégration
+        * `logic` - Logique
+        * `utility` - Utilitaire
+    ActionTemplateRequest:
+      type: object
+      description: Serializer pour les templates d'actions.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nom du template
+          maxLength: 255
+        description:
+          type: string
+          minLength: 1
+        category:
+          allOf:
+          - $ref: '#/components/schemas/ActionTemplateCategoryEnum'
+          title: Catégorie
+        action_type:
+          type: string
+          minLength: 1
+          title: Type d'action
+          maxLength: 50
+        default_params:
+          type: object
+          additionalProperties: {}
+          title: Paramètres par défaut
+        param_schema:
+          type: object
+          additionalProperties: {}
+          title: Schéma de validation
+          description: JSON Schema pour valider les paramètres
+        is_public:
+          type: boolean
+          title: Public
+        organization:
+          type: integer
+          nullable: true
+          title: Organisation
+        icon:
+          type: string
+          title: Icône
+          maxLength: 50
+        tags:
+          type: object
+          additionalProperties: {}
+      required:
+      - action_type
+      - category
+      - description
+      - name
+    ActionTypeEnum:
+      enum:
+      - validate_data
+      - database_save
+      - database_query
+      - integration_call
+      - send_email
+      - send_webhook
+      - transform_data
+      - conditional
+      - loop
+      - wait
+      - custom_code
+      type: string
+      description: |-
+        * `validate_data` - Validation de données
+        * `database_save` - Sauvegarde en base
+        * `database_query` - Requête base de données
+        * `integration_call` - Appel d'intégration
+        * `send_email` - Envoi d'email
+        * `send_webhook` - Envoi de webhook
+        * `transform_data` - Transformation de données
+        * `conditional` - Condition
+        * `loop` - Boucle
+        * `wait` - Attente
+        * `custom_code` - Code personnalisé
+    ActivityTypeEnum:
+      enum:
+      - user.login
+      - user.logout
+      - user.register
+      - user.profile_update
+      - project.created
+      - project.updated
+      - project.deleted
+      - project.shared
+      - app.created
+      - app.updated
+      - app.deployed
+      - app.deleted
+      - workflow.created
+      - workflow.executed
+      - workflow.failed
+      - integration.created
+      - integration.updated
+      - integration.failed
+      - security.permission_changed
+      - security.password_changed
+      - security.2fa_enabled
+      - security.2fa_disabled
+      - system.backup
+      - system.maintenance
+      - system.error
+      type: string
+      description: |-
+        * `user.login` - Connexion utilisateur
+        * `user.logout` - Déconnexion utilisateur
+        * `user.register` - Inscription utilisateur
+        * `user.profile_update` - Mise à jour profil
+        * `project.created` - Création de projet
+        * `project.updated` - Modification de projet
+        * `project.deleted` - Suppression de projet
+        * `project.shared` - Partage de projet
+        * `app.created` - Création d'application
+        * `app.updated` - Modification d'application
+        * `app.deployed` - Déploiement d'application
+        * `app.deleted` - Suppression d'application
+        * `workflow.created` - Création de workflow
+        * `workflow.executed` - Exécution de workflow
+        * `workflow.failed` - Échec de workflow
+        * `integration.created` - Création d'intégration
+        * `integration.updated` - Modification d'intégration
+        * `integration.failed` - Échec d'intégration
+        * `security.permission_changed` - Changement de permissions
+        * `security.password_changed` - Changement de mot de passe
+        * `security.2fa_enabled` - 2FA activée
+        * `security.2fa_disabled` - 2FA désactivée
+        * `system.backup` - Sauvegarde système
+        * `system.maintenance` - Maintenance système
+        * `system.error` - Erreur système
+    AnalyticsReportRequest:
+      type: object
+      description: Sérialiseur pour les rapports d'analytics.
+      properties:
+        organization_id:
+          type: string
+          format: uuid
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        metrics:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default:
+          - user_activity
+          - system_performance
+          - app_metrics
+        group_by:
+          allOf:
+          - $ref: '#/components/schemas/GroupByEnum'
+          default: day
+      required:
+      - end_date
+      - organization_id
+      - start_date
+    ApplicationMetric:
+      type: object
+      description: Sérialiseur pour les métriques d'application.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        app:
+          type: string
+          readOnly: true
+        metric_type:
+          allOf:
+          - $ref: '#/components/schemas/ApplicationMetricMetricTypeEnum'
+          title: Type de métrique
+        value:
+          type: number
+          format: double
+          title: Valeur
+        unit:
+          type: string
+          title: Unité
+          maxLength: 20
+        environment:
+          type: string
+          title: Environnement
+          maxLength: 50
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+      required:
+      - app
+      - created_at
+      - id
+      - metric_type
+      - value
+    ApplicationMetricMetricTypeEnum:
+      enum:
+      - response.time
+      - requests.count
+      - errors.count
+      - uptime
+      - cpu.usage
+      - memory.usage
+      - users.active
+      - api.calls
+      - database.queries
+      type: string
+      description: |-
+        * `response.time` - Temps de réponse (ms)
+        * `requests.count` - Nombre de requêtes
+        * `errors.count` - Nombre d'erreurs
+        * `uptime` - Disponibilité (%)
+        * `cpu.usage` - Utilisation CPU (%)
+        * `memory.usage` - Utilisation mémoire (%)
+        * `users.active` - Utilisateurs actifs
+        * `api.calls` - Appels API
+        * `database.queries` - Requêtes base de données
+    CategorieUtilisateurEnum:
+      enum:
+      - CLIENT
+      - ORGANIZATION
+      type: string
+      description: |-
+        * `CLIENT` - Client
+        * `ORGANIZATION` - Organisation
+    Component:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        display_name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/ComponentCategoryEnum'
+        icon:
+          type: string
+          description: 'Nom de l''icône (ex: ''button'', ''input'')'
+          maxLength: 100
+        properties:
+          type: object
+          additionalProperties: {}
+          description: "\n        Définition des propriétés configurables du composant.\n\
+            \        Format: {\n            'prop_name': {\n                'type':\
+            \ 'string|number|boolean|select|color|action',\n                'label':\
+            \ 'Label affiché',\n                'default': 'valeur par défaut',\n\
+            \                'required': true/false,\n                'options': ['option1',\
+            \ 'option2'] // pour type select\n            }\n        }\n    "
+        validation_rules:
+          type: object
+          additionalProperties: {}
+          description: "\n        Règles de validation pour les propriétés.\n    \
+            \    Format: {\n            'prop_name': {\n                'min_length':\
+            \ 1,\n                'max_length': 100,\n                'pattern': 'regex',\n\
+            \                'custom_validation': 'function_name'\n            }\n\
+            \        }\n    "
+        default_config:
+          type: object
+          additionalProperties: {}
+          description: "\n        Configuration par défaut quand le composant est\
+            \ ajouté à une page.\n    "
+        is_active:
+          type: boolean
+        version:
+          type: string
+          maxLength: 20
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - display_name
+      - id
+      - name
+      - updated_at
+    ComponentCategoryEnum:
+      enum:
+      - layout
+      - forms
+      - content
+      - navigation
+      - data
+      - media
+      - feedback
+      - overlay
+      type: string
+      description: |-
+        * `layout` - Layout
+        * `forms` - Formulaires
+        * `content` - Contenu
+        * `navigation` - Navigation
+        * `data` - Données
+        * `media` - Médias
+        * `feedback` - Feedback
+        * `overlay` - Overlay
+    ContentType:
+      type: object
+      description: Sérialiseur pour les ContentTypes.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        app_label:
+          type: string
+          maxLength: 100
+        model:
+          type: string
+          title: Nom de la classe python du modèle
+          maxLength: 100
+      required:
+      - app_label
+      - id
+      - model
+    DataSchema:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        project:
+          type: integer
+        table_name:
+          type: string
+          maxLength: 63
+          pattern: ^[-a-zA-Z0-9_]+$
+        display_name:
+          type: string
+          maxLength: 255
+        fields_config:
+          type: object
+          additionalProperties: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - display_name
+      - fields_config
+      - id
+      - project
+      - table_name
+      - updated_at
+    DataSchemaRequest:
+      type: object
+      properties:
+        project:
+          type: integer
+        table_name:
+          type: string
+          minLength: 1
+          maxLength: 63
+          pattern: ^[-a-zA-Z0-9_]+$
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        fields_config:
+          type: object
+          additionalProperties: {}
+      required:
+      - display_name
+      - fields_config
+      - project
+      - table_name
+    DeploymentActionRequest:
+      type: object
+      description: Sérialiseur pour les actions de déploiement.
+      properties:
+        target:
+          allOf:
+          - $ref: '#/components/schemas/TargetEnum'
+          default: local
+          description: |-
+            Cible de déploiement (local, staging, production)
+
+            * `local` - local
+            * `staging` - staging
+            * `production` - production
+        force:
+          type: boolean
+          default: false
+          description: Forcer le déploiement même si aucun changement détecté
+    DeploymentLog:
+      type: object
+      description: Sérialiseur pour les journaux de déploiement.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        app:
+          type: string
+          format: uuid
+          readOnly: true
+          title: Application
+        status:
+          allOf:
+          - $ref: '#/components/schemas/DeploymentLogStatusEnum'
+          readOnly: true
+          title: Statut
+        status_display:
+          type: string
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Début
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Fin
+        performed_by:
+          type: string
+          readOnly: true
+        duration:
+          type: string
+          readOnly: true
+        error_message:
+          type: string
+          readOnly: true
+          title: Message d'erreur
+      required:
+      - app
+      - completed_at
+      - duration
+      - error_message
+      - id
+      - performed_by
+      - started_at
+      - status
+      - status_display
+    DeploymentLogStatusEnum:
+      enum:
+      - pending
+      - in_progress
+      - completed
+      - failed
+      - rolled_back
+      type: string
+      description: |-
+        * `pending` - En attente
+        * `in_progress` - En cours
+        * `completed` - Terminé
+        * `failed` - Échec
+        * `rolled_back` - Annulé
+    DeploymentTargetEnum:
+      enum:
+      - local
+      - staging
+      - production
+      type: string
+      description: |-
+        * `local` - Local
+        * `staging` - Environnement de test
+        * `production` - Production
+    Edge:
+      type: object
+      description: Serializer pour les arêtes du graphe de workflows.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        workflow:
+          type: string
+          format: uuid
+        source_node:
+          type: string
+          format: uuid
+        target_node:
+          type: string
+          format: uuid
+        source_port:
+          type: string
+          default: output
+          maxLength: 50
+        target_port:
+          type: string
+          default: input
+          maxLength: 50
+        label:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - source_node
+      - target_node
+      - updated_at
+      - workflow
+    EdgeRequest:
+      type: object
+      description: Serializer pour les arêtes du graphe de workflows.
+      properties:
+        workflow:
+          type: string
+          format: uuid
+        source_node:
+          type: string
+          format: uuid
+        target_node:
+          type: string
+          format: uuid
+        source_port:
+          type: string
+          minLength: 1
+          default: output
+          maxLength: 50
+        target_port:
+          type: string
+          minLength: 1
+          default: input
+          maxLength: 50
+        label:
+          type: string
+          maxLength: 255
+      required:
+      - source_node
+      - target_node
+      - workflow
+    EventTrackingRequest:
+      type: object
+      description: Sérialiseur pour le tracking d'événements personnalisés.
+      properties:
+        event_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+        event_data:
+          type: object
+          additionalProperties: {}
+        timestamp:
+          type: string
+          format: date-time
+        session_id:
+          type: string
+          maxLength: 255
+        user_id:
+          type: string
+          format: uuid
+        organization_id:
+          type: string
+          format: uuid
+      required:
+      - event_data
+      - event_type
+      - timestamp
+    GeneratedApp:
+      type: object
+      description: Sérialiseur pour les applications générées.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        project:
+          allOf:
+          - $ref: '#/components/schemas/Project'
+          readOnly: true
+        version:
+          type: string
+          maxLength: 50
+        status:
+          allOf:
+          - $ref: '#/components/schemas/GeneratedAppStatusEnum'
+          readOnly: true
+          title: Statut
+        status_display:
+          type: string
+          readOnly: true
+        deployment_target:
+          allOf:
+          - $ref: '#/components/schemas/DeploymentTargetEnum'
+          title: Environnement de déploiement
+        deployment_target_display:
+          type: string
+          readOnly: true
+        api_base_url:
+          type: string
+          format: uri
+          title: URL de base de l'API
+          maxLength: 200
+        admin_url:
+          type: string
+          format: uri
+          title: URL d'administration
+          maxLength: 200
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Mis à jour le
+        last_deployed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Dernier déploiement
+        last_deployment:
+          type: string
+          readOnly: true
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration technique
+      required:
+      - created_at
+      - deployment_target_display
+      - id
+      - last_deployed_at
+      - last_deployment
+      - project
+      - status
+      - status_display
+      - updated_at
+    GeneratedAppRequest:
+      type: object
+      description: Sérialiseur pour les applications générées.
+      properties:
+        project_tracking_id:
+          type: string
+          format: uuid
+          writeOnly: true
+        version:
+          type: string
+          minLength: 1
+          maxLength: 50
+        deployment_target:
+          allOf:
+          - $ref: '#/components/schemas/DeploymentTargetEnum'
+          title: Environnement de déploiement
+        api_base_url:
+          type: string
+          format: uri
+          title: URL de base de l'API
+          maxLength: 200
+        admin_url:
+          type: string
+          format: uri
+          title: URL d'administration
+          maxLength: 200
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration technique
+      required:
+      - project_tracking_id
+    GeneratedAppStatusEnum:
+      enum:
+      - draft
+      - generated
+      - deployed
+      - error
+      - archived
+      type: string
+      description: |-
+        * `draft` - Brouillon
+        * `generated` - Générée
+        * `deployed` - Déployée
+        * `error` - Erreur
+        * `archived` - Archivée
+    GroupByEnum:
+      enum:
+      - day
+      - week
+      - month
+      type: string
+      description: |-
+        * `day` - day
+        * `week` - week
+        * `month` - month
+    Integration:
+      type: object
+      description: Serializer pour les intégrations.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          title: Nom de l'intégration
+          maxLength: 255
+        integration_type:
+          allOf:
+          - $ref: '#/components/schemas/IntegrationTypeEnum'
+          title: Type d'intégration
+        organization:
+          type: integer
+          title: Organisation
+        organization_name:
+          type: string
+          readOnly: true
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration générale de l'intégration
+        status:
+          allOf:
+          - $ref: '#/components/schemas/IntegrationStatusEnum'
+          title: Statut
+        total_calls:
+          type: integer
+          readOnly: true
+          title: Appels totaux
+        successful_calls:
+          type: integer
+          readOnly: true
+          title: Appels réussis
+        failed_calls:
+          type: integer
+          readOnly: true
+          title: Appels échoués
+        success_rate:
+          type: string
+          readOnly: true
+        last_used_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Dernière utilisation
+        rate_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          title: Limite de requêtes
+          description: Nombre maximum de requêtes par heure
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Modifié le
+      required:
+      - created_at
+      - failed_calls
+      - id
+      - integration_type
+      - last_used_at
+      - name
+      - organization
+      - organization_name
+      - success_rate
+      - successful_calls
+      - total_calls
+      - updated_at
+    IntegrationRequest:
+      type: object
+      description: Serializer pour les intégrations.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nom de l'intégration
+          maxLength: 255
+        integration_type:
+          allOf:
+          - $ref: '#/components/schemas/IntegrationTypeEnum'
+          title: Type d'intégration
+        organization:
+          type: integer
+          title: Organisation
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration générale de l'intégration
+        status:
+          allOf:
+          - $ref: '#/components/schemas/IntegrationStatusEnum'
+          title: Statut
+        rate_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          title: Limite de requêtes
+          description: Nombre maximum de requêtes par heure
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+      required:
+      - integration_type
+      - name
+      - organization
+    IntegrationStatusEnum:
+      enum:
+      - active
+      - inactive
+      - error
+      - testing
+      type: string
+      description: |-
+        * `active` - Active
+        * `inactive` - Inactive
+        * `error` - Erreur
+        * `testing` - En test
+    IntegrationTypeEnum:
+      enum:
+      - email
+      - stripe
+      - webhook
+      - database
+      - storage
+      - notification
+      - api
+      - slack
+      - zapier
+      - custom
+      type: string
+      description: |-
+        * `email` - Email (SMTP/SendGrid)
+        * `stripe` - Stripe
+        * `webhook` - Webhook HTTP
+        * `database` - Base de données
+        * `storage` - Stockage (S3, etc.)
+        * `notification` - Notifications (SMS, Push)
+        * `api` - API REST personnalisée
+        * `slack` - Slack
+        * `zapier` - Zapier
+        * `custom` - Personnalisée
+    LevelEnum:
+      enum:
+      - DEBUG
+      - INFO
+      - WARNING
+      - ERROR
+      - CRITICAL
+      type: string
+      description: |-
+        * `DEBUG` - Debug
+        * `INFO` - Info
+        * `WARNING` - Warning
+        * `ERROR` - Error
+        * `CRITICAL` - Critical
+    Node:
+      type: object
+      description: Serializer pour les nœuds du graphe de workflows.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        workflow:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+          maxLength: 100
+        node_type:
+          $ref: '#/components/schemas/NodeTypeEnum'
+        label:
+          type: string
+          maxLength: 255
+        position_x:
+          type: number
+          format: double
+        position_y:
+          type: number
+          format: double
+        config:
+          type: object
+          additionalProperties: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - label
+      - node_id
+      - node_type
+      - updated_at
+      - workflow
+    NodeRequest:
+      type: object
+      description: Serializer pour les nœuds du graphe de workflows.
+      properties:
+        workflow:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+          minLength: 1
+          maxLength: 100
+        node_type:
+          $ref: '#/components/schemas/NodeTypeEnum'
+        label:
+          type: string
+          minLength: 1
+          maxLength: 255
+        position_x:
+          type: number
+          format: double
+        position_y:
+          type: number
+          format: double
+        config:
+          type: object
+          additionalProperties: {}
+      required:
+      - label
+      - node_id
+      - node_type
+      - workflow
+    NodeTypeEnum:
+      enum:
+      - trigger
+      - action
+      - condition
+      - math
+      - string
+      - data
+      - api
+      - email
+      type: string
+      description: |-
+        * `trigger` - Déclencheur
+        * `action` - Action
+        * `condition` - Condition
+        * `math` - Math
+        * `string` - String
+        * `data` - Data
+        * `api` - API
+        * `email` - Email
+    NomEnum:
+      enum:
+      - FREE
+      - MENSUEL
+      - ANNUEL
+      type: string
+      description: |-
+        * `FREE` - Gratuit
+        * `MENSUEL` - Mensuel
+        * `ANNUEL` - Annuel
+    OnErrorEnum:
+      enum:
+      - stop
+      - continue
+      - retry
+      - goto
+      type: string
+      description: |-
+        * `stop` - Arrêter le workflow
+        * `continue` - Continuer
+        * `retry` - Réessayer
+        * `goto` - Aller à une étape
+    Page:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        project:
+          type: integer
+        name:
+          type: string
+          maxLength: 255
+        route:
+          type: string
+          description: 'Chemin de l''URL (ex: ''home'', ''about'')'
+          maxLength: 255
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration de la page au format JSON (composants, mise en
+            page, etc.)
+        is_home:
+          type: boolean
+          description: Page d'accueil du projet
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - name
+      - project
+      - route
+      - updated_at
+    PageRequest:
+      type: object
+      properties:
+        project:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        route:
+          type: string
+          minLength: 1
+          description: 'Chemin de l''URL (ex: ''home'', ''about'')'
+          maxLength: 255
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration de la page au format JSON (composants, mise en
+            page, etc.)
+        is_home:
+          type: boolean
+          description: Page d'accueil du projet
+      required:
+      - name
+      - project
+      - route
+    PaginatedAbonnementList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Abonnement'
+    PaginatedActionTemplateList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionTemplate'
+    PaginatedApplicationMetricList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApplicationMetric'
+    PaginatedComponentList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Component'
+    PaginatedDataSchemaList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSchema'
+    PaginatedDeploymentLogList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DeploymentLog'
+    PaginatedEdgeList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+    PaginatedGeneratedAppList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneratedApp'
+    PaginatedIntegrationList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Integration'
+    PaginatedNodeList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+    PaginatedPageList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Page'
+    PaginatedPerformanceMetricList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PerformanceMetric'
+    PaginatedProjectList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+    PaginatedSystemMetricList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SystemMetric'
+    PaginatedTypeAbonnementList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TypeAbonnement'
+    PaginatedUserActivityList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserActivity'
+    PaginatedUserMetricList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserMetric'
+    PaginatedWorkflowExecutionListList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowExecutionList'
+    PaginatedWorkflowListList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowList'
+    PatchedActionTemplateRequest:
+      type: object
+      description: Serializer pour les templates d'actions.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nom du template
+          maxLength: 255
+        description:
+          type: string
+          minLength: 1
+        category:
+          allOf:
+          - $ref: '#/components/schemas/ActionTemplateCategoryEnum'
+          title: Catégorie
+        action_type:
+          type: string
+          minLength: 1
+          title: Type d'action
+          maxLength: 50
+        default_params:
+          type: object
+          additionalProperties: {}
+          title: Paramètres par défaut
+        param_schema:
+          type: object
+          additionalProperties: {}
+          title: Schéma de validation
+          description: JSON Schema pour valider les paramètres
+        is_public:
+          type: boolean
+          title: Public
+        organization:
+          type: integer
+          nullable: true
+          title: Organisation
+        icon:
+          type: string
+          title: Icône
+          maxLength: 50
+        tags:
+          type: object
+          additionalProperties: {}
+    PatchedDataSchemaRequest:
+      type: object
+      properties:
+        project:
+          type: integer
+        table_name:
+          type: string
+          minLength: 1
+          maxLength: 63
+          pattern: ^[-a-zA-Z0-9_]+$
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        fields_config:
+          type: object
+          additionalProperties: {}
+    PatchedEdgeRequest:
+      type: object
+      description: Serializer pour les arêtes du graphe de workflows.
+      properties:
+        workflow:
+          type: string
+          format: uuid
+        source_node:
+          type: string
+          format: uuid
+        target_node:
+          type: string
+          format: uuid
+        source_port:
+          type: string
+          minLength: 1
+          default: output
+          maxLength: 50
+        target_port:
+          type: string
+          minLength: 1
+          default: input
+          maxLength: 50
+        label:
+          type: string
+          maxLength: 255
+    PatchedGeneratedAppRequest:
+      type: object
+      description: Sérialiseur pour les applications générées.
+      properties:
+        project_tracking_id:
+          type: string
+          format: uuid
+          writeOnly: true
+        version:
+          type: string
+          minLength: 1
+          maxLength: 50
+        deployment_target:
+          allOf:
+          - $ref: '#/components/schemas/DeploymentTargetEnum'
+          title: Environnement de déploiement
+        api_base_url:
+          type: string
+          format: uri
+          title: URL de base de l'API
+          maxLength: 200
+        admin_url:
+          type: string
+          format: uri
+          title: URL d'administration
+          maxLength: 200
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration technique
+    PatchedIntegrationRequest:
+      type: object
+      description: Serializer pour les intégrations.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nom de l'intégration
+          maxLength: 255
+        integration_type:
+          allOf:
+          - $ref: '#/components/schemas/IntegrationTypeEnum'
+          title: Type d'intégration
+        organization:
+          type: integer
+          title: Organisation
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration générale de l'intégration
+        status:
+          allOf:
+          - $ref: '#/components/schemas/IntegrationStatusEnum'
+          title: Statut
+        rate_limit:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          title: Limite de requêtes
+          description: Nombre maximum de requêtes par heure
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+    PatchedNodeRequest:
+      type: object
+      description: Serializer pour les nœuds du graphe de workflows.
+      properties:
+        workflow:
+          type: string
+          format: uuid
+        node_id:
+          type: string
+          minLength: 1
+          maxLength: 100
+        node_type:
+          $ref: '#/components/schemas/NodeTypeEnum'
+        label:
+          type: string
+          minLength: 1
+          maxLength: 255
+        position_x:
+          type: number
+          format: double
+        position_y:
+          type: number
+          format: double
+        config:
+          type: object
+          additionalProperties: {}
+    PatchedPageRequest:
+      type: object
+      properties:
+        project:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        route:
+          type: string
+          minLength: 1
+          description: 'Chemin de l''URL (ex: ''home'', ''about'')'
+          maxLength: 255
+        config:
+          type: object
+          additionalProperties: {}
+          description: Configuration de la page au format JSON (composants, mise en
+            page, etc.)
+        is_home:
+          type: boolean
+          description: Page d'accueil du projet
+    PatchedProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        organization_id:
+          type: string
+          format: uuid
+          writeOnly: true
+          nullable: true
+    PatchedWorkflowDetailRequest:
+      type: object
+      description: Serializer détaillé pour un workflow.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nom du workflow
+          maxLength: 255
+        description:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2dbEnum'
+          title: Statut
+        organization:
+          type: integer
+          title: Organisation
+        created_by:
+          type: integer
+          nullable: true
+          title: Créé par
+        project:
+          type: integer
+          nullable: true
+          title: Projet
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration générale du workflow
+        variables:
+          type: object
+          additionalProperties: {}
+          description: Variables globales du workflow
+    PerformanceMetric:
+      type: object
+      description: Sérialiseur pour les métriques de performance.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/PerformanceMetricCategoryEnum'
+          title: Catégorie
+        name:
+          type: string
+          title: Nom de la métrique
+          maxLength: 100
+        value:
+          type: number
+          format: double
+          title: Valeur
+        unit:
+          type: string
+          title: Unité
+          maxLength: 20
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Horodatage
+        organization:
+          type: string
+          readOnly: true
+        user:
+          type: string
+          readOnly: true
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+      required:
+      - category
+      - id
+      - name
+      - organization
+      - timestamp
+      - user
+      - value
+    PerformanceMetricCategoryEnum:
+      enum:
+      - frontend
+      - backend
+      - database
+      - external
+      - network
+      type: string
+      description: |-
+        * `frontend` - Interface utilisateur
+        * `backend` - Serveur backend
+        * `database` - Base de données
+        * `external` - Services externes
+        * `network` - Réseau
+    PerformanceReportRequest:
+      type: object
+      description: Sérialiseur pour les rapports de performance.
+      properties:
+        app_id:
+          type: string
+          format: uuid
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        metrics:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          default:
+          - response_time
+          - error_rate
+          - uptime
+      required:
+      - app_id
+      - end_date
+      - start_date
+    Project:
+      type: object
+      properties:
+        tracking_id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        organization_name:
+          type: string
+          readOnly: true
+        schema_name:
+          type: string
+          readOnly: true
+        created_by_username:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - created_by_username
+      - name
+      - organization_name
+      - schema_name
+      - tracking_id
+      - updated_at
+    ProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        organization_id:
+          type: string
+          format: uuid
+          writeOnly: true
+          nullable: true
+      required:
+      - name
+    Status2a6Enum:
+      enum:
+      - pending
+      - running
+      - completed
+      - failed
+      - cancelled
+      type: string
+      description: |-
+        * `pending` - En attente
+        * `running` - En cours
+        * `completed` - Terminé
+        * `failed` - Échoué
+        * `cancelled` - Annulé
+    Status2dbEnum:
+      enum:
+      - DRAFT
+      - ACTIVE
+      - PAUSED
+      - ARCHIVED
+      type: string
+      description: |-
+        * `DRAFT` - Brouillon
+        * `ACTIVE` - Actif
+        * `PAUSED` - En pause
+        * `ARCHIVED` - Archivé
+    SystemMetric:
+      type: object
+      description: Sérialiseur pour les métriques système.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        metric_type:
+          allOf:
+          - $ref: '#/components/schemas/SystemMetricMetricTypeEnum'
+          title: Type de métrique
+        value:
+          type: number
+          format: double
+          title: Valeur
+        unit:
+          type: string
+          title: Unité
+          maxLength: 20
+        tags:
+          type: object
+          additionalProperties: {}
+          title: Étiquettes
+        hostname:
+          type: string
+          title: Nom d'hôte
+          maxLength: 255
+        service:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+      required:
+      - created_at
+      - id
+      - metric_type
+      - value
+    SystemMetricMetricTypeEnum:
+      enum:
+      - cpu.usage
+      - memory.usage
+      - disk.usage
+      - network.in
+      - network.out
+      - requests.count
+      - requests.latency
+      - errors.count
+      - active.users
+      - database.connections
+      - cache.hit_rate
+      type: string
+      description: |-
+        * `cpu.usage` - Utilisation CPU (%)
+        * `memory.usage` - Utilisation mémoire (%)
+        * `disk.usage` - Utilisation disque (%)
+        * `network.in` - Trafic réseau entrant (bytes/s)
+        * `network.out` - Trafic réseau sortant (bytes/s)
+        * `requests.count` - Nombre de requêtes
+        * `requests.latency` - Latence des requêtes (ms)
+        * `errors.count` - Nombre d'erreurs
+        * `active.users` - Utilisateurs actifs
+        * `database.connections` - Connexions base de données
+        * `cache.hit_rate` - Taux de succès cache (%)
+    TargetEnum:
+      enum:
+      - local
+      - staging
+      - production
+      type: string
+      description: |-
+        * `local` - local
+        * `staging` - staging
+        * `production` - production
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - email
+      - password
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    Trigger:
+      type: object
+      description: Serializer pour les déclencheurs.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        trigger_type:
+          allOf:
+          - $ref: '#/components/schemas/TriggerTypeEnum'
+          title: Type de déclencheur
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration spécifique au type de déclencheur
+        webhook_url:
+          type: string
+          readOnly: true
+          title: URL du webhook
+          description: URL générée automatiquement pour recevoir les webhooks
+        webhook_secret:
+          type: string
+          readOnly: true
+          title: Secret du webhook
+        cron_expression:
+          type: string
+          title: Expression cron
+          description: 'Expression cron pour la planification (ex: 0 9 * * *)'
+          maxLength: 100
+        event_type:
+          type: string
+          title: Type d'événement
+          description: 'Type d''événement à écouter (ex: project.created)'
+          maxLength: 100
+        is_active:
+          type: boolean
+          title: Actif
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Modifié le
+      required:
+      - created_at
+      - id
+      - trigger_type
+      - updated_at
+      - webhook_secret
+      - webhook_url
+    TriggerRequest:
+      type: object
+      description: Serializer pour les déclencheurs.
+      properties:
+        trigger_type:
+          allOf:
+          - $ref: '#/components/schemas/TriggerTypeEnum'
+          title: Type de déclencheur
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration spécifique au type de déclencheur
+        cron_expression:
+          type: string
+          title: Expression cron
+          description: 'Expression cron pour la planification (ex: 0 9 * * *)'
+          maxLength: 100
+        event_type:
+          type: string
+          title: Type d'événement
+          description: 'Type d''événement à écouter (ex: project.created)'
+          maxLength: 100
+        is_active:
+          type: boolean
+          title: Actif
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+      required:
+      - trigger_type
+    TriggerTypeEnum:
+      enum:
+      - manual
+      - event
+      - webhook
+      - schedule
+      - form_submit
+      - data_change
+      - api_call
+      type: string
+      description: |-
+        * `manual` - Manuel
+        * `event` - Événement système
+        * `webhook` - Webhook
+        * `schedule` - Planification (cron)
+        * `form_submit` - Soumission de formulaire
+        * `data_change` - Modification de données
+        * `api_call` - Appel API
+    TypeAbonnement:
+      type: object
+      description: Serializer pour les types d'abonnement
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        nom:
+          allOf:
+          - $ref: '#/components/schemas/NomEnum'
+          title: Nom du plan
+        description:
+          type: string
+        tarif:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Tarif (FCFA)
+        duree_en_jours:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Durée en jours
+        categorie_utilisateur:
+          allOf:
+          - $ref: '#/components/schemas/CategorieUtilisateurEnum'
+          title: Catégorie d'utilisateur
+        is_active:
+          type: boolean
+          title: Plan actif
+          description: Indique si ce plan peut être souscrit
+      required:
+      - categorie_utilisateur
+      - duree_en_jours
+      - id
+      - nom
+      - tarif
+    TypeAbonnementRequest:
+      type: object
+      description: Serializer pour les types d'abonnement
+      properties:
+        nom:
+          allOf:
+          - $ref: '#/components/schemas/NomEnum'
+          title: Nom du plan
+        description:
+          type: string
+        tarif:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Tarif (FCFA)
+        duree_en_jours:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Durée en jours
+        categorie_utilisateur:
+          allOf:
+          - $ref: '#/components/schemas/CategorieUtilisateurEnum'
+          title: Catégorie d'utilisateur
+        is_active:
+          type: boolean
+          title: Plan actif
+          description: Indique si ce plan peut être souscrit
+      required:
+      - categorie_utilisateur
+      - duree_en_jours
+      - nom
+      - tarif
+    UserActivity:
+      type: object
+      description: Sérialiseur pour les activités utilisateur.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          type: string
+          readOnly: true
+        organization:
+          type: string
+          readOnly: true
+        activity_type:
+          allOf:
+          - $ref: '#/components/schemas/ActivityTypeEnum'
+          title: Type d'activité
+        description:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+        content_type:
+          allOf:
+          - $ref: '#/components/schemas/ContentType'
+          readOnly: true
+        object_id:
+          type: string
+          format: uuid
+          nullable: true
+          title: ID de l'objet
+        content_object:
+          type: string
+          readOnly: true
+        ip_address:
+          type: string
+          nullable: true
+          title: Adresse IP
+        user_agent:
+          type: string
+        session_id:
+          type: string
+          title: ID de session
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+      required:
+      - activity_type
+      - content_object
+      - content_type
+      - created_at
+      - id
+      - organization
+      - user
+    UserBase:
+      type: object
+      description: Serializer de base pour les utilisateurs.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          title: Adresse email
+          description: L'adresse email est utilisée comme identifiant de connexion.
+          maxLength: 254
+        nom:
+          type: string
+          title: Nom de famille
+          maxLength: 255
+        prenom:
+          type: string
+          title: Prénom
+          maxLength: 255
+        pays:
+          type: string
+          nullable: true
+          maxLength: 100
+        full_name:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+          title: Actif
+          description: Précise si l’utilisateur doit être considéré comme actif. Décochez
+            ceci plutôt que de supprimer le compte.
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Date d’inscription
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Dernière connexion
+      required:
+      - date_joined
+      - email
+      - full_name
+      - id
+      - last_login
+      - nom
+      - prenom
+    UserBaseRequest:
+      type: object
+      description: Serializer de base pour les utilisateurs.
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          title: Adresse email
+          description: L'adresse email est utilisée comme identifiant de connexion.
+          maxLength: 254
+        nom:
+          type: string
+          minLength: 1
+          title: Nom de famille
+          maxLength: 255
+        prenom:
+          type: string
+          minLength: 1
+          title: Prénom
+          maxLength: 255
+        pays:
+          type: string
+          nullable: true
+          maxLength: 100
+        is_active:
+          type: boolean
+          title: Actif
+          description: Précise si l’utilisateur doit être considéré comme actif. Décochez
+            ceci plutôt que de supprimer le compte.
+      required:
+      - email
+      - nom
+      - prenom
+    UserMetric:
+      type: object
+      description: Sérialiseur pour les métriques utilisateur.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          type: string
+          readOnly: true
+        organization:
+          type: string
+          readOnly: true
+        metric_type:
+          allOf:
+          - $ref: '#/components/schemas/UserMetricMetricTypeEnum'
+          title: Type de métrique
+        value:
+          type: number
+          format: double
+          title: Valeur
+        date:
+          type: string
+          format: date
+        context:
+          type: object
+          additionalProperties: {}
+          title: Contexte
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+      required:
+      - created_at
+      - id
+      - metric_type
+      - organization
+      - user
+      - value
+    UserMetricMetricTypeEnum:
+      enum:
+      - session.duration
+      - pages.visited
+      - actions.performed
+      - projects.created
+      - apps.deployed
+      - time.spent
+      - features.used
+      type: string
+      description: |-
+        * `session.duration` - Durée de session (minutes)
+        * `pages.visited` - Pages visitées
+        * `actions.performed` - Actions effectuées
+        * `projects.created` - Projets créés
+        * `apps.deployed` - Applications déployées
+        * `time.spent` - Temps passé (heures)
+        * `features.used` - Fonctionnalités utilisées
+    WorkflowCreate:
+      type: object
+      description: Serializer pour créer un workflow.
+      properties:
+        name:
+          type: string
+          title: Nom du workflow
+          maxLength: 255
+        description:
+          type: string
+        organization:
+          type: integer
+          title: Organisation
+        project:
+          type: integer
+          nullable: true
+          title: Projet
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2dbEnum'
+          title: Statut
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration générale du workflow
+        variables:
+          type: object
+          additionalProperties: {}
+          description: Variables globales du workflow
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowStep'
+        triggers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trigger'
+      required:
+      - name
+      - organization
+    WorkflowCreateRequest:
+      type: object
+      description: Serializer pour créer un workflow.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nom du workflow
+          maxLength: 255
+        description:
+          type: string
+        organization:
+          type: integer
+          title: Organisation
+        project:
+          type: integer
+          nullable: true
+          title: Projet
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2dbEnum'
+          title: Statut
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration générale du workflow
+        variables:
+          type: object
+          additionalProperties: {}
+          description: Variables globales du workflow
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowStepRequest'
+        triggers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TriggerRequest'
+      required:
+      - name
+      - organization
+    WorkflowDetail:
+      type: object
+      description: Serializer détaillé pour un workflow.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          title: Nom du workflow
+          maxLength: 255
+        description:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2dbEnum'
+          title: Statut
+        organization:
+          type: integer
+          title: Organisation
+        organization_name:
+          type: string
+          readOnly: true
+        created_by:
+          type: integer
+          nullable: true
+          title: Créé par
+        created_by_name:
+          type: string
+          readOnly: true
+        project:
+          type: integer
+          nullable: true
+          title: Projet
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration générale du workflow
+        variables:
+          type: object
+          additionalProperties: {}
+          description: Variables globales du workflow
+        execution_count:
+          type: integer
+          readOnly: true
+          title: Nombre d'exécutions
+        success_count:
+          type: integer
+          readOnly: true
+          title: Exécutions réussies
+        failure_count:
+          type: integer
+          readOnly: true
+          title: Exécutions échouées
+        success_rate:
+          type: string
+          readOnly: true
+        last_executed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Dernière exécution
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowStep'
+          readOnly: true
+        triggers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Trigger'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Modifié le
+      required:
+      - created_at
+      - created_by_name
+      - execution_count
+      - failure_count
+      - id
+      - last_executed_at
+      - name
+      - organization
+      - organization_name
+      - steps
+      - success_count
+      - success_rate
+      - triggers
+      - updated_at
+    WorkflowDetailRequest:
+      type: object
+      description: Serializer détaillé pour un workflow.
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nom du workflow
+          maxLength: 255
+        description:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2dbEnum'
+          title: Statut
+        organization:
+          type: integer
+          title: Organisation
+        created_by:
+          type: integer
+          nullable: true
+          title: Créé par
+        project:
+          type: integer
+          nullable: true
+          title: Projet
+        config:
+          type: object
+          additionalProperties: {}
+          title: Configuration
+          description: Configuration générale du workflow
+        variables:
+          type: object
+          additionalProperties: {}
+          description: Variables globales du workflow
+      required:
+      - name
+      - organization
+    WorkflowExecutionDetail:
+      type: object
+      description: Serializer détaillé pour une exécution.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        workflow:
+          type: string
+          format: uuid
+        workflow_name:
+          type: string
+          readOnly: true
+        trigger:
+          type: string
+          format: uuid
+          nullable: true
+          title: Déclencheur
+        triggered_by:
+          type: integer
+          nullable: true
+          title: Déclenché par
+        triggered_by_name:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2a6Enum'
+          title: Statut
+        input_data:
+          type: object
+          additionalProperties: {}
+          title: Données d'entrée
+          description: Données fournies au démarrage du workflow
+        output_data:
+          type: object
+          additionalProperties: {}
+          title: Données de sortie
+          description: Résultat de l'exécution
+        context:
+          type: object
+          additionalProperties: {}
+          title: Contexte
+          description: Variables et état durant l'exécution
+        error_message:
+          type: string
+          title: Message d'erreur
+        error_details:
+          type: object
+          additionalProperties: {}
+          title: Détails de l'erreur
+        current_step_id:
+          type: string
+          title: Étape actuelle
+          maxLength: 100
+        completed_steps:
+          type: object
+          additionalProperties: {}
+          title: Étapes complétées
+        duration:
+          type: string
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Démarré le
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Terminé le
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Modifié le
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkflowExecutionLog'
+          readOnly: true
+      required:
+      - created_at
+      - duration
+      - id
+      - logs
+      - triggered_by_name
+      - updated_at
+      - workflow
+      - workflow_name
+    WorkflowExecutionDetailRequest:
+      type: object
+      description: Serializer détaillé pour une exécution.
+      properties:
+        workflow:
+          type: string
+          format: uuid
+        trigger:
+          type: string
+          format: uuid
+          nullable: true
+          title: Déclencheur
+        triggered_by:
+          type: integer
+          nullable: true
+          title: Déclenché par
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2a6Enum'
+          title: Statut
+        input_data:
+          type: object
+          additionalProperties: {}
+          title: Données d'entrée
+          description: Données fournies au démarrage du workflow
+        output_data:
+          type: object
+          additionalProperties: {}
+          title: Données de sortie
+          description: Résultat de l'exécution
+        context:
+          type: object
+          additionalProperties: {}
+          title: Contexte
+          description: Variables et état durant l'exécution
+        error_message:
+          type: string
+          title: Message d'erreur
+        error_details:
+          type: object
+          additionalProperties: {}
+          title: Détails de l'erreur
+        current_step_id:
+          type: string
+          title: Étape actuelle
+          maxLength: 100
+        completed_steps:
+          type: object
+          additionalProperties: {}
+          title: Étapes complétées
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Démarré le
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Terminé le
+      required:
+      - workflow
+    WorkflowExecutionList:
+      type: object
+      description: Serializer simplifié pour les listes d'exécutions.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        workflow:
+          type: string
+          format: uuid
+        workflow_name:
+          type: string
+          readOnly: true
+        trigger:
+          type: string
+          format: uuid
+          nullable: true
+          title: Déclencheur
+        trigger_type:
+          type: string
+          readOnly: true
+        triggered_by:
+          type: integer
+          nullable: true
+          title: Déclenché par
+        triggered_by_name:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2a6Enum'
+          title: Statut
+        duration:
+          type: string
+          readOnly: true
+        current_step_id:
+          type: string
+          title: Étape actuelle
+          maxLength: 100
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Démarré le
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          title: Terminé le
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+      required:
+      - created_at
+      - duration
+      - id
+      - trigger_type
+      - triggered_by_name
+      - workflow
+      - workflow_name
+    WorkflowExecutionLog:
+      type: object
+      description: Serializer pour les logs d'exécution.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        step:
+          type: string
+          format: uuid
+          nullable: true
+          title: Étape
+        step_id:
+          type: string
+          format: uuid
+          nullable: true
+          title: Étape
+          readOnly: true
+        step_name:
+          type: string
+          readOnly: true
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          title: Niveau
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: {}
+          title: Détails
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+      required:
+      - created_at
+      - id
+      - message
+      - step_id
+      - step_name
+    WorkflowExecutionLogRequest:
+      type: object
+      description: Serializer pour les logs d'exécution.
+      properties:
+        step:
+          type: string
+          format: uuid
+          nullable: true
+          title: Étape
+        level:
+          allOf:
+          - $ref: '#/components/schemas/LevelEnum'
+          title: Niveau
+        message:
+          type: string
+          minLength: 1
+        details:
+          type: object
+          additionalProperties: {}
+          title: Détails
+      required:
+      - message
+    WorkflowList:
+      type: object
+      description: Serializer simplifié pour les listes de workflows.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          title: Nom du workflow
+          maxLength: 255
+        description:
+          type: string
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2dbEnum'
+          title: Statut
+        organization:
+          type: integer
+          title: Organisation
+        organization_name:
+          type: string
+          readOnly: true
+        created_by:
+          type: integer
+          nullable: true
+          title: Créé par
+        created_by_name:
+          type: string
+          readOnly: true
+        project:
+          type: integer
+          nullable: true
+          title: Projet
+        execution_count:
+          type: integer
+          readOnly: true
+          title: Nombre d'exécutions
+        success_count:
+          type: integer
+          readOnly: true
+          title: Exécutions réussies
+        failure_count:
+          type: integer
+          readOnly: true
+          title: Exécutions échouées
+        success_rate:
+          type: string
+          readOnly: true
+        last_executed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Dernière exécution
+        triggers_count:
+          type: integer
+          readOnly: true
+        steps_count:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Modifié le
+      required:
+      - created_at
+      - created_by_name
+      - execution_count
+      - failure_count
+      - id
+      - last_executed_at
+      - name
+      - organization
+      - organization_name
+      - steps_count
+      - success_count
+      - success_rate
+      - triggers_count
+      - updated_at
+    WorkflowStep:
+      type: object
+      description: Serializer pour les étapes de workflow.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        step_id:
+          type: string
+          title: Identifiant unique
+          description: Identifiant unique pour référencer l'étape
+          maxLength: 100
+        name:
+          type: string
+          title: Nom de l'étape
+          maxLength: 255
+        action_type:
+          allOf:
+          - $ref: '#/components/schemas/ActionTypeEnum'
+          title: Type d'action
+        params:
+          type: object
+          additionalProperties: {}
+          title: Paramètres
+          description: Paramètres de l'action
+        integration:
+          type: string
+          format: uuid
+          nullable: true
+          title: Intégration
+        integration_name:
+          type: string
+          readOnly: true
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          title: Ordre
+        condition:
+          type: object
+          additionalProperties: {}
+          description: Condition pour exécuter cette étape
+        on_error:
+          allOf:
+          - $ref: '#/components/schemas/OnErrorEnum'
+          title: En cas d'erreur
+        retry_count:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          title: Nombre de tentatives
+        retry_delay:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          title: Délai entre tentatives (secondes)
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Créé le
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Modifié le
+      required:
+      - action_type
+      - created_at
+      - id
+      - integration_name
+      - name
+      - step_id
+      - updated_at
+    WorkflowStepRequest:
+      type: object
+      description: Serializer pour les étapes de workflow.
+      properties:
+        step_id:
+          type: string
+          minLength: 1
+          title: Identifiant unique
+          description: Identifiant unique pour référencer l'étape
+          maxLength: 100
+        name:
+          type: string
+          minLength: 1
+          title: Nom de l'étape
+          maxLength: 255
+        action_type:
+          allOf:
+          - $ref: '#/components/schemas/ActionTypeEnum'
+          title: Type d'action
+        params:
+          type: object
+          additionalProperties: {}
+          title: Paramètres
+          description: Paramètres de l'action
+        integration:
+          type: string
+          format: uuid
+          nullable: true
+          title: Intégration
+        order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          title: Ordre
+        condition:
+          type: object
+          additionalProperties: {}
+          description: Condition pour exécuter cette étape
+        on_error:
+          allOf:
+          - $ref: '#/components/schemas/OnErrorEnum'
+          title: En cas d'erreur
+        retry_count:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          title: Nombre de tentatives
+        retry_delay:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          title: Délai entre tentatives (secondes)
+        metadata:
+          type: object
+          additionalProperties: {}
+          title: Métadonnées
+      required:
+      - action_type
+      - name
+      - step_id

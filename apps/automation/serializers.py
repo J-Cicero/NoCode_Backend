@@ -1,11 +1,12 @@
 """
 Serializers pour le module Automation
 """
+import uuid
 from rest_framework import serializers
 from .models import (
     Workflow, WorkflowStep, Trigger, Integration,
     IntegrationCredential, WorkflowExecution,
-    WorkflowExecutionLog, ActionTemplate
+    WorkflowExecutionLog, ActionTemplate, Node, Edge
 )
 from apps.foundation.serializers import UserBaseSerializer, OrganizationBaseSerializer
 
@@ -27,7 +28,6 @@ class WorkflowStepSerializer(serializers.ModelSerializer):
 
 
 class TriggerSerializer(serializers.ModelSerializer):
-    """Serializer pour les déclencheurs."""
     
     class Meta:
         model = Trigger
@@ -40,7 +40,6 @@ class TriggerSerializer(serializers.ModelSerializer):
 
 
 class WorkflowListSerializer(serializers.ModelSerializer):
-    """Serializer simplifié pour les listes de workflows."""
     
     organization_name = serializers.CharField(source='organization.name', read_only=True)
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
@@ -63,7 +62,6 @@ class WorkflowListSerializer(serializers.ModelSerializer):
 
 
 class WorkflowDetailSerializer(serializers.ModelSerializer):
-    """Serializer détaillé pour un workflow."""
     
     steps = WorkflowStepSerializer(many=True, read_only=True)
     triggers = TriggerSerializer(many=True, read_only=True)
@@ -236,3 +234,79 @@ class IntegrationCredentialCreateSerializer(serializers.Serializer):
     credential_type = serializers.CharField()
     credentials_data = serializers.JSONField()
     expires_at = serializers.DateTimeField(required=False, allow_null=True)
+
+
+# === SERIALIZERS POUR LE GRAPHE VISUEL (NODE/EDGE) ===
+
+class NodeSerializer(serializers.ModelSerializer):
+    """Serializer pour les nœuds du graphe de workflows."""
+    
+    class Meta:
+        model = Node
+        fields = [
+            'id', 'workflow', 'node_id', 'node_type', 'label', 'position_x', 'position_y',
+            'config', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        """Crée un nouveau nœud avec un ID unique."""
+        if 'node_id' not in validated_data:
+            validated_data['node_id'] = str(uuid.uuid4())
+        return super().create(validated_data)
+
+
+class EdgeSerializer(serializers.ModelSerializer):
+    """Serializer pour les arêtes du graphe de workflows."""
+    
+    class Meta:
+        model = Edge
+        fields = [
+            'id', 'workflow', 'source_node', 'target_node', 'source_port',
+            'target_port', 'label', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        """Validation pour éviter les boucles infinies et les connexions invalides."""
+        source_node = attrs.get('source_node')
+        target_node = attrs.get('target_node')
+        
+        # Vérifier que source et target sont différents
+        if source_node and target_node and source_node.id == target_node.id:
+            raise serializers.ValidationError({
+                'target_node': 'Un nœud ne peut pas se connecter à lui-même.'
+            })
+        
+        # Vérifier que les nœuds appartiennent au même workflow
+        if source_node and target_node and source_node.workflow_id != target_node.workflow_id:
+            raise serializers.ValidationError({
+                'target_node': 'Les nœuds source et cible doivent appartenir au même workflow.'
+            })
+        
+        return attrs
+
+
+class WorkflowGraphSerializer(serializers.Serializer):
+    """Serializer pour le graphe complet d'un workflow."""
+    
+    workflow_id = serializers.UUIDField()
+    nodes = NodeSerializer(many=True, read_only=True)
+    edges = EdgeSerializer(many=True, read_only=True)
+    
+    def to_representation(self, instance):
+        """Retourne le graphe complet avec les nœuds et arêtes."""
+        workflow = instance
+        nodes = workflow.nodes.all()
+        edges = workflow.edges.all()
+        
+        return {
+            'workflow_id': workflow.id,
+            'nodes': NodeSerializer(nodes, many=True).data,
+            'edges': EdgeSerializer(edges, many=True).data,
+            'metadata': {
+                'node_count': nodes.count(),
+                'edge_count': edges.count(),
+                'last_updated': workflow.updated_at
+            }
+        }

@@ -4,6 +4,7 @@ Expose les APIs pour les organisations, membres, invitations, etc.
 """
 from rest_framework import status, generics, permissions
 from rest_framework.decorators import api_view, permission_classes
+from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -36,6 +37,7 @@ class OrganizationListCreateView(APIView):
                 'error': result.error_message
             }, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(request=OrganizationCreateSerializer, responses={201: OrganizationDetailSerializer})
     def post(self, request):
         """Crée une nouvelle organisation."""
         serializer = OrganizationCreateSerializer(
@@ -72,6 +74,7 @@ class OrganizationDetailView(APIView):
                 'error': result.error_message
             }, status=status.HTTP_400_BAD_REQUEST)
     
+    @extend_schema(request=OrganizationUpdateSerializer, responses={200: OrganizationDetailSerializer})
     def put(self, request, org_id):
         """Met à jour une organisation."""
         serializer = OrganizationUpdateSerializer(data=request.data)
@@ -123,6 +126,7 @@ class OrganizationMembersView(APIView):
 class OrganizationMemberDetailView(APIView):
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(request=dict, responses={200: OrganizationMemberSerializer})
     def put(self, request, org_id, member_id):
         """Met à jour un membre d'organisation."""
         new_role = request.data.get('role')
@@ -138,6 +142,7 @@ class OrganizationMemberDetailView(APIView):
                 'error': result.error_message
             }, status=status.HTTP_400_BAD_REQUEST)
     
+    @extend_schema(request=None, responses={204: None})
     def delete(self, request, org_id, member_id):
         """Supprime un membre d'une organisation."""
         org_service = OrganizationService(user=request.user)

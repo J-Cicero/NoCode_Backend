@@ -1,6 +1,7 @@
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
+from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -34,7 +35,7 @@ class LoginView(TokenObtainPairView):
             return Response(result.data, status=status.HTTP_200_OK)
         else:
             return Response({
-                'error': result.error_message
+                'error': result.errors[0] if result.errors else 'Erreur inconnue'
             }, status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -42,6 +43,7 @@ class RegisterClientView(APIView):
 
     permission_classes = [AllowAny]
     
+    # @extend_schema(request=UserCreateSerializer, responses={201: dict})
     def post(self, request):
         serializer = UserCreateSerializer(data=request.data)
         
@@ -53,7 +55,7 @@ class RegisterClientView(APIView):
                 return Response(result.data, status=status.HTTP_201_CREATED)
             else:
                 return Response({
-                    'error': result.error_message
+                    'error': result.errors[0] if result.errors else 'Erreur inconnue'
                 }, status=status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -65,6 +67,7 @@ class LogoutView(APIView):
 
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(request=dict, responses={200: dict})
     def post(self, request):
         refresh_token = request.data.get('refresh_token')
         
@@ -79,7 +82,7 @@ class LogoutView(APIView):
             return Response(result.data, status=status.HTTP_200_OK)
         else:
             return Response({
-                'error': result.error_message
+                'error': result.errors[0] if result.errors else 'Erreur inconnue'
             }, status=status.HTTP_400_BAD_REQUEST)
 
 class RefreshTokenView(TokenRefreshView):
@@ -98,7 +101,7 @@ class RefreshTokenView(TokenRefreshView):
             return Response(result.data, status=status.HTTP_200_OK)
         else:
             return Response({
-                'error': result.error_message
+                'error': result.errors[0] if result.errors else 'Erreur inconnue'
             }, status=status.HTTP_401_UNAUTHORIZED)
 
 
@@ -123,7 +126,7 @@ class PasswordChangeView(APIView):
                 return Response(result.data, status=status.HTTP_200_OK)
             else:
                 return Response({
-                    'error': result.error_message
+                    'error': result.errors[0] if result.errors else 'Erreur inconnue'
                 }, status=status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -169,7 +172,7 @@ class PasswordResetConfirmView(APIView):
                 return Response(result.data, status=status.HTTP_200_OK)
             else:
                 return Response({
-                    'error': result.error_message
+                    'error': result.errors[0] if result.errors else 'Erreur inconnue'
                 }, status=status.HTTP_400_BAD_REQUEST)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -195,7 +198,7 @@ class EmailVerificationView(APIView):
                     return Response(result.data, status=status.HTTP_200_OK)
                 else:
                     return Response({
-                        'error': result.error_message
+                        'error': result.errors[0] if result.errors else 'Erreur inconnue'
                     }, status=status.HTTP_400_BAD_REQUEST)
                     
             except Exception:
@@ -218,7 +221,7 @@ def me(request):
         return Response(result.data, status=status.HTTP_200_OK)
     else:
         return Response({
-            'error': result.error_message
+            'error': result.errors[0] if result.errors else 'Erreur inconnue'
         }, status=status.HTTP_400_BAD_REQUEST)
 
 

@@ -37,7 +37,7 @@ from .billing_serializers import (
     TypeAbonnementDetailSerializer,
     AbonnementSerializer,
     AbonnementCreateSerializer,
-
+    AbonnementListSerializer,
 )
 
 # Exports pour faciliter les imports

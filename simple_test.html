@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Simple API</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        button { padding: 10px 20px; margin: 10px; background: #007cba; color: white; border: none; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Simple APIs</h1>
+    
+    <button onclick="testServer()">Tester serveur</button>
+    <div id="server-result" class="result"></div>
+    
+    <button onclick="testRegister()">Test inscription</button>
+    <div id="register-result" class="result"></div>
+    
+    <button onclick="testLogin()">Test connexion</button>
+    <div id="login-result" class="result"></div>
+
+    <script>
+        const BASE_URL = 'http://127.0.0.1:8000/api/v1';
+        
+        function showResult(id, text, isError = false) {
+            document.getElementById(id).innerHTML = text;
+            document.getElementById(id).style.background = isError ? '#ffebee' : '#e8f5e8';
+        }
+        
+        async function testServer() {
+            try {
+                const response = await fetch(`${BASE_URL}/foundation/auth/login/`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email: 'test@test.com', password: 'test'})
+                });
+                showResult('server-result', `✅ Serveur répond! Status: ${response.status}`);
+            } catch (error) {
+                showResult('server-result', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+        
+        async function testRegister() {
+            try {
+                const data = {
+                    email: 'test@example.com',
+                    password: 'TestPass123@',
+                    password_confirm: 'TestPass123@',
+                    nom: 'Test',
+                    prenom: 'User',
+                    pays: 'France',
+                    numero_telephone: '0123456789'
+                };
+                
+                const response = await fetch(`${BASE_URL}/foundation/auth/register/client/`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                showResult('register-result', `Status: ${response.status}\n${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                showResult('register-result', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                const data = {email: 'test@example.com', password: 'TestPass123@'};
+                
+                const response = await fetch(`${BASE_URL}/foundation/auth/login/`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                showResult('login-result', `Status: ${response.status}\n${JSON.stringify(result, null, 2)}`);
+            } catch (error) {
+                showResult('login-result', `❌ Erreur: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

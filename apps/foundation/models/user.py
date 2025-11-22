@@ -5,15 +5,10 @@ import uuid
 from .base import BaseModel
 
 class User(BaseModel, AbstractUser):
-    """Utilisateur du système (CLIENT ou ADMIN)"""
+    """Utilisateur du système"""
     username = None
     first_name = None
     last_name = None
-    
-    ROLE_CHOICES = [
-        ('CLIENT', 'Client'),
-        ('ADMIN', 'Administrateur'),
-    ]
     
     tracking_id = models.UUIDField(
         default=uuid.uuid4,
@@ -22,13 +17,6 @@ class User(BaseModel, AbstractUser):
         db_index=True,
         verbose_name="Tracking ID",
         help_text="Identifiant public unique utilisé dans les URLs et APIs"
-    )
-    
-    role = models.CharField(
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default='CLIENT',
-        verbose_name="Rôle"
     )
     
     email = models.EmailField(
@@ -88,13 +76,8 @@ class User(BaseModel, AbstractUser):
     
     @property
     def is_admin(self):
-        """Vérifie si l'utilisateur est admin"""
-        return self.role == 'ADMIN' or self.is_superuser
-    
-    @property
-    def is_client(self):
-        """Vérifie si l'utilisateur est client"""
-        return self.role == 'CLIENT'
+        """Vérifie si l'utilisateur est admin système"""
+        return self.is_staff or self.is_superuser
     
     def get_display_name(self):
         return self.full_name

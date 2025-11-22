@@ -1,26 +1,26 @@
 
 
-# Base permissions
-from .base_permissions import (
-    IsOwnerOrReadOnly,
-    IsOrganizationMember,
-    IsOrganizationOwner,
-    IsOrganizationAdmin,
-    CanManageBilling,
-    IsEntrepriseOwner,
-    IsStaffOrOwner,
-    IsVerifiedEntreprise,
+# Permissions principales (simplifiées et centralisées)
+from .core import (
+    IsAuthenticated,
+    IsStaffUser,
+    IsResourceOwner,
+    IsOrgMember,
+    IsOrgAdmin,
+    IsOrgOwner,
     HasActiveSubscription,
-    CanInviteMembers,
-    IsOwnerOrStaff,
-    CanAccessUserData,
-    HasSubscriptionLimit,
-    DynamicPermission,
+    IsOwnerOrReadOnly,
+    # Helpers
+    get_user_organizations,
+    is_org_member,
+    is_org_admin,
+    is_org_owner,
 )
 
-# Aliases pour compatibilité
-IsOrgMember = IsOrganizationMember
-IsOrgAdmin = IsOrganizationAdmin
+# Aliases pour compatibilité avec l'ancien code
+IsOrganizationMember = IsOrgMember
+IsOrganizationOwner = IsOrgOwner
+IsOrganizationAdmin = IsOrgAdmin
 
 # Organization permissions
 from .organization_permissions import (
@@ -47,33 +47,30 @@ from .billing_permissions import (
 
 # Exports pour faciliter les imports
 __all__ = [
-    # Base permissions
+    # Core permissions (simplifiées)
+    'IsAuthenticated',
+    'IsStaffUser',
+    'IsResourceOwner',
+    'IsOrgMember',
+    'IsOrgAdmin',
+    'IsOrgOwner',
+    'HasActiveSubscription',
     'IsOwnerOrReadOnly',
+    
     'IsOrganizationMember',
     'IsOrganizationOwner',
     'IsOrganizationAdmin',
-    'CanManageBilling',
-    'IsEntrepriseOwner',
-    'IsStaffOrOwner',
-    'IsVerifiedEntreprise',
-    'HasActiveSubscription',
-    'CanInviteMembers',
-    'IsOwnerOrStaff',
-    'CanAccessUserData',
-    'HasSubscriptionLimit',
-    'DynamicPermission',
     
-    # Aliases
-    'IsOrgMember',
-    'IsOrgAdmin',
+    'get_user_organizations',
+    'is_org_member',
+    'is_org_admin',
+    'is_org_owner',
     
-    # Organization permissions
     'OrganizationPermission',
     'OrganizationMemberPermission',
     'CanViewOrganizationStats',
     'OrganizationContextPermission',
     
-    # Billing permissions
     'BillingCanManageBilling',
     'CanViewBillingInfo',
     'CanManageSubscriptions',
@@ -84,6 +81,4 @@ __all__ = [
     'CanGenerateInvoices',
     'CanViewBillingStats',
     'SubscriptionLimitPermission',
-    
-
 ]
