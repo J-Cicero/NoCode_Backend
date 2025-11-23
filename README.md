@@ -44,198 +44,138 @@ Une plateforme complète de développement NoCode construite avec Django REST Fr
 ### 🚀 Module Runtime
 - **Génération automatique** d'APIs Django
 - **Applications complètes** générées dynamiquement
-- **Déploiement automatique** des applications
-- **Gestion de bases de données** PostgreSQL
-- **Monitoring** des applications déployées
-
-### 📊 Module Insights
-- **Analytics utilisateurs** et métriques d'usage
-- **Monitoring système** (CPU, mémoire, performance)
-- **Rapports automatiques** et tableaux de bord
-- **Tracking d'activités** en temps réel
-- **Audit complet** de toutes les actions
-
-## 🏛️ Architecture
-
-La plateforme suit une architecture modulaire avec 5 modules principaux :
-
 ```
-📦 NoCode Platform
-├── 🎯 Foundation (Base technique)
-│   ├── 👤 Authentification & Utilisateurs
-│   ├── 🏢 Organisations & Multi-tenancy
-│   ├── 💳 Facturation & Abonnements
-│   └── ✅ Vérification & Conformité
-├── 🎨 Studio (Éditeur NoCode)
-│   ├── 📁 Gestion de projets
-│   ├── 🧩 Composants & Métadonnées
-│   ├── 📄 Pages & Interface
-│   └── 🗄️ Schémas de données
-├── ⚡ Automation (Logique métier)
-│   ├── 🔄 Workflows & Étapes
-│   ├── 🔗 Intégrations externes
-│   ├── ⏰ Planification
-│   └── 📊 Exécution & Monitoring
-├── 🚀 Runtime (Génération d'apps)
-│   ├── ⚙️ Génération automatique
-│   ├── 🚀 Déploiement
-│   ├── 🗄️ Bases de données dynamiques
-│   └── 📈 Monitoring d'applications
-└── 📊 Insights (Analytics)
-    ├── 📈 Métriques & Analytics
-    ├── 👁️ Monitoring & Alertes
-    ├── 📋 Audit & Traçabilité
-    └── 📊 Rapports & Dashboards
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   UTILISATEUR   │───▶│     STUDIO      │───▶│     RUNTIME     │
+│                 │    │  (Drag & Drop)  │    │ (Apps générées) │
+│ - Crée projets  │    │ - Pages JSON    │    │ - Fichiers      │
+│ - Drag & Drop   │    │ - Composants    │    │ - Déploiements  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   FOUNDATION    │    │   AUTOMATION    │    │    INSIGHTS     │
+│                 │    │                 │    │                 │
+│ - Authentif.    │    │ - Workflows     │    │ - Analytics     │
+│ - Organisations │    │ - Triggers      │    │ - Métriques     │
+│ - Utilisateurs  │    │ - Exécutions    │    │ - Logs          │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## 🛠️ Installation
+## 🔄 Flux de Données Automatique
+
+### Ce que l'utilisateur fait :
+1. **S'inscrit/Connecte** via Foundation
+2. **Crée une organisation** via Foundation  
+3. **Crée des projets** via Studio
+4. **Fait du drag & drop** pour créer des pages via Studio
+
+### Ce que le système fait automatiquement :
+1. **Crée des workflows** quand un projet est créé (Automation)
+2. **Déclenche des triggers** lors des modifications (Automation)
+3. **Génère des applications JSON** (Runtime)
+4. **Sauvegarde automatiquement** les changements (Runtime)
+5. **Collecte les analytics** de toutes les actions (Insights)
+6. **Monitor les performances** en temps réel (Insights)
+
+## 🛠️ Stack Technologique
+
+### Backend Core
+- **Django 5.0.6** - Framework web principal
+- **Django REST Framework** - API REST
+- **PostgreSQL 15** - Base de données principale avec support JSON natif
+- **Python 3.12.3** - Langage de programmation
+
+### Communication & APIs
+- **drf-spectacular** - Documentation OpenAPI/Swagger automatique
+- **Django Channels** - WebSockets pour la collaboration temps réel
+- **Redis** - Cache et broker de messages
+
+### Traitement en Arrière-plan
+- **Celery** - Tâches asynchrones et workflows
+- **Flower** - Monitoring des tâches Celery
+- **Django Signals** - Déclencheurs automatiques inter-modules
+
+### Déploiement & Monitoring
+- **Docker & Docker Compose** - Conteneurisation
+- **Nginx** - Reverse proxy et serveur de fichiers statiques
+- **Gunicorn** - Serveur WSGI pour Django
+
+## 🚀 Démarrage Rapide
 
 ### Prérequis
-
-- **Python** 3.8 ou supérieur
-- **PostgreSQL** 12 ou supérieur
-- **Redis** 6 ou supérieur (pour Celery)
-- **Node.js** 16+ (pour le frontend optionnel)
-
-### Installation Rapide
-
-1. **Cloner le repository**
 ```bash
+# Python 3.12+ et PostgreSQL requis
+sudo apt update
+sudo apt install python3.12 python3.12-venv postgresql postgresql-contrib redis-server
+```
+
+### Installation
+```bash
+# Cloner le projet
 git clone <repository-url>
-cd NoCode
-```
+cd NoCode_Backend
 
-2. **Configuration avec le script de lancement**
-```bash
-python3 launch.py setup
-```
+# Environnement virtuel
+python3.12 -m venv .venv
+source .venv/bin/activate
 
-3. **Ou installation manuelle**
-```bash
-# 1. Créer un environnement virtuel
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate     # Windows
-
-# 2. Installer les dépendances
+# Dépendances
 pip install -r requirements.txt
 
-# 3. Configurer l'environnement
+# Configuration base de données
 cp .env.example .env
-# Éditer le fichier .env avec vos paramètres
+# Éditer .env avec vos credentials PostgreSQL
 
-# 4. Exécuter les migrations
+# Migrations
 python manage.py migrate
 
-# 5. Créer un superutilisateur
+# Superutilisateur
 python manage.py createsuperuser
 
-# 6. Collecter les fichiers statiques
-python manage.py collectstatic
-```
-
-4. **Démarrer le serveur**
-```bash
+# Démarrage
 python manage.py runserver
 ```
 
-5. **Accéder à la plateforme**
-- API Documentation: http://localhost:8000/api/docs/
-- Interface Admin: http://localhost:8000/admin/
+### Accès
+- **Swagger UI** : http://127.0.0.1:8000/api/docs/
+- **Django Admin** : http://127.0.0.1:8000/admin/
+- **API Foundation** : http://127.0.0.1:8000/api/foundation/
+- **API Studio** : http://127.0.0.1:8000/api/studio/
 
-## ⚙️ Configuration
+## 📁 Structure du Projet
 
-### Variables d'environnement
-
-Créez un fichier `.env` à la racine du projet :
-
-```env
-# Django
-DEBUG=True
-SECRET_KEY=your-secret-key-change-this-in-production
-DJANGO_SETTINGS_MODULE=config.settings.development
-
-# Base de données
-DATABASE_URL=postgresql://nocode_user:nocode_pass@localhost:5432/nocode_db
-
-# Redis (pour Celery)
-REDIS_URL=redis://localhost:6379/0
-
-# Email
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
-
-# Stripe
-STRIPE_PUBLIC_KEY=pk_test_...
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-
-# Sécurité
-ALLOWED_HOSTS=localhost,127.0.0.1,yourdomain.com
-CORS_ALLOWED_ORIGINS=http://localhost:3000
-
-# Logging
-LOG_LEVEL=INFO
+```
+NoCode_Backend/
+├── apps/
+│   ├── foundation/          # Authentification & organisations
+│   ├── studio/              # Drag & Drop & création d'applications
+│   ├── automation/          # Workflows & triggers automatiques
+│   ├── runtime/             # Génération & déploiement d'applications
+│   └── insights/            # Analytics & monitoring
+├── config/
+│   ├── settings/            # Configuration Django (dev, prod, test)
+│   ├── urls.py              # Routage principal
+│   └── wsgi.py              # Interface WSGI
+├── docker/                  # Configuration Docker
+├── docs/                    # Documentation détaillée des modules
+├── requirements/            # Dépendances par environnement
+└── scripts/                 # Scripts utilitaires
 ```
 
-### Configuration Celery (Tâches asynchrones)
+## 🔧 Configuration des Services
 
+### Redis (Cache & Broker)
 ```bash
-# Démarrer le worker Celery
-python manage.py celery worker -l info
+# Installation
+sudo apt install redis-server
 
-# Démarrer le beat pour les tâches planifiées
-python manage.py celery beat -l info
-```
+# Configuration
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
 
-## 🚀 Utilisation
-
-### Démarrage Rapide
-
-```bash
-# Utiliser le script de lancement
-python3 launch.py setup    # Configuration complète
-python3 launch.py server   # Démarrer le serveur
-python3 launch.py check    # Vérifier les prérequis
-python3 launch.py test     # Exécuter les tests
-```
-
-### Workflow Utilisateur Type
-
-1. **Inscription & Configuration**
-   - Créer un compte utilisateur
-   - Créer ou rejoindre une organisation
-   - Configurer l'abonnement (si nécessaire)
-
-2. **Création de Projet**
-   - Accéder au module Studio
-   - Créer un nouveau projet
-   - Configurer les schémas de données
-
-3. **Conception de l'Interface**
-   - Ajouter des pages au projet
-   - Configurer les composants via l'interface drag & drop
-   - Personnaliser le style et la logique
-
-4. **Automatisation**
-   - Créer des workflows automatisés
-   - Configurer des intégrations externes
-   - Planifier des tâches récurrentes
-
-5. **Déploiement**
-   - Générer l'application complète
-   - Déployer automatiquement
-   - Monitorer les performances
-
-### API Endpoints Principaux
-
-#### Authentification
-- `POST /api/v1/foundation/auth/register/client/` - Inscription
+# Test
+redis-cli ping  # Doit répondre "PONG"
 - `POST /api/v1/foundation/auth/login/` - Connexion
 - `POST /api/v1/foundation/auth/logout/` - Déconnexion
 

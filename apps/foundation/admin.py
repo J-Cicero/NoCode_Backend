@@ -52,7 +52,7 @@ class OrganizationAdmin(admin.ModelAdmin):
             'fields': ('is_active', 'is_verified', 'verified_at')
         }),
         ('Dates', {
-            'fields': ('created_at', 'updated_at'),
+            'fields': ('created_at',),
             'classes': ('collapse',)
         }),
     )
