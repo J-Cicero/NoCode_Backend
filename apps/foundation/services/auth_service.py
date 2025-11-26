@@ -84,7 +84,7 @@ class AuthService(BaseService):
             user_data = {
                 'id': user.id,
                 'email': user.email,
-                'user_type': user.user_type,
+                'user_type': getattr(user, 'user_type', None),  # Rendu optionnel
                 'full_name': user.full_name,
             }
             
@@ -114,7 +114,7 @@ class AuthService(BaseService):
             EventBus.publish(FoundationEvents.USER_LOGIN, {
                 'user_id': user.id,
                 'email': user.email,
-                'user_type': user.user_type,
+                'user_type': getattr(user, 'user_type', None),
                 'login_time': timezone.now().isoformat(),
             })
             
@@ -422,7 +422,7 @@ class AuthService(BaseService):
         access = refresh.access_token
         
         # Ajouter des claims personnalisés
-        access['user_type'] = user.user_type
+        access['user_type'] = getattr(user, 'user_type', None)  # Rendu optionnel
         access['email'] = user.email
         
         # Ajouter les organisations de l'utilisateur
@@ -464,7 +464,7 @@ class AuthService(BaseService):
             user_data = {
                 'id': user.id,
                 'email': user.email,
-                'user_type': user.user_type,
+                'user_type': getattr(user, 'user_type', None),
                 'full_name': user.full_name,
                 'organizations': access_token.payload.get('organizations', []),
             }

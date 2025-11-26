@@ -52,6 +52,16 @@ INTERNAL_IPS = [
     '127.0.0.1',
     'localhost',
 ]
+
+# Configuration Celery pour développement (sans Redis requis)
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_BROKER_URL = 'memory://'
+CELERY_RESULT_BACKEND = 'cache+memory://'
+
+# Désactiver les tâches périodiques en développement
+CELERY_BEAT_SCHEDULER = None
+
 NOCODE_CONFIG.update({
     'AUTO_MIGRATE_GENERATED_APPS': True,
     'ENABLE_CODE_GENERATION_DEBUG': True,

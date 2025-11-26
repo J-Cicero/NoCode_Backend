@@ -31,7 +31,9 @@ class DataSchema(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='schemas')
     table_name = models.SlugField(max_length=63)  # Nom technique de la table
     display_name = models.CharField(max_length=255)  # Nom d'affichage
-    fields_config = models.JSONField()  # Configuration des champs
+    fields_config = models.JSONField(default=dict)  # Configuration des champs (compatibilité existante)
+    icon = models.CharField(max_length=10, default='📋')
+    description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -43,6 +45,157 @@ class DataSchema(models.Model):
 
     def __str__(self):
         return f"{self.display_name} ({self.table_name})"
+    
+    @property
+    def structured_fields(self):
+        """Retourne les champs structurés (FieldSchema) avec fallback vers JSON"""
+        structured = list(self.fields.all())
+        if structured:
+            return structured
+        # Fallback vers JSON existant
+        return self._convert_json_to_fields()
+    
+    def _convert_json_to_fields(self):
+        """Convertit le JSON fields_config en objets FieldSchema virtuels"""
+        fields = []
+        for field_name, field_config in self.fields_config.items():
+            fields.append({
+                'name': field_name,
+                'display_name': field_config.get('display_name', field_name.capitalize()),
+                'field_type': field_config.get('type', 'TEXT_SHORT'),
+                'is_required': field_config.get('required', False),
+                'is_unique': field_config.get('unique', False),
+                'default_value': field_config.get('default'),
+                'choices': field_config.get('choices'),
+                'related_schema': field_config.get('related_schema'),
+                'order': field_config.get('order', 0)
+            })
+        return sorted(fields, key=lambda x: x['order'])
+
+
+class FieldSchema(models.Model):
+    """
+    Représente un CHAMP d'une table utilisateur.
+    Permet une gestion structurée des champs avec relations et validation.
+    """
+    
+    class FieldType(models.TextChoices):
+        # Types de base
+        TEXT_SHORT = 'TEXT_SHORT', 'Texte court (max 255 caractères)'
+        TEXT_LONG = 'TEXT_LONG', 'Texte long (illimité)'
+        NUMBER_INT = 'NUMBER_INT', 'Nombre entier'
+        NUMBER_DECIMAL = 'NUMBER_DECIMAL', 'Nombre décimal'
+        DATE = 'DATE', 'Date'
+        DATETIME = 'DATETIME', 'Date et heure'
+        TIME = 'TIME', 'Heure'
+        BOOLEAN = 'BOOLEAN', 'Vrai/Faux'
+        
+        # Types spéciaux
+        EMAIL = 'EMAIL', 'Adresse email'
+        URL = 'URL', 'Lien web'
+        PHONE = 'PHONE', 'Numéro de téléphone'
+        COLOR = 'COLOR', 'Couleur'
+        
+        # Fichiers
+        FILE = 'FILE', 'Fichier'
+        IMAGE = 'IMAGE', 'Image'
+        
+        # Choix
+        CHOICE_SINGLE = 'CHOICE_SINGLE', 'Choix unique (liste déroulante)'
+        CHOICE_MULTIPLE = 'CHOICE_MULTIPLE', 'Choix multiples (cases à cocher)'
+        
+        # Relations
+        RELATION_ONE_TO_ONE = 'RELATION_ONE_TO_ONE', 'Relation 1:1 avec autre table'
+        RELATION_ONE_TO_MANY = 'RELATION_ONE_TO_MANY', 'Relation 1:N avec autre table'
+        RELATION_MANY_TO_MANY = 'RELATION_MANY_TO_MANY', 'Relation N:N avec autre table'
+    
+    # Mapping vers les champs Django
+    DJANGO_FIELD_MAPPING = {
+        'TEXT_SHORT': 'models.CharField(max_length=255{})',
+        'TEXT_LONG': 'models.TextField({})',
+        'NUMBER_INT': 'models.IntegerField({})',
+        'NUMBER_DECIMAL': 'models.DecimalField(max_digits=10, decimal_places=2{})',
+        'DATE': 'models.DateField({})',
+        'DATETIME': 'models.DateTimeField({})',
+        'TIME': 'models.TimeField({})',
+        'BOOLEAN': 'models.BooleanField(default=False{})',
+        'EMAIL': 'models.EmailField({})',
+        'URL': 'models.URLField({})',
+        'PHONE': 'models.CharField(max_length=20{})',
+        'COLOR': 'models.CharField(max_length=7{})',
+        'FILE': 'models.FileField(upload_to="user_files/"{})',
+        'IMAGE': 'models.ImageField(upload_to="user_images/"{})',
+        'CHOICE_SINGLE': 'models.CharField(max_length=100, choices={}{})',
+        'CHOICE_MULTIPLE': 'models.JSONField({})',
+        'RELATION_ONE_TO_ONE': 'models.OneToOneField("{}", on_delete=models.CASCADE{})',
+        'RELATION_ONE_TO_MANY': 'models.ForeignKey("{}", on_delete=models.CASCADE{})',
+        'RELATION_MANY_TO_MANY': 'models.ManyToManyField("{}"{})',
+    }
+    
+    schema = models.ForeignKey(
+        DataSchema, 
+        on_delete=models.CASCADE, 
+        related_name='fields'
+    )
+    name = models.CharField(max_length=100)  # Ex: "titre", "prix"
+    display_name = models.CharField(max_length=100)  # Ex: "Titre de l'article"
+    field_type = models.CharField(max_length=30, choices=FieldType.choices)
+    
+    # Contraintes
+    is_required = models.BooleanField(default=False)
+    is_unique = models.BooleanField(default=False)
+    default_value = models.JSONField(null=True, blank=True)
+    
+    # Pour les champs de type CHOICE
+    choices = models.JSONField(null=True, blank=True)
+    
+    # Pour les relations
+    related_schema = models.ForeignKey(
+        DataSchema,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='related_from'
+    )
+    
+    # Validation
+    min_value = models.FloatField(null=True, blank=True)
+    max_value = models.FloatField(null=True, blank=True)
+    min_length = models.IntegerField(null=True, blank=True)
+    max_length = models.IntegerField(null=True, blank=True)
+    regex_pattern = models.CharField(max_length=255, blank=True)
+    
+    # Ordre d'affichage
+    order = models.IntegerField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['schema', 'name']
+        ordering = ['schema', 'order']  # Modified here
+    
+    def __str__(self):
+        return f"{self.display_name} ({self.get_field_type_display()})"
+    
+    def get_django_field(self):
+        """Retourne le code du champ Django correspondant"""
+        base_field = self.DJANGO_FIELD_MAPPING.get(self.field_type, 'models.CharField(max_length=255{})')
+        
+        # Ajout des contraintes
+        constraints = []
+        if self.is_required:
+            constraints.append('null=False')
+        else:
+            constraints.append('null=True, blank=True')
+        
+        if self.is_unique:
+            constraints.append('unique=True')
+        
+        if self.default_value is not None:
+            constraints.append(f"default={repr(self.default_value)}")
+        
+        constraint_str = ', '.join(constraints)
+        return base_field.format(constraint_str)
 
 class Page(models.Model):
 

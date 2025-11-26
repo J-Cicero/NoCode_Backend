@@ -1,14 +1,47 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
 from django.core.validators import RegexValidator
 import uuid
 from .base import BaseModel
+
+class CustomUserManager(BaseUserManager):
+    """Manager personnalisé pour le modèle User avec email comme identifiant"""
+    
+    def create_user(self, email, password=None, **extra_fields):
+        """Créer un utilisateur avec email au lieu de username"""
+        if not email:
+            raise ValueError('L email est obligatoire')
+        
+        email = self.normalize_email(email)
+        user = self.model(
+            email=email,
+            **extra_fields
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+    
+    def create_superuser(self, email, password=None, **extra_fields):
+        """Créer un super utilisateur avec email"""
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+        
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser doit avoir is_staff=True')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser doit avoir is_superuser=True')
+        
+        return self.create_user(email, password, **extra_fields)
 
 class User(BaseModel, AbstractUser):
     """Utilisateur du système"""
     username = None
     first_name = None
     last_name = None
+    
+    objects = CustomUserManager()  # Manager personnalisé
     
     tracking_id = models.UUIDField(
         default=uuid.uuid4,
