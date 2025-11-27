@@ -20,9 +20,6 @@ from .serializers import (
     WorkflowExecuteSerializer, IntegrationTestSerializer,
     IntegrationCredentialCreateSerializer, NodeSerializer, EdgeSerializer, WorkflowGraphSerializer
 )
-# from .permissions import IsOrgMember  # Temporairement désactivé pour les tests
-from .services import WorkflowEngine, WorkflowValidator, IntegrationService
-from .tasks import execute_workflow_async
 from apps.foundation.permissions import IsOrgMember, IsOrgAdmin
 
 logger = logging.getLogger(__name__)
@@ -528,7 +525,7 @@ class NodeViewSet(viewsets.ModelViewSet):
     """ViewSet pour les opérations CRUD sur les nœuds."""
     
     serializer_class = NodeSerializer
-    # permission_classes = [IsAuthenticated, IsOrgMember]  # Temporairement désactivé
+    permission_classes = [IsAuthenticated, IsOrgMember]
     
     def get_queryset(self):
         """Filtre les nœuds par workflow."""
@@ -588,7 +585,7 @@ class EdgeViewSet(viewsets.ModelViewSet):
     """ViewSet pour les opérations CRUD sur les arêtes."""
     
     serializer_class = EdgeSerializer
-    # permission_classes = [IsAuthenticated, IsOrgMember]  # Temporairement désactivé
+    permission_classes = [IsAuthenticated, IsOrgMember]
     
     def get_queryset(self):
         """Filtre les arêtes par workflow."""
@@ -607,7 +604,7 @@ class EdgeViewSet(viewsets.ModelViewSet):
 class WorkflowGraphViewSet(viewsets.GenericViewSet):
     """ViewSet pour les opérations sur le graphe complet d'un workflow."""
     
-    # permission_classes = [IsAuthenticated, IsOrgMember]  # Temporairement désactivé
+    permission_classes = [IsAuthenticated, IsOrgMember]
     
     def get_queryset(self):
         return Workflow.objects.all()

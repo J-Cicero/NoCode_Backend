@@ -34,6 +34,22 @@ class DataSchema(models.Model):
     fields_config = models.JSONField(default=dict)  # Configuration des champs (compatibilité existante)
     icon = models.CharField(max_length=10, default='📋')
     description = models.TextField(blank=True)
+    
+    # Auto-generation settings
+    auto_generate_pages = models.BooleanField(
+        default=True,
+        help_text="Génère automatiquement les pages (liste, détail, formulaire) lors de la création"
+    )
+    schema_version = models.IntegerField(
+        default=1,
+        help_text="Version du schéma pour le suivi des modifications"
+    )
+    last_sync_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Dernière synchronisation avec les composants"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -71,6 +87,29 @@ class DataSchema(models.Model):
                 'order': field_config.get('order', 0)
             })
         return sorted(fields, key=lambda x: x['order'])
+    
+    def regenerate_pages(self):
+        """
+        Régénère complètement toutes les pages et composants pour ce schéma.
+        """
+        from .signals_auto_generation import regenerate_schema_components
+        regenerate_schema_components(self)
+    
+    def sync_components(self):
+        """
+        Marque tous les composants liés à ce schéma comme needing sync.
+        """
+        from .services.page_builder import PageBuilder
+        page_builder = PageBuilder(self)
+        page_builder.sync_components()
+    
+    def generate_pages(self):
+        """
+        Génère manuellement les pages pour ce schéma.
+        """
+        from .services.page_builder import PageBuilder
+        page_builder = PageBuilder(self)
+        page_builder.generate_pages()
 
 
 class FieldSchema(models.Model):
@@ -474,6 +513,25 @@ class ComponentInstance(models.Model):
         default=dict,
         verbose_name="Configuration",
         help_text="Configuration spécifique de cette instance de composant"
+    )
+    
+    # Auto-generation tracking
+    linked_field_schema = models.ForeignKey(
+        FieldSchema,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='component_instances',
+        verbose_name="Schéma de champ lié",
+        help_text="Champ du schéma lié à ce composant (pour auto-génération)"
+    )
+    is_auto_generated = models.BooleanField(
+        default=False,
+        help_text="Indique si ce composant a été généré automatiquement"
+    )
+    needs_sync = models.BooleanField(
+        default=False,
+        help_text="Indique si ce composant nécessite une synchronisation avec le schéma"
     )
     
     created_at = models.DateTimeField(auto_now_add=True)

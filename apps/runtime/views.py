@@ -9,6 +9,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from .permissions import IsProjectMemberOrAdmin, CanAccessProjectData, CanManageProjectSchema
 from django.shortcuts import get_object_or_404
 from django.db import transaction, connection
 from drf_spectacular.utils import (
@@ -84,7 +85,7 @@ class GeneratedAppViewSet(viewsets.ModelViewSet):
     """
     queryset = GeneratedApp.objects.all()
     serializer_class = GeneratedAppSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProjectMemberOrAdmin]
     
     def get_queryset(self):
         """Filtre les applications par utilisateur et organisations où il est membre."""
@@ -457,7 +458,7 @@ class DeploymentLogViewSet(viewsets.ReadOnlyModelViewSet):
     avec des filtres par application et organisation.
     """
     serializer_class = DeploymentLogSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsProjectMemberOrAdmin]
     
     def get_queryset(self):
         """Filtre les journaux de déploiement par utilisateur et organisation.
@@ -598,7 +599,7 @@ class DynamicProjectAPIView:
     """
     
     def __init__(self):
-        self.permission_classes = [IsAuthenticated]
+        self.permission_classes = [IsAuthenticated, CanAccessProjectData]
     
     def get_project(self, project_id):
         """Récupère un projet avec vérification des permissions."""
@@ -629,7 +630,7 @@ class DynamicTableViewSet(viewsets.ViewSet):
     ViewSet dynamique pour les tables d'un projet.
     Fournit le CRUD automatique pour n'importe quelle table utilisateur.
     """
-    permission_classes = [IsAuthenticated]  # Réactivé pour la sécurité
+    permission_classes = [IsAuthenticated, CanAccessProjectData]
     
     def __init__(self, *args, **kwargs):
         super().__init__()

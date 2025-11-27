@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'channels',
+    'django_celery_beat',
     
     'apps.foundation',
     'apps.studio',

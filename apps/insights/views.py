@@ -15,6 +15,7 @@ from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from .permissions import CanViewAnalytics, CanManageMetrics, CanAccessReports, CanExportData
 from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import (
     extend_schema, extend_schema_view, OpenApiParameter,
@@ -69,7 +70,7 @@ class UserActivityViewSet(viewsets.ReadOnlyModelViewSet):
     """
     serializer_class = UserActivitySerializer
     pagination_class = StandardPagination
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanViewAnalytics]
 
     def get_queryset(self):
         """Filtre les activités par organisation de l'utilisateur."""
@@ -198,7 +199,7 @@ class SystemMetricViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = SystemMetric.objects.all()
     serializer_class = SystemMetricSerializer
     pagination_class = StandardPagination
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanViewAnalytics]
 
 @extend_schema_view(
     list=extend_schema(
@@ -222,7 +223,7 @@ class ApplicationMetricViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ApplicationMetric.objects.select_related('app')
     serializer_class = ApplicationMetricSerializer
     pagination_class = StandardPagination
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanViewAnalytics]
 
     def get_queryset(self):
         """Filtre par organisation si nécessaire."""
@@ -267,7 +268,7 @@ class UserMetricViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = UserMetric.objects.select_related('user', 'organization')
     serializer_class = UserMetricSerializer
     pagination_class = StandardPagination
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanViewAnalytics]
 
     def get_queryset(self):
         """Filtre par organisation de l'utilisateur."""
@@ -311,7 +312,7 @@ class PerformanceMetricViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = PerformanceMetric.objects.select_related('organization', 'user')
     serializer_class = PerformanceMetricSerializer
     pagination_class = StandardPagination
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, CanViewAnalytics]
 
 @extend_schema(
     summary="Tracker un événement personnalisé",

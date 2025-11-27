@@ -1,7 +1,4 @@
-"""
-Vues pour les opérations de graphe (Node/Edge) dans Automation.
-Gère les endpoints CRUD pour le système de graphe visuel des workflows.
-"""
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,24 +7,21 @@ from django.shortcuts import get_object_or_404
 from django.db import transaction
 from ..models import Workflow, Node, Edge
 from ..serializers.graph_serializers import NodeSerializer, EdgeSerializer, WorkflowGraphSerializer
-from ..permissions import IsOrgMember
+from apps.foundation.permissions import IsOrgMember
 
 
 class NodeViewSet(viewsets.ModelViewSet):
-    """ViewSet pour les opérations CRUD sur les nœuds."""
     
     serializer_class = NodeSerializer
     permission_classes = [IsAuthenticated, IsOrgMember]
     
     def get_queryset(self):
-        """Filtre les nœuds par workflow."""
         workflow_id = self.kwargs.get('workflow_pk')
         if workflow_id:
             return Node.objects.filter(workflow_id=workflow_id)
         return Node.objects.none()
     
     def perform_create(self, serializer):
-        """Associe le nœud au workflow lors de la création."""
         workflow_id = self.kwargs.get('workflow_pk')
         workflow = get_object_or_404(Workflow, id=workflow_id)
         serializer.save(workflow=workflow)

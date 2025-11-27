@@ -1,6 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, permission_classes
 from rest_framework.permissions import IsAuthenticated
+from .permissions import HasProjectAccess
+from apps.foundation.permissions import IsOrgMember
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
@@ -15,7 +17,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     API endpoint pour gérer les projets NoCode
     """
     serializer_class = ProjectSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
         return Project.objects.filter(owner=self.request.user)
@@ -67,7 +69,7 @@ class DataSchemaViewSet(viewsets.ModelViewSet):
     API endpoint pour gérer les schémas de données (tables)
     """
     serializer_class = DataSchemaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
         project_id = self.request.query_params.get('project')
@@ -93,7 +95,7 @@ class FieldSchemaViewSet(viewsets.ModelViewSet):
     API endpoint pour gérer les champs des schémas de données
     """
     serializer_class = FieldSchemaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
         schema_id = self.request.query_params.get('schema')
@@ -110,7 +112,7 @@ class EditorViewSet(viewsets.ViewSet):
     """
     API endpoint pour l'éd et drop
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasProjectAccess]
 
     @action(detail=False, methods=['post'])
     def add_component(self, request):
@@ -254,7 +256,7 @@ class PageViewSet(viewsets.ModelViewSet):
     API endpoint pour gérer les pages
     """
     serializer_class = PageSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
         return Page.objects.filter(project__owner=self.request.user)
@@ -276,7 +278,7 @@ class ComponentViewSet(viewsets.ModelViewSet):
     API endpoint pour gérer les composants
     """
     serializer_class = ComponentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
         return ComponentInstance.objects.filter(page__project__owner=self.request.user)

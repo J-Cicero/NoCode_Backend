@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, DataSchema, Page, Component
+from .models import Project, DataSchema, FieldSchema, Page, ComponentInstance
 from apps.foundation.serializers import OrganizationBaseSerializer
 
 
@@ -115,6 +115,36 @@ class DataSchemaSerializer(serializers.ModelSerializer):
         return value
 
 
+class FieldSchemaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FieldSchema
+        fields = [
+            'id', 'schema', 'name', 'display_name', 'field_type', 
+            'is_required', 'is_unique', 'default_value', 'validation_rules',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['created_at', 'updated_at']
+    
+    def validate_name(self, value):
+        """Vérifie que le nom du champ est valide"""
+        import re
+        if not re.match(r'^[a-z][a-z0-9_]*$', value):
+            raise serializers.ValidationError(
+                "Le nom du champ ne peut contenir que des lettres minuscules, des chiffres et des tirets bas."
+            )
+        return value
+
+
+class ComponentInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ComponentInstance
+        fields = [
+            'tracking_id', 'page', 'component_type', 'position', 
+            'config', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['tracking_id', 'created_at', 'updated_at']
+
+
 class PageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Page
@@ -135,39 +165,10 @@ class PageSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'is_home': "Une page est déjà définie comme page d'accueil pour ce projet."
                 })
-class ComponentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Component
-        fields = [
-            'id', 'name', 'display_name', 'description', 'category', 'icon',
-            'properties', 'validation_rules', 'default_config',
-            'is_active', 'version', 'created_at', 'updated_at'
-        ]
-        read_only_fields = ['created_at', 'updated_at']
+        
+        return data
 
-    def validate_name(self, value):
-        """Vérifie que le nom du composant est unique"""
-        if Component.objects.filter(name=value).exists():
-            if self.instance and self.instance.name == value:
-                return value  # Même nom pour update
-            raise serializers.ValidationError("Un composant avec ce nom existe déjà.")
-        return value
 
-    def validate_properties(self, value):
-        """Valide la structure des propriétés"""
-        if not isinstance(value, dict):
-            raise serializers.ValidationError("Les propriétés doivent être un objet.")
-
-        # Validation basique de la structure des propriétés
-        for prop_name, prop_config in value.items():
-            if not isinstance(prop_config, dict):
-                raise serializers.ValidationError(f"La propriété '{prop_name}' doit être un objet.")
-
-            required_fields = ['type', 'label']
-            missing_fields = [field for field in required_fields if field not in prop_config]
-            if missing_fields:
-                raise serializers.ValidationError(
-                    f"Les champs suivants sont requis pour '{prop_name}': {', '.join(missing_fields)}"
-                )
-
-        return value
+class ComponentSerializer(ComponentInstanceSerializer):
+    """Alias pour ComponentInstanceSerializer pour compatibilité"""
+    pass

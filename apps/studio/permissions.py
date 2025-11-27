@@ -1,6 +1,7 @@
 
 from rest_framework import permissions
-from .models import Project, OrganizationMember
+from .models import Project
+from apps.foundation.models import OrganizationMember
 
 class HasProjectAccess(permissions.BasePermission):
 

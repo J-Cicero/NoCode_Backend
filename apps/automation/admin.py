@@ -9,6 +9,12 @@ from .models import (
 )
 
 
+# Only show Automation admin to superusers/staff
+def has_admin_permission(request):
+    """Check if user has admin permissions for Automation module"""
+    return request.user.is_superuser or request.user.is_staff
+
+
 class WorkflowStepInline(admin.TabularInline):
     model = WorkflowStep
     extra = 0
@@ -29,6 +35,21 @@ class WorkflowAdmin(admin.ModelAdmin):
     search_fields = ['name', 'description']
     readonly_fields = ['id', 'execution_count', 'success_count', 'failure_count', 'last_executed_at', 'created_at', 'updated_at']
     inlines = [WorkflowStepInline, TriggerInline]
+    
+    def has_module_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_view_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_change_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_add_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_delete_permission(self, request, obj=None):
+        return has_admin_permission(request)
     
     fieldsets = (
         ('Informations générales', {
@@ -54,6 +75,21 @@ class WorkflowStepAdmin(admin.ModelAdmin):
     list_filter = ['action_type', 'on_error', 'workflow']
     search_fields = ['name', 'step_id', 'workflow__name']
     readonly_fields = ['id', 'created_at', 'updated_at']
+    
+    def has_module_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_view_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_change_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_add_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_delete_permission(self, request, obj=None):
+        return has_admin_permission(request)
 
 
 @admin.register(Trigger)
@@ -62,6 +98,21 @@ class TriggerAdmin(admin.ModelAdmin):
     list_filter = ['trigger_type', 'is_active', 'created_at']
     search_fields = ['workflow__name', 'event_type']
     readonly_fields = ['id', 'webhook_url', 'created_at', 'updated_at']
+    
+    def has_module_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_view_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_change_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_add_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_delete_permission(self, request, obj=None):
+        return has_admin_permission(request)
 
 
 @admin.register(Integration)
@@ -70,6 +121,21 @@ class IntegrationAdmin(admin.ModelAdmin):
     list_filter = ['integration_type', 'status', 'organization']
     search_fields = ['name']
     readonly_fields = ['id', 'total_calls', 'successful_calls', 'failed_calls', 'last_used_at', 'created_at', 'updated_at']
+    
+    def has_module_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_view_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_change_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_add_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_delete_permission(self, request, obj=None):
+        return has_admin_permission(request)
     
     fieldsets = (
         ('Informations générales', {
@@ -95,6 +161,21 @@ class IntegrationCredentialAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'credential_type', 'created_at']
     search_fields = ['integration__name']
     readonly_fields = ['id', 'created_at', 'updated_at']
+    
+    def has_module_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_view_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_change_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_add_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_delete_permission(self, request, obj=None):
+        return has_admin_permission(request)
 
 
 class WorkflowExecutionLogInline(admin.TabularInline):
@@ -113,6 +194,21 @@ class WorkflowExecutionAdmin(admin.ModelAdmin):
     search_fields = ['workflow__name', 'id']
     readonly_fields = ['id', 'duration', 'created_at', 'updated_at']
     inlines = [WorkflowExecutionLogInline]
+    
+    def has_module_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_view_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_change_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_add_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_delete_permission(self, request, obj=None):
+        return has_admin_permission(request)
     
     fieldsets = (
         ('Informations générales', {
@@ -152,6 +248,21 @@ class WorkflowExecutionLogAdmin(admin.ModelAdmin):
     search_fields = ['message', 'execution__id']
     readonly_fields = ['id', 'created_at']
     
+    def has_module_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_view_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_change_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_add_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_delete_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
     def message_short(self, obj):
         return obj.message[:100] if len(obj.message) > 100 else obj.message
     message_short.short_description = 'Message'
@@ -163,6 +274,21 @@ class ActionTemplateAdmin(admin.ModelAdmin):
     list_filter = ['category', 'is_public', 'is_system', 'created_at']
     search_fields = ['name', 'description']
     readonly_fields = ['id', 'created_at', 'updated_at']
+    
+    def has_module_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_view_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_change_permission(self, request, obj=None):
+        return has_admin_permission(request)
+    
+    def has_add_permission(self, request):
+        return has_admin_permission(request)
+    
+    def has_delete_permission(self, request, obj=None):
+        return has_admin_permission(request)
     
     fieldsets = (
         ('Informations générales', {

@@ -19,9 +19,9 @@ class InsightsConfig(AppConfig):
             from . import signals  # noqa
             logger.info("Signaux Insights chargés avec succès")
 
-            # Démarrer les tâches périodiques si nécessaire
-            from .tasks import start_periodic_tasks
-            start_periodic_tasks()
+            # Les tâches périodiques sont maintenant gérées par Celery Beat
+            # dans les settings (CELERY_BEAT_SCHEDULE)
+            logger.info("Tâches périodiques Insights configurées via Celery Beat")
 
         except ImportError as e:
             logger.warning(f"Impossible de charger les composants Insights: {e}")

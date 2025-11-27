@@ -10,12 +10,27 @@ app = Celery('nocode_platform')
 
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
-app.autodiscover_tasks()
+app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+
+# Debug pour voir ce que Celery découvre
+print(f"Celery autodiscovering tasks in: {settings.INSTALLED_APPS}")
+print(f"Celery app name: {app.main}")
+print(f"Celery tasks after autodiscover: {list(app.tasks.keys())}")
 
 app.conf.beat_schedule = {
     'cleanup-expired-sessions': {
         'task': 'apps.foundation.tasks.cleanup_expired_sessions',
         'schedule': crontab(minute=0),  
+    },
+
+    'collect-system-metrics': {
+        'task': 'apps.insights.tasks.collect_system_metrics_task',
+        'schedule': crontab(minute='*/5'),  # Toutes les 5 minutes
+    },
+
+    'aggregate-daily-metrics': {
+        'task': 'apps.insights.tasks.aggregate_daily_metrics_task',
+        'schedule': crontab(hour=0, minute=0),  # Tous les jours à minuit
     },
 
     'generate-daily-analytics': {

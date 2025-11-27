@@ -18,6 +18,7 @@ from .models import UserActivity, SystemMetric, ApplicationMetric, UserMetric
 from .services import MetricsCollector, AnalyticsService
 
 logger = logging.getLogger(__name__)
+print("🔍 DEBUG: Loading insights/tasks.py module")
 
 @shared_task(bind=True, max_retries=3)
 def collect_system_metrics_task(self):
