@@ -78,7 +78,8 @@ class User(BaseModel, AbstractUser):
             )
         ],
         verbose_name="Numéro de téléphone",
-        unique=True
+        blank=True,
+        null=True
     )
     
     pays = models.CharField(

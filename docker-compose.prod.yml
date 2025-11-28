@@ -1,0 +1,95 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: nocode_db_prod
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: nocode_redis_prod
+    volumes:
+      - redis_data_prod:/data
+    restart: always
+
+  web:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      network: host
+    image: nocode_web:prod
+    container_name: nocode_web_prod
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    volumes:
+      - staticfiles:/app/staticfiles
+      - mediafiles:/app/media
+    env_file:
+      - .env.production
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+
+  celery:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      network: host
+    image: nocode_web:prod
+    container_name: nocode_celery_prod
+    command: celery -A config worker -l info --concurrency=2
+    env_file:
+      - .env.production
+    depends_on:
+      - db
+      - redis
+      - web
+    restart: always
+
+  celery-beat:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      network: host
+    image: nocode_web:prod
+    container_name: nocode_celery_beat_prod
+    command: celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env.production
+    depends_on:
+      - db
+      - redis
+      - web
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: nocode_nginx_prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - staticfiles:/static:ro
+      - mediafiles:/media:ro
+      - ssl_certs:/etc/nginx/ssl:ro
+    depends_on:
+      - web
+    restart: always
+
+volumes:
+  postgres_data_prod:
+  redis_data_prod:
+  staticfiles:
+  mediafiles:
+  ssl_certs:

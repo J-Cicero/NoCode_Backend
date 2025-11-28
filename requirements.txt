@@ -50,5 +50,11 @@ requests==2.31.0
 # Timezone
 pytz==2023.3
 
+# System monitoring
+psutil==5.9.6
+
 # UUID
 uuid==1.30
+
+# WSGI Server
+gunicorn==21.2.0

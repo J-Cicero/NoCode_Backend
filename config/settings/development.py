@@ -5,17 +5,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'nocode',
-        'USER': 'nocode_user',
-        'PASSWORD':'cicero',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
-
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

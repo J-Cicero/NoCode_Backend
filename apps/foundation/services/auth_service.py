@@ -60,22 +60,29 @@ class AuthService(BaseService):
     def login(self, email: str, password: str) -> ServiceResult:
 
         try:
+            logger.info(f"Tentative de connexion pour: {email}")
+            
             if not email or not password:
                 return ServiceResult.error_result("Email et mot de passe requis")
             
             if not self.validate_email_format(email):
                 return ServiceResult.error_result("Format d'email invalide")
             
+            logger.info("Authentication en cours...")
             user = authenticate(username=email, password=password)
             
             if not user:
                 self.log_activity('login_failed', {'email': email})
                 return ServiceResult.error_result("Email ou mot de passe incorrect")
             
+            logger.info(f"Utilisateur authentifié: {user.email}")
+            
             if not user.is_active:
                 return ServiceResult.error_result("Compte désactivé")
 
+            logger.info("Génération des tokens...")
             tokens = self.generate_tokens(user)
+            logger.info("Tokens générés avec succès")
             
             user.last_login = timezone.now()
             user.save(update_fields=['last_login'])
@@ -88,6 +95,7 @@ class AuthService(BaseService):
                 'full_name': user.full_name,
             }
             
+            logger.info("Récupération des organisations...")
             # Récupérer les organisations de l'utilisateur
             organizations = []
             memberships = OrganizationMember.objects.filter(

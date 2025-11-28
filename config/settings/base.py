@@ -145,11 +145,11 @@ SIMPLE_JWT = {
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'nocode',
-        'USER': 'nocode_user',
-        'PASSWORD':'cicero',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': config('DB_NAME', default='nocode_platform'),
+        'USER': config('DB_USER', default='nocode_user'),
+        'PASSWORD': config('DB_PASSWORD', default='nocode_password'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
 
