@@ -90,7 +90,7 @@ DB_HOST=db
 # Email
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
-EMAIL_HOST_USER=votre-email@gmail.com
+EMAIL_HOST_USER=woroukoffijudeprudencio@mail.coom
 EMAIL_HOST_PASSWORD=votre-app-password
 
 # Frontend
