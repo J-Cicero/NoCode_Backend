@@ -14,13 +14,13 @@ class FoundationConfig(AppConfig):
     def ready(self):
         """Initialisation du module Foundation."""
         try:
-            from .signals import user_post_save  # noqa
-            logger.info("Signaux utilisateur Foundation chargés")
+            # from . import signals  # noqa
+            logger.info("Signaux Foundation désactivés temporairement")
         except ImportError as e:
-            logger.warning(f"Impossible de charger les signaux utilisateur: {e}")
+            logger.warning(f"Impossible de charger les signaux: {e}")
             
         # Enregistrer le signal post_migrate pour créer les données initiales
-        post_migrate.connect(self._create_initial_data, sender=self)
+        # post_migrate.connect(self._create_initial_data, sender=self)  # Temporairement désactivé
 
     
     def _create_initial_data(self, sender, **kwargs):

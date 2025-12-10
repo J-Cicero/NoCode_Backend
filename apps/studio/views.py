@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from .models import Project, DataSchema, FieldSchema, Page, ComponentInstance
 from .serializers import ProjectSerializer, DataSchemaSerializer, FieldSchemaSerializer, PageSerializer, ComponentSerializer
+from .user_friendly_serializers import TableCreationSerializer, TableUpdateSerializer
 
 User = get_user_model()
 
@@ -20,10 +21,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
-        return Project.objects.filter(owner=self.request.user)
+        return Project.objects.filter(created_by=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
+        serializer.save(created_by=self.request.user)
 
     @action(detail=True, methods=['post'])
     def publish(self, request, pk=None):
@@ -62,6 +63,113 @@ class ProjectViewSet(viewsets.ModelViewSet):
         schemas = DataSchema.objects.filter(project=project)
         serializer = DataSchemaSerializer(schemas, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='tables/create')
+    def create_table(self, request, pk=None):
+        """
+        Créer une table avec formulaire intuitif (sans JSON).
+        Endpoint user-friendly pour la création de schémas de données.
+        """
+        project = self.get_object()
+        
+        # Ajouter le project_id aux données
+        data = request.data.copy()
+        data['project_id'] = project.id
+        
+        serializer = TableCreationSerializer(
+            data=data, 
+            context={'request': request}
+        )
+        
+        if serializer.is_valid():
+            data_schema = serializer.save()
+            # Retourner le schéma créé avec les champs
+            response_data = {
+                'id': data_schema.id,
+                'table_name': data_schema.table_name,
+                'display_name': data_schema.display_name,
+                'description': data_schema.description,
+                'icon': data_schema.icon,
+                'auto_generate_pages': data_schema.auto_generate_pages,
+                'created_at': data_schema.created_at,
+                'fields_count': data_schema.fields.count(),
+                'message': 'Table créée avec succès'
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'], url_path='tables')
+    def list_tables(self, request, pk=None):
+        """
+        Lister les tables du projet avec leurs champs.
+        """
+        project = self.get_object()
+        schemas = DataSchema.objects.filter(project=project)
+        
+        tables_data = []
+        for schema in schemas:
+            fields = FieldSchema.objects.filter(schema=schema)
+            tables_data.append({
+                'id': schema.id,
+                'table_name': schema.table_name,
+                'display_name': schema.display_name,
+                'description': schema.description,
+                'icon': schema.icon,
+                'auto_generate_pages': schema.auto_generate_pages,
+                'created_at': schema.created_at,
+                'fields_count': fields.count(),
+                'fields': [
+                    {
+                        'id': field.id,
+                        'name': field.name,
+                        'display_name': field.display_name,
+                        'field_type': field.field_type,
+                        'is_required': field.is_required,
+                        'is_unique': field.is_unique
+                    }
+                    for field in fields
+                ]
+            })
+        
+        return Response({
+            'project': {
+                'id': project.id,
+                'name': project.name,
+                'tracking_id': project.tracking_id
+            },
+            'tables': tables_data
+        })
+
+    @action(detail=True, methods=['put'], url_path='tables/(?P<table_id>[^/.]+)')
+    def update_table(self, request, pk=None, table_id=None):
+        """
+        Mettre à jour une table (ajouter/supprimer des champs).
+        """
+        project = self.get_object()
+        
+        try:
+            data_schema = DataSchema.objects.get(id=table_id, project=project)
+        except DataSchema.DoesNotExist:
+            return Response(
+                {'error': 'Table introuvable'}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = TableUpdateSerializer(
+            data_schema,
+            data=request.data,
+            context={'request': request}
+        )
+        
+        if serializer.is_valid():
+            updated_schema = serializer.save()
+            return Response({
+                'message': 'Table mise à jour avec succès',
+                'fields_count': updated_schema.fields.count()
+            })
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class DataSchemaViewSet(viewsets.ModelViewSet):

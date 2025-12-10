@@ -106,9 +106,9 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'organization', 'role', 'status',
             'joined_at', 'is_current_user',
-            'created_at', 'updated_at'
+            'created_at'
         ]
-        read_only_fields = ['id', 'joined_at', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'joined_at', 'created_at']
     
     def get_is_current_user(self, obj):
         """Vérifie si c'est le membre actuel."""

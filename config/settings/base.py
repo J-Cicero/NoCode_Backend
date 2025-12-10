@@ -23,14 +23,14 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'drf_spectacular',
-    'channels',
-    'django_celery_beat',
+    # 'channels',  # Temporairement désactivé
+    # 'django_celery_beat',  # Temporairement désactivé
     
     'apps.foundation',
     'apps.studio',
     'apps.runtime',
-    'apps.insights',
-    'apps.automation',
+    # 'apps.insights',  # Temporairement désactivé
+    # 'apps.automation',  # Temporairement désactivé
 ]
 
 # Configuration CORS pour permettre les requêtes depuis les fichiers locaux
@@ -51,8 +51,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'apps.insights.middleware.InsightsMiddleware',
-    'apps.insights.middleware.MetricsCollectionMiddleware',
+    # 'apps.insights.middleware.InsightsMiddleware',  # Temporairement désactivé
+    # 'apps.insights.middleware.MetricsCollectionMiddleware',  # Temporairement désactivé
 ]
 
 TEMPLATES = [
@@ -107,11 +107,38 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
         # 'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Réactivé pour Swagger
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S%z',
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
+}
+
+# Configuration drf_spectacular pour Swagger/OpenAPI
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'NoCode Backend API',
+    'DESCRIPTION': 'API pour la plateforme NoCode - Création d\'applications sans code',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],  # Permet l'accès public au schéma
+    'SCHEMA_PATH_PREFIX': '/api/v1/',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'COMPONENT_NO_READ_ONLY_REQUIRED': True,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+    },
+    'REDOC_UI_SETTINGS': {
+        'hideDownloadButton': True,
+        'hideHostname': True,
+    },
+    'PREPROCESSING_HOOKS': [],
+    'POSTPROCESSING_HOOKS': [],
+    'SERVERS': [
+        {'url': 'http://localhost:8000', 'description': 'Development server'},
+        {'url': 'https://api.nocode.com', 'description': 'Production server'},
+    ],
 }
 
 # Configuration JWT

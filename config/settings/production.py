@@ -36,18 +36,22 @@ REDIS_URL = config('REDIS_URL', default='redis://localhost:6379')
 if config('REDIS_PASSWORD', default=None):
     REDIS_URL = REDIS_URL.replace('redis://', f'redis://:{config("REDIS_PASSWORD")}@')
 
-CACHES['default'].update({
-    'TIMEOUT': 300,
-    'OPTIONS': {
-        'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-        'CONNECTION_POOL_KWARGS': {
-            'max_connections': 50,
-            'retry_on_timeout': True,
-        },
-        'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
-        'IGNORE_EXCEPTIONS': True,
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': REDIS_URL,
+        'TIMEOUT': 300,
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'CONNECTION_POOL_KWARGS': {
+                'max_connections': 50,
+                'retry_on_timeout': True,
+            },
+            'COMPRESSOR': 'django_redis.compressors.zlib.ZlibCompressor',
+            'IGNORE_EXCEPTIONS': True,
+        }
     }
-})
+}
 
 CELERY_BROKER_URL = REDIS_URL
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1

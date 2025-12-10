@@ -28,7 +28,6 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-      network: host
     image: nocode_web
     container_name: nocode_web
     command: python manage.py runserver 0.0.0.0:8000
@@ -47,7 +46,6 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-      network: host
     image: nocode_web
     container_name: nocode_celery
     command: celery -A config worker -l info
@@ -65,7 +63,6 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
-      network: host
     image: nocode_web
     container_name: nocode_celery_beat
     command: celery -A config beat -l info

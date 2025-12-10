@@ -57,14 +57,12 @@ class EdgeSerializer(serializers.ModelSerializer):
 
 
 class WorkflowGraphSerializer(serializers.Serializer):
-    """Serializer pour le graphe complet d'un workflow."""
     
     workflow_id = serializers.UUIDField()
     nodes = NodeSerializer(many=True, read_only=True)
     edges = EdgeSerializer(many=True, read_only=True)
     
     def to_representation(self, instance):
-        """Retourne le graphe complet avec les nœuds et arêtes."""
         workflow = instance
         nodes = workflow.nodes.all()
         edges = workflow.edges.all()

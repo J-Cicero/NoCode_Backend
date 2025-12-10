@@ -1,9 +1,21 @@
 
 from .base import *
 
+print(f"🔍 SETTINGS LOADED: {__file__}")  # Debug pour vérifier quel settings est utilisé
+
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+
+# Désactiver la redirection SSL en développement
+SECURE_SSL_REDIRECT = False
+print(f"🔍 SECURE_SSL_REDIRECT: {SECURE_SSL_REDIRECT}")  # Debug pour vérifier la valeur
+
+SECURE_HSTS_SECONDS = 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+SECURE_HSTS_PRELOAD = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 
 LOGGING = {
     'version': 1,

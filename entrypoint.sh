@@ -5,7 +5,22 @@ echo "🚀 Démarrage de l'application NoCode..."
 
 # Attendre que la base de données soit prête
 echo "⏳ Attente de la base de données..."
-while ! nc -z $DB_HOST $DB_PORT; do
+while ! python -c "
+import psycopg2
+import sys
+try:
+    conn = psycopg2.connect(
+        host='$DB_HOST',
+        port=$DB_PORT,
+        dbname='$DB_NAME',
+        user='$DB_USER',
+        password='$DB_PASSWORD'
+    )
+    conn.close()
+    sys.exit(0)
+except:
+    sys.exit(1)
+"; do
   sleep 0.1
 done
 echo "✅ Base de données disponible"

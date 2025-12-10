@@ -108,7 +108,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'tracking_id', 'email', 'nom', 'prenom', 'full_name',
-            'role', 'numero_telephone', 'pays', 'is_active', 
+            'numero_telephone', 'pays', 'is_active', 
             'date_joined', 'last_login'
         ]
         read_only_fields = [
