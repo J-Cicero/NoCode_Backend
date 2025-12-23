@@ -443,7 +443,7 @@ class AuthService(BaseService):
         for membership in memberships:
             organizations.append({
                 'id': membership.organization.id,
-                'tracking_id': membership.organization.tracking_id,
+                'tracking_id': str(membership.organization.tracking_id),  # Convertir UUID en string
                 'role': membership.role,
             })
         

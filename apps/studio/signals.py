@@ -1,11 +1,25 @@
-from django.db.models.signals import pre_delete, post_migrate
+from django.db.models.signals import pre_delete, post_migrate, post_save
 from django.dispatch import receiver
 from django.db import connection
 from .models import Project
 from .schema_manager import SchemaManager
+from .services.project_service import ProjectService
 import logging
 
 logger = logging.getLogger(__name__)
+
+@receiver(post_save, sender=Project)
+def create_project_schema(sender, instance, created, **kwargs):
+    """
+    Crée automatiquement le schéma PostgreSQL et la page d'accueil
+    lors de la création d'un nouveau projet.
+    """
+    if created and not instance.schema_name:
+        try:
+            ProjectService.bootstrap_project_with_schema_and_homepage(instance)
+            logger.info(f"Schéma et page d'accueil créés pour le projet {instance.name}")
+        except Exception as e:
+            logger.error(f"Erreur lors de la création du schéma pour le projet {instance.id}: {e}")
 
 @receiver(pre_delete, sender=Project)
 def delete_project_schema(sender, instance, **kwargs):

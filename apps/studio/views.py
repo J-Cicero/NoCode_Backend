@@ -6,6 +6,8 @@ from apps.foundation.permissions import IsOrgMember
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 from .models import Project, DataSchema, FieldSchema, Page, ComponentInstance
 from .serializers import ProjectSerializer, DataSchemaSerializer, FieldSchemaSerializer, PageSerializer, ComponentSerializer
 from .user_friendly_serializers import TableCreationSerializer, TableUpdateSerializer
@@ -13,6 +15,211 @@ from .user_friendly_serializers import TableCreationSerializer, TableUpdateSeria
 User = get_user_model()
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="📋 Lister tous les projets accessibles",
+        description="""
+        **Récupère la liste de tous les projets accessibles par l'utilisateur connecté.**
+        
+        ## 🎯 Projets retournés :
+        
+        ### Pour un Client Individuel (sans organisation) :
+        - ✅ Tous les projets qu'il a créés personnellement
+        - ✅ Les projets où `organization` est NULL
+        
+        ### Pour un Membre d'Organisation :
+        - ✅ Tous ses projets personnels (créés par lui, organization=NULL)
+        - ✅ Tous les projets de ses organisations (où il est membre actif)
+        - ✅ Visible par tous les membres (OWNER, ADMIN, MEMBER)
+        
+        ## 📊 Réponse :
+        - Liste de projets avec leurs détails complets
+        - Inclut : tracking_id, name, schema_name, organization, created_by, dates
+        
+        ## 🔐 Permissions :
+        - Authentification requise (Bearer Token)
+        - Retourne uniquement les projets accessibles par l'utilisateur
+        
+        ## 💡 Exemple d'utilisation :
+        ```
+        GET /api/v1/studio/projects/
+        Authorization: Bearer <votre_token>
+        ```
+        """,
+        tags=["📁 Studio - Projets"]
+    ),
+    create=extend_schema(
+        summary="➕ Créer un nouveau projet",
+        description="""
+        **Crée un nouveau projet NoCode.**
+        
+        ## 🎯 Types de projets :
+        
+        ### 1️⃣ Projet Personnel (Client Individuel) :
+        ```json
+        {
+            "name": "Mon Application Mobile"
+            // Ne pas fournir organization_id
+        }
+        ```
+        - Le projet sera lié uniquement au créateur
+        - `organization` sera NULL
+        - Seul le créateur aura accès
+        
+        ### 2️⃣ Projet d'Organisation :
+        ```json
+        {
+            "name": "ERP Entreprise",
+            "organization_id": "uuid-de-votre-organisation"
+        }
+        ```
+        - Le projet sera lié à l'organisation
+        - Tous les membres actifs de l'organisation auront accès
+        - OWNER/ADMIN peuvent modifier, MEMBER peut lire
+        
+        ## ⚙️ Ce qui est créé automatiquement :
+        - ✅ Un schéma PostgreSQL unique (`schema_name`)
+        - ✅ Une page d'accueil par défaut
+        - ✅ Une structure de base pour l'application
+        
+        ## 🔐 Permissions :
+        - Authentification requise
+        - Pour créer un projet d'organisation : être membre actif de cette organisation
+        
+        ## 📊 Réponse :
+        - Détails complets du projet créé
+        - Code HTTP 201 Created
+        
+        ## ⚠️ Notes importantes :
+        - Le nom du projet doit être unique dans votre espace
+        - Le schema_name est généré automatiquement
+        - La suppression d'un projet supprime toutes ses données
+        """,
+        tags=["📁 Studio - Projets"],
+        examples=[
+            OpenApiExample(
+                "Projet Personnel",
+                value={"name": "Mon Portfolio"},
+                request_only=True
+            ),
+            OpenApiExample(
+                "Projet Organisation",
+                value={
+                    "name": "CRM Enterprise",
+                    "organization_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                request_only=True
+            )
+        ]
+    ),
+    retrieve=extend_schema(
+        summary="🔍 Récupérer les détails d'un projet",
+        description="""
+        **Récupère les informations détaillées d'un projet spécifique.**
+        
+        ## 🎯 Informations retournées :
+        - tracking_id (UUID unique du projet)
+        - name (nom du projet)
+        - schema_name (nom du schéma PostgreSQL)
+        - organization (organisation liée, ou NULL si projet personnel)
+        - created_by (email et nom du créateur)
+        - created_at / updated_at (dates de création/modification)
+        
+        ## 🔐 Permissions :
+        - Authentification requise
+        - Accès autorisé si :
+          - ✅ Vous êtes le créateur du projet
+          - ✅ Vous êtes membre actif de l'organisation du projet
+        
+        ## 💡 Exemple :
+        ```
+        GET /api/v1/studio/projects/{tracking_id}/
+        Authorization: Bearer <votre_token>
+        ```
+        """,
+        tags=["📁 Studio - Projets"]
+    ),
+    update=extend_schema(
+        summary="✏️ Modifier un projet (PUT complet)",
+        description="""
+        **Modifie complètement un projet existant.**
+        
+        ## 📝 Champs modifiables :
+        - `name` : Nouveau nom du projet
+        - `organization_id` : Changer d'organisation (si autorisé)
+        
+        ## 🔐 Permissions :
+        - Authentification requise
+        - Modification autorisée si :
+          - ✅ Vous êtes le créateur du projet
+          - ✅ Vous êtes OWNER ou ADMIN de l'organisation du projet
+          - ❌ Les MEMBER ne peuvent PAS modifier
+        
+        ## ⚠️ Notes :
+        - Le schema_name ne peut pas être modifié
+        - Le tracking_id ne change jamais
+        
+        ## 💡 Exemple :
+        ```json
+        PUT /api/v1/studio/projects/{tracking_id}/
+        {
+            "name": "Nouveau Nom du Projet"
+        }
+        ```
+        """,
+        tags=["📁 Studio - Projets"]
+    ),
+    partial_update=extend_schema(
+        summary="✏️ Modifier partiellement un projet (PATCH)",
+        description="""
+        **Modifie partiellement un projet existant.**
+        
+        Même fonctionnement que PUT, mais vous pouvez ne modifier que les champs souhaités.
+        
+        ## 💡 Exemple :
+        ```json
+        PATCH /api/v1/studio/projects/{tracking_id}/
+        {
+            "name": "Nouveau Nom"
+        }
+        ```
+        
+        ## 🔐 Permissions : Identiques à PUT
+        """,
+        tags=["📁 Studio - Projets"]
+    ),
+    destroy=extend_schema(
+        summary="🗑️ Supprimer un projet",
+        description="""
+        **Supprime définitivement un projet et toutes ses données associées.**
+        
+        ## ⚠️ ATTENTION - Cette action est IRRÉVERSIBLE !
+        
+        ### Ce qui sera supprimé :
+        - 🗑️ Le projet lui-même
+        - 🗑️ Le schéma PostgreSQL complet
+        - 🗑️ Toutes les tables du projet
+        - 🗑️ Toutes les pages et composants
+        - 🗑️ Toutes les données stockées dans ce projet
+        
+        ## 🔐 Permissions :
+        - Authentification requise
+        - Suppression autorisée si :
+          - ✅ Vous êtes le créateur du projet
+          - ✅ Vous êtes OWNER ou ADMIN de l'organisation du projet
+          - ❌ Les MEMBER ne peuvent PAS supprimer
+        
+        ## 📊 Réponse :
+        - Code HTTP 204 No Content (succès)
+        - Code HTTP 403 Forbidden (pas autorisé)
+        - Code HTTP 404 Not Found (projet inexistant)
+        
+        ## 💡 Conseil :
+        Avant de supprimer, assurez-vous d'avoir exporté les données importantes !
+        """,
+        tags=["📁 Studio - Projets"]
+    ),
+)
 class ProjectViewSet(viewsets.ModelViewSet):
     """
     API endpoint pour gérer les projets NoCode
@@ -21,7 +228,24 @@ class ProjectViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
-        return Project.objects.filter(created_by=self.request.user)
+        """
+        Retourne les projets accessibles par l'utilisateur :
+        - Projets créés par l'utilisateur (client individuel)
+        - Projets des organisations dont l'utilisateur est membre
+        """
+        user = self.request.user
+        
+        # Projets personnels
+        user_projects = Project.objects.filter(created_by=user)
+        
+        # Projets des organisations
+        user_orgs = user.organization_memberships.filter(
+            status='ACTIVE'
+        ).values_list('organization_id', flat=True)
+        org_projects = Project.objects.filter(organization_id__in=user_orgs)
+        
+        # Combinaison des deux
+        return (user_projects | org_projects).distinct()
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
@@ -172,6 +396,132 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="📊 Lister toutes les tables (schémas de données)",
+        description="""
+        **Récupère la liste de toutes les tables (DataSchema) de vos projets accessibles.**
+        
+        ## 🎯 Qu'est-ce qu'un DataSchema (Table) ?
+        Un DataSchema représente une **table de base de données** dans votre projet NoCode :
+        - Équivalent à une table SQL
+        - Contient des champs (FieldSchema)
+        - Stocke les données de votre application
+        
+        ## 📊 Filtrage disponible :
+        Paramètre `?project=<project_id>` : Filtrer les tables d'un projet spécifique
+        
+        ## 💡 Exemple :
+        ```
+        GET /api/v1/studio/schemas/
+        GET /api/v1/studio/schemas/?project=uuid-du-projet
+        ```
+        
+        ## 🔐 Permissions :
+        - Uniquement les tables des projets accessibles
+        """,
+        tags=["📊 Studio - Tables (Schémas)"],
+        parameters=[
+            OpenApiParameter(
+                name="project",
+                type=OpenApiTypes.UUID,
+                location=OpenApiParameter.QUERY,
+                description="UUID du projet pour filtrer les tables",
+                required=False
+            )
+        ]
+    ),
+    create=extend_schema(
+        summary="➕ Créer une nouvelle table",
+        description="""
+        **Crée une nouvelle table (DataSchema) dans un projet.**
+        
+        ## 📝 Informations requises :
+        ```json
+        {
+            "name": "clients",
+            "display_name": "Clients",
+            "project_id": "uuid-du-projet"
+        }
+        ```
+        
+        ## 🎯 Ce qui est créé :
+        - Une table dans le schéma PostgreSQL du projet
+        - Un modèle de données prêt à recevoir des champs
+        - Une structure pour stocker vos données
+        
+        ## ⚙️ Prochaines étapes après création :
+        1. Ajouter des champs (FieldSchema) à la table
+        2. Créer des formulaires et vues pour manipuler les données
+        3. Utiliser l'API Runtime pour CRUD sur les données
+        
+        ## 🔐 Permissions :
+        - Créateur du projet : ✅ Autorisé
+        - OWNER/ADMIN d'organisation : ✅ Autorisé
+        - MEMBER d'organisation : ❌ Lecture seule
+        
+        ## 💡 Bonnes pratiques :
+        - `name` : en minuscules, sans espaces (ex: "clients", "commandes")
+        - `display_name` : nom lisible (ex: "Clients", "Commandes")
+        """,
+        tags=["📊 Studio - Tables (Schémas)"],
+        examples=[
+            OpenApiExample(
+                "Table Clients",
+                value={
+                    "name": "clients",
+                    "display_name": "Clients",
+                    "project_id": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                request_only=True
+            )
+        ]
+    ),
+    retrieve=extend_schema(
+        summary="🔍 Récupérer les détails d'une table",
+        description="""
+        **Récupère les informations complètes d'une table spécifique.**
+        
+        ## 📊 Informations retournées :
+        - ID et nom de la table
+        - Projet parent
+        - Liste des champs (fields)
+        - Métadonnées (dates, etc.)
+        """,
+        tags=["📊 Studio - Tables (Schémas)"]
+    ),
+    update=extend_schema(
+        summary="✏️ Modifier une table",
+        description="""
+        **Modifie les informations d'une table existante.**
+        
+        ## 📝 Champs modifiables :
+        - `display_name` : Nom d'affichage de la table
+        - `name` : ⚠️ Attention, peut casser des références existantes
+        
+        ## 🔐 Permissions : Identiques à la création
+        """,
+        tags=["📊 Studio - Tables (Schémas)"]
+    ),
+    partial_update=extend_schema(
+        summary="✏️ Modifier partiellement une table",
+        tags=["📊 Studio - Tables (Schémas)"]
+    ),
+    destroy=extend_schema(
+        summary="🗑️ Supprimer une table",
+        description="""
+        **Supprime une table et TOUTES ses données.**
+        
+        ## ⚠️ ATTENTION - Action IRRÉVERSIBLE !
+        - 🗑️ La table sera supprimée
+        - 🗑️ Tous les champs seront supprimés
+        - 🗑️ Toutes les données stockées seront perdues
+        
+        ## 🔐 Permissions : Identiques à la création
+        """,
+        tags=["📊 Studio - Tables (Schémas)"]
+    ),
+)
 class DataSchemaViewSet(viewsets.ModelViewSet):
     """
     API endpoint pour gérer les schémas de données (tables)
@@ -180,10 +530,24 @@ class DataSchemaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
+        """Retourne les schémas des projets accessibles par l'utilisateur"""
+        user = self.request.user
+        
+        # Récupérer les IDs des projets accessibles
+        user_projects = Project.objects.filter(created_by=user)
+        user_orgs = user.organization_memberships.filter(
+            status='ACTIVE'
+        ).values_list('organization_id', flat=True)
+        org_projects = Project.objects.filter(organization_id__in=user_orgs)
+        accessible_projects = (user_projects | org_projects).distinct()
+        
         project_id = self.request.query_params.get('project')
         if project_id:
-            return DataSchema.objects.filter(project_id=project_id, project__owner=self.request.user)
-        return DataSchema.objects.filter(project__owner=self.request.user)
+            return DataSchema.objects.filter(
+                project_id=project_id, 
+                project__in=accessible_projects
+            )
+        return DataSchema.objects.filter(project__in=accessible_projects)
 
     def perform_create(self, serializer):
         # Le signal auto_generate_django_model se déclenchera ici
@@ -206,10 +570,24 @@ class FieldSchemaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
+        """Retourne les champs des schémas des projets accessibles"""
+        user = self.request.user
+        
+        # Récupérer les IDs des projets accessibles
+        user_projects = Project.objects.filter(created_by=user)
+        user_orgs = user.organization_memberships.filter(
+            status='ACTIVE'
+        ).values_list('organization_id', flat=True)
+        org_projects = Project.objects.filter(organization_id__in=user_orgs)
+        accessible_projects = (user_projects | org_projects).distinct()
+        
         schema_id = self.request.query_params.get('schema')
         if schema_id:
-            return FieldSchema.objects.filter(schema_id=schema_id, schema__project__owner=self.request.user)
-        return FieldSchema.objects.filter(schema__project__owner=self.request.user)
+            return FieldSchema.objects.filter(
+                schema_id=schema_id, 
+                schema__project__in=accessible_projects
+            )
+        return FieldSchema.objects.filter(schema__project__in=accessible_projects)
 
     def perform_create(self, serializer):
         # Le signal auto_add_field_to_model se déclenchera ici
@@ -237,10 +615,19 @@ class EditorViewSet(viewsets.ViewSet):
             )
 
         try:
-            project = Project.objects.get(tracking_id=project_id, owner=request.user)
+            # Vérifier que l'utilisateur a accès au projet
+            user = request.user
+            user_projects = Project.objects.filter(created_by=user)
+            user_orgs = user.organization_memberships.filter(
+                status='ACTIVE'
+            ).values_list('organization_id', flat=True)
+            org_projects = Project.objects.filter(organization_id__in=user_orgs)
+            accessible_projects = (user_projects | org_projects).distinct()
+            
+            project = accessible_projects.get(tracking_id=project_id)
         except Project.DoesNotExist:
             return Response(
-                {'error': 'Projet non trouvé'}, 
+                {'error': 'Projet non trouvé ou accès refusé'}, 
                 status=status.HTTP_404_NOT_FOUND
             )
 
@@ -278,9 +665,18 @@ class EditorViewSet(viewsets.ViewSet):
             )
 
         try:
+            # Vérifier que l'utilisateur a accès au projet du composant
+            user = request.user
+            user_projects = Project.objects.filter(created_by=user)
+            user_orgs = user.organization_memberships.filter(
+                status='ACTIVE'
+            ).values_list('organization_id', flat=True)
+            org_projects = Project.objects.filter(organization_id__in=user_orgs)
+            accessible_projects = (user_projects | org_projects).distinct()
+            
             component = ComponentInstance.objects.get(
                 tracking_id=component_id,
-                page__project__owner=request.user
+                page__project__in=accessible_projects
             )
             component.position = position
             component.save()
@@ -304,9 +700,18 @@ class EditorViewSet(viewsets.ViewSet):
             )
 
         try:
+            # Vérifier que l'utilisateur a accès au projet du composant
+            user = request.user
+            user_projects = Project.objects.filter(created_by=user)
+            user_orgs = user.organization_memberships.filter(
+                status='ACTIVE'
+            ).values_list('organization_id', flat=True)
+            org_projects = Project.objects.filter(organization_id__in=user_orgs)
+            accessible_projects = (user_projects | org_projects).distinct()
+            
             component = ComponentInstance.objects.get(
                 tracking_id=component_id,
-                page__project__owner=request.user
+                page__project__in=accessible_projects
             )
             component.delete()
             
@@ -329,7 +734,16 @@ class EditorViewSet(viewsets.ViewSet):
             )
 
         try:
-            project = Project.objects.get(tracking_id=project_id, owner=request.user)
+            # Vérifier que l'utilisateur a accès au projet
+            user = request.user
+            user_projects = Project.objects.filter(created_by=user)
+            user_orgs = user.organization_memberships.filter(
+                status='ACTIVE'
+            ).values_list('organization_id', flat=True)
+            org_projects = Project.objects.filter(organization_id__in=user_orgs)
+            accessible_projects = (user_projects | org_projects).distinct()
+            
+            project = accessible_projects.get(tracking_id=project_id)
             pages = Page.objects.filter(project=project)
             
             state = {
@@ -367,7 +781,18 @@ class PageViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
-        return Page.objects.filter(project__owner=self.request.user)
+        """Retourne les pages des projets accessibles"""
+        user = self.request.user
+        
+        # Récupérer les IDs des projets accessibles
+        user_projects = Project.objects.filter(created_by=user)
+        user_orgs = user.organization_memberships.filter(
+            status='ACTIVE'
+        ).values_list('organization_id', flat=True)
+        org_projects = Project.objects.filter(organization_id__in=user_orgs)
+        accessible_projects = (user_projects | org_projects).distinct()
+        
+        return Page.objects.filter(project__in=accessible_projects)
 
     def perform_create(self, serializer):
         serializer.save()
@@ -389,7 +814,18 @@ class ComponentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, HasProjectAccess]
 
     def get_queryset(self):
-        return ComponentInstance.objects.filter(page__project__owner=self.request.user)
+        """Retourne les composants des projets accessibles"""
+        user = self.request.user
+        
+        # Récupérer les IDs des projets accessibles
+        user_projects = Project.objects.filter(created_by=user)
+        user_orgs = user.organization_memberships.filter(
+            status='ACTIVE'
+        ).values_list('organization_id', flat=True)
+        org_projects = Project.objects.filter(organization_id__in=user_orgs)
+        accessible_projects = (user_projects | org_projects).distinct()
+        
+        return ComponentInstance.objects.filter(page__project__in=accessible_projects)
 
     def perform_create(self, serializer):
         # Le signal auto_create_page_if_needed se déclenchera ici

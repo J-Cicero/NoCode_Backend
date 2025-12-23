@@ -625,6 +625,49 @@ class DynamicProjectAPIView:
         return project
 
 
+@extend_schema_view(
+    list=extend_schema(
+        summary="Lister les enregistrements d'une table",
+        description="Retourne la liste des enregistrements d'une table spécifique d'un projet.",
+        responses={
+            200: OpenApiResponse(description="Liste des enregistrements"),
+            403: OpenApiResponse(description="Accès non autorisé")
+        }
+    ),
+    retrieve=extend_schema(
+        summary="Récupérer un enregistrement",
+        description="Récupère les détails d'un enregistrement spécifique.",
+        responses={
+            200: OpenApiResponse(description="Détails de l'enregistrement"),
+            404: OpenApiResponse(description="Enregistrement non trouvé")
+        }
+    ),
+    create=extend_schema(
+        summary="Créer un enregistrement",
+        description="Crée un nouvel enregistrement dans la table.",
+        responses={
+            201: OpenApiResponse(description="Enregistrement créé"),
+            400: OpenApiResponse(description="Données invalides")
+        }
+    ),
+    update=extend_schema(
+        summary="Mettre à jour un enregistrement",
+        description="Met à jour les données d'un enregistrement existant.",
+        responses={
+            200: OpenApiResponse(description="Enregistrement mis à jour"),
+            400: OpenApiResponse(description="Données invalides"),
+            404: OpenApiResponse(description="Enregistrement non trouvé")
+        }
+    ),
+    destroy=extend_schema(
+        summary="Supprimer un enregistrement",
+        description="Supprime un enregistrement de la table.",
+        responses={
+            204: OpenApiResponse(description="Enregistrement supprimé"),
+            404: OpenApiResponse(description="Enregistrement non trouvé")
+        }
+    )
+)
 class DynamicTableViewSet(viewsets.ViewSet):
     """
     ViewSet dynamique pour les tables d'un projet.
@@ -914,8 +957,8 @@ class DynamicTableViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    @action(detail=False, methods=['get'])
-    def schema(self, request, project_id, table_name):
+    @action(detail=False, methods=['get'], url_path='schema', url_name='schema')
+    def table_schema(self, request, project_id, table_name):
         """Retourne les métadonnées du schéma pour le frontend."""
         try:
             self.initialize(project_id, table_name)

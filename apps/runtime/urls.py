@@ -39,7 +39,7 @@ urlpatterns = [
     
     # Métadonnées pour le frontend
     path('projects/<uuid:project_id>/tables/<str:table_name>/schema/', views.DynamicTableViewSet.as_view({
-        'get': 'schema'
+        'get': 'table_schema'
     }), name='dynamic-table-schema'),
     
     path('projects/<uuid:project_id>/tables/<str:table_name>/fields/', views.DynamicTableViewSet.as_view({

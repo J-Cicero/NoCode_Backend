@@ -4,83 +4,96 @@ from .models import Project
 from apps.foundation.models import OrganizationMember
 
 class HasProjectAccess(permissions.BasePermission):
-
+    """
+    Permission personnalisée pour les projets NoCode.
+    
+    Règles:
+    - Client individuel: contrôle total sur ses propres projets
+    - OWNER/ADMIN d'organisation: contrôle total sur les projets de l'org
+    - MEMBER d'organisation: lecture seule sur les projets de l'org
+    """
     
     def has_permission(self, request, view):
         # Vérifie que l'utilisateur est authentifié
         if not request.user.is_authenticated:
             return False
-            
-        # Pour les méthodes non sécurisées (GET, HEAD, OPTIONS),
-        # on vérifie que l'utilisateur est membre de l'organisation OU propriétaire du projet
-        if request.method in permissions.SAFE_METHODS:
-            project_id = view.kwargs.get('pk') or view.kwargs.get('project_id')
-            if not project_id:
-                # Si on ne peut pas déterminer le projet, on refuse par sécurité
-                return False
-                
-            try:
-                project = Project.objects.get(id=project_id)
-                # Permet l'accès si l'utilisateur est le créateur du projet
-                if project.created_by == request.user:
-                    return True
-                # Vérifie si l'utilisateur est membre de l'organisation
-                if project.organization and project.organization.members.filter(id=request.user.id).exists():
-                    return True
-                return False
-            except Project.DoesNotExist:
-                return False
-                
-        # Pour les méthodes modifiantes (POST, PUT, PATCH, DELETE),
-        # on vérifie que l'utilisateur est admin de l'organisation
-        # OU propriétaire du projet (projets personnels autorisés)
-        project_id = view.kwargs.get('pk') or view.kwargs.get('project_id')
         
         # Pour la création de projet (POST sans project_id), on autorise tout utilisateur authentifié
+        project_id = view.kwargs.get('pk') or view.kwargs.get('project_id')
         if request.method == 'POST' and not project_id:
             return True
             
+        # Si pas de project_id, on laisse passer (le queryset filtrera)
         if not project_id:
-            return False
-            
+            return True
+                
         try:
             project = Project.objects.get(id=project_id)
-            # Vérifie si l'utilisateur est propriétaire du projet
-            if project.created_by == request.user:
-                return True
-                
-            # Vérifie si l'utilisateur est admin de l'organisation
-            if project.organization:
-                return OrganizationMember.objects.filter(
-                    organization=project.organization,
-                    user=request.user,
-                    role__in=['OWNER', 'ADMIN']
-                ).exists()
-            
         except Project.DoesNotExist:
             return False
+        
+        # Vérifie si l'utilisateur est le créateur du projet (client individuel)
+        if project.created_by == request.user:
+            return True
+        
+        # Vérifie les permissions au niveau de l'organisation
+        if project.organization:
+            membership = OrganizationMember.objects.filter(
+                organization=project.organization,
+                user=request.user,
+                status='ACTIVE'
+            ).first()
+            
+            if not membership:
+                return False
+            
+            # SAFE_METHODS (GET, HEAD, OPTIONS): tous les membres peuvent lire
+            if request.method in permissions.SAFE_METHODS:
+                return True
+            
+            # Méthodes modifiantes: uniquement OWNER et ADMIN
+            return membership.role in ['OWNER', 'ADMIN']
+        
+        return False
     
     def has_object_permission(self, request, view, obj):
-        # Pour les méthodes non sécurisées, on vérifie que l'utilisateur est membre de l'org OU propriétaire
-        if request.method in permissions.SAFE_METHODS:
-            # Permet l'accès si l'utilisateur est le créateur du projet
-            if hasattr(obj, 'created_by') and obj.created_by == request.user:
-                return True
-            # Vérifie si l'utilisateur est membre de l'organisation
-            if hasattr(obj, 'organization') and obj.organization and obj.organization.members.filter(id=request.user.id).exists():
-                return True
+        """
+        Permission au niveau objet.
+        Gère Project et les objets liés (Table, Page, Component, etc.)
+        """
+        # Récupérer le projet associé à l'objet
+        if isinstance(obj, Project):
+            project = obj
+        elif hasattr(obj, 'project'):
+            project = obj.project
+        elif hasattr(obj, 'page') and hasattr(obj.page, 'project'):
+            project = obj.page.project
+        elif hasattr(obj, 'schema') and hasattr(obj.schema, 'project'):
+            project = obj.schema.project
+        else:
+            # Si on ne peut pas déterminer le projet, on refuse
             return False
-            
-        # Pour les méthodes modifiantes, on vérifie que l'utilisateur est admin ou propriétaire
-        if hasattr(obj, 'created_by') and obj.created_by == request.user:
+        
+        # Vérifie si l'utilisateur est le créateur du projet
+        if project.created_by == request.user:
             return True
-            
-        # Vérifie si l'utilisateur est admin de l'organisation
-        if hasattr(obj, 'organization') and obj.organization:
-            return OrganizationMember.objects.filter(
-                organization=obj.organization,
+        
+        # Vérifie les permissions au niveau de l'organisation
+        if project.organization:
+            membership = OrganizationMember.objects.filter(
+                organization=project.organization,
                 user=request.user,
-                role__in=['OWNER', 'ADMIN']
-            ).exists()
+                status='ACTIVE'
+            ).first()
+            
+            if not membership:
+                return False
+            
+            # SAFE_METHODS: tous les membres peuvent lire
+            if request.method in permissions.SAFE_METHODS:
+                return True
+            
+            # Méthodes modifiantes: uniquement OWNER et ADMIN
+            return membership.role in ['OWNER', 'ADMIN']
         
         return False

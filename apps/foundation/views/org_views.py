@@ -263,4 +263,3 @@ def leave_organization(request, org_id):
         }, status=status.HTTP_400_BAD_REQUEST)
 
 
-# resend_invitation - SUPPRIMÉ (modèle OrganizationInvitation supprimé)

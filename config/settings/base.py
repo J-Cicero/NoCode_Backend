@@ -133,7 +133,9 @@ SPECTACULAR_SETTINGS = {
         'hideDownloadButton': True,
         'hideHostname': True,
     },
-    'PREPROCESSING_HOOKS': [],
+    'PREPROCESSING_HOOKS': [
+        'drf_spectacular.hooks.preprocess_exclude_path_format',
+    ],
     'POSTPROCESSING_HOOKS': [],
     'SERVERS': [
         {'url': 'http://localhost:8000', 'description': 'Development server'},
@@ -171,12 +173,8 @@ SIMPLE_JWT = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': config('DB_NAME', default='nocode_platform'),
-        'USER': config('DB_USER', default='nocode_user'),
-        'PASSWORD': config('DB_PASSWORD', default='nocode_password'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='5432'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

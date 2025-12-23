@@ -1,7 +1,7 @@
 
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiExample
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,6 +17,82 @@ from ..serializers import (
 
 User = get_user_model()
 
+@extend_schema(
+    summary="🔑 Connexion utilisateur",
+    description="""
+    **Authentifie un utilisateur et génère des tokens JWT.**
+    
+    ## 🎯 Fonctionnement :
+    1. Envoyer email + mot de passe
+    2. Le système vérifie les identifiants
+    3. Si valide : retourne un access_token et refresh_token
+    
+    ## 📊 Tokens retournés :
+    - **access_token** : Token d'accès (courte durée, ~1h)
+      - À utiliser dans l'en-tête : `Authorization: Bearer <access_token>`
+      - Permet d'accéder aux endpoints protégés
+    
+    - **refresh_token** : Token de rafraîchissement (longue durée, ~7j)
+      - Permet d'obtenir un nouveau access_token sans re-login
+      - À conserver en sécurité côté client
+    
+    ## 🔐 Informations retournées :
+    - Tokens JWT
+    - Informations utilisateur (email, nom, prénom)
+    - Liste des organisations de l'utilisateur
+    - Type d'utilisateur
+    
+    ## 💡 Exemple de requête :
+    ```json
+    POST /api/v1/foundation/auth/login/
+    {
+        "email": "client@example.com",
+        "password": "MonMotDePasse123!"
+    }
+    ```
+    
+    ## 📊 Exemple de réponse :
+    ```json
+    {
+        "tokens": {
+            "access": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        },
+        "user": {
+            "email": "client@example.com",
+            "nom": "Dupont",
+            "prenom": "Jean",
+            "organizations": [...]
+        }
+    }
+    ```
+    
+    ## ⚠️ Erreurs possibles :
+    - 400 : Email ou mot de passe manquant
+    - 401 : Identifiants incorrects
+    """,
+    tags=["🔐 Authentification"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "email": {"type": "string", "format": "email", "example": "client@example.com"},
+                "password": {"type": "string", "format": "password", "example": "MonMotDePasse123!"}
+            },
+            "required": ["email", "password"]
+        }
+    },
+    examples=[
+        OpenApiExample(
+            "Connexion Client",
+            value={
+                "email": "client@example.com",
+                "password": "MonMotDePasse123!"
+            },
+            request_only=True
+        )
+    ]
+)
 class LoginView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
@@ -39,11 +115,85 @@ class LoginView(TokenObtainPairView):
             }, status=status.HTTP_401_UNAUTHORIZED)
 
 
+@extend_schema(
+    summary="📝 Inscription d'un nouveau client",
+    description="""
+    **Crée un nouveau compte client individuel sur la plateforme NoCode.**
+    
+    ## 🎯 Qu'est-ce qu'un Client ?
+    Un **Client** est un utilisateur individuel qui :
+    - ✅ Peut créer ses propres projets NoCode
+    - ✅ A une organisation personnelle automatiquement créée
+    - ✅ Peut rejoindre des organisations d'entreprise plus tard
+    - ✅ Travaille de manière indépendante (freelance/solo)
+    
+    ## 📝 Informations requises :
+    ```json
+    {
+        "email": "nouveau@example.com",
+        "password": "MotDePasse123!",
+        "password_confirm": "MotDePasse123!",
+        "nom": "Dupont",
+        "prenom": "Jean",
+        "pays": "France",
+        "numero_telephone": "+33612345678"
+    }
+    ```
+    
+    ## ⚙️ Ce qui est créé automatiquement :
+    - ✅ Compte utilisateur
+    - ✅ Organisation personnelle (type PERSONAL)
+    - ✅ Tokens JWT (access + refresh)
+    - ✅ Email de vérification envoyé (si activé)
+    
+    ## 🔐 Sécurité :
+    - Mot de passe hashé avec bcrypt
+    - Email unique requis
+    - Validation des données
+    
+    ## 📊 Réponse :
+    - Détails de l'utilisateur créé
+    - Tokens JWT pour connexion immédiate
+    - Informations de l'organisation personnelle
+    
+    ## ⚠️ Validation du mot de passe :
+    - Minimum 8 caractères
+    - Au moins 1 majuscule
+    - Au moins 1 chiffre
+    - Au moins 1 caractère spécial
+    
+    ## 💡 Après l'inscription :
+    1. Utilisez les tokens pour accéder aux endpoints
+    2. Créez votre premier projet NoCode
+    3. Commencez à construire vos applications
+    
+    ## ⚠️ Erreurs possibles :
+    - 400 : Email déjà utilisé
+    - 400 : Mot de passe trop faible
+    - 400 : Champs manquants ou invalides
+    """,
+    tags=["🔐 Authentification"],
+    request=UserCreateSerializer,
+    examples=[
+        OpenApiExample(
+            "Inscription Complète",
+            value={
+                "email": "nouveau.client@example.com",
+                "password": "SecurePass123!",
+                "password_confirm": "SecurePass123!",
+                "nom": "Martin",
+                "prenom": "Sophie",
+                "pays": "France",
+                "numero_telephone": "+33698765432"
+            },
+            request_only=True
+        )
+    ]
+)
 class RegisterClientView(APIView):
 
     permission_classes = [AllowAny]
     
-    # @extend_schema(request=UserCreateSerializer, responses={201: dict})
     def post(self, request):
         serializer = UserCreateSerializer(data=request.data)
         
@@ -63,11 +213,47 @@ class RegisterClientView(APIView):
 
 
 
+@extend_schema(
+    summary="🚪 Déconnexion utilisateur",
+    description="""
+    **Déconnecte un utilisateur en invalidant son refresh token.**
+    
+    ## 🎯 Fonctionnement :
+    1. Envoyer le refresh_token
+    2. Le système l'invalide (blacklist)
+    3. L'utilisateur ne peut plus générer de nouveaux access tokens
+    
+    ## 📝 Requête :
+    ```json
+    {
+        "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    ```
+    
+    ## 🔐 Sécurité :
+    - Authentification requise (Bearer token)
+    - Le refresh_token est ajouté à une blacklist
+    - Empêche la réutilisation des tokens
+    
+    ## 💡 Bonnes pratiques :
+    - Supprimer les tokens stockés côté client
+    - Rediriger vers la page de connexion
+    """,
+    tags=["🔐 Authentification"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {"type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}
+            },
+            "required": ["refresh_token"]
+        }
+    }
+)
 class LogoutView(APIView):
 
     permission_classes = [IsAuthenticated]
     
-    @extend_schema(request=dict, responses={200: dict})
     def post(self, request):
         refresh_token = request.data.get('refresh_token')
         
@@ -85,6 +271,50 @@ class LogoutView(APIView):
                 'error': result.errors[0] if result.errors else 'Erreur inconnue'
             }, status=status.HTTP_400_BAD_REQUEST)
 
+@extend_schema(
+    summary="🔄 Rafraîchir le token d'accès",
+    description="""
+    **Génère un nouveau access token à partir d'un refresh token valide.**
+    
+    ## 🎯 Pourquoi rafraîchir ?
+    Les access tokens ont une durée de vie courte (~1h). Plutôt que de redemander à l'utilisateur
+    de se reconnecter, utilisez le refresh token pour obtenir un nouveau access token.
+    
+    ## 📝 Requête :
+    ```json
+    {
+        "refresh": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    ```
+    
+    ## 📊 Réponse :
+    ```json
+    {
+        "access": "nouveau_access_token..."
+    }
+    ```
+    
+    ## 💡 Utilisation :
+    1. Détecter l'expiration du access token (erreur 401)
+    2. Appeler cet endpoint avec le refresh token
+    3. Obtenir un nouveau access token
+    4. Continuer à utiliser l'API
+    
+    ## ⚠️ Erreurs possibles :
+    - 400 : Refresh token manquant
+    - 401 : Refresh token invalide ou expiré
+    """,
+    tags=["🔐 Authentification"],
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "refresh": {"type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}
+            },
+            "required": ["refresh"]
+        }
+    }
+)
 class RefreshTokenView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         refresh_token = request.data.get('refresh')
@@ -209,6 +439,32 @@ class EmailVerificationView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(
+    summary="👤 Récupérer mon profil",
+    description="""
+    **Récupère les informations complètes de l'utilisateur actuellement connecté.**
+    
+    ## 📊 Informations retournées :
+    - Données personnelles (email, nom, prénom, etc.)
+    - Liste des organisations
+    - Rôles dans chaque organisation
+    - Date d'inscription
+    - Statut de vérification email
+    
+    ## 🔐 Authentification :
+    ```
+    GET /api/v1/foundation/auth/me/
+    Authorization: Bearer <access_token>
+    ```
+    
+    ## 💡 Cas d'utilisation :
+    - Afficher le profil utilisateur
+    - Vérifier les permissions
+    - Récupérer les organisations disponibles
+    - Initialiser l'interface utilisateur
+    """,
+    tags=["🔐 Authentification"]
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def me(request):

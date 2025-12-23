@@ -7,17 +7,18 @@ class ProjectSerializer(serializers.ModelSerializer):
     tracking_id = serializers.UUIDField(read_only=True)
     organization_name = serializers.CharField(source='organization.name', read_only=True)
     organization_id = serializers.UUIDField(write_only=True, required=False, allow_null=True)
-    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    created_by_email = serializers.CharField(source='created_by.email', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.full_name', read_only=True)
     
     class Meta:
         model = Project
         fields = [
             'tracking_id', 'name',
             'organization_id', 'organization_name',
-            'schema_name', 'created_by_username',
+            'schema_name', 'created_by_email', 'created_by_name',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['tracking_id', 'schema_name', 'created_at', 'updated_at', 'created_by_username']
+        read_only_fields = ['tracking_id', 'schema_name', 'created_at', 'updated_at', 'created_by_email', 'created_by_name']
     
     def validate_name(self, value):
         # Vérifie que le nom du projet est unique pour cette organisation (ou pour les projets personnels)
@@ -136,13 +137,28 @@ class FieldSchemaSerializer(serializers.ModelSerializer):
 
 
 class ComponentInstanceSerializer(serializers.ModelSerializer):
+    """Serializer de base pour ComponentInstance.
+
+    NOTE:
+    - Le modèle ComponentInstance n'a pas de champ `tracking_id`.
+    - Les champs attendus sont ceux définis dans apps/studio/models/component_instance.py.
+    """
+
     class Meta:
         model = ComponentInstance
         fields = [
-            'tracking_id', 'page', 'component_type', 'position', 
-            'config', 'created_at', 'updated_at'
+            'id',
+            'page',
+            'component',
+            'order',
+            'config',
+            'linked_field_schema',
+            'is_auto_generated',
+            'needs_sync',
+            'created_at',
+            'updated_at'
         ]
-        read_only_fields = ['tracking_id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
 
 class PageSerializer(serializers.ModelSerializer):
