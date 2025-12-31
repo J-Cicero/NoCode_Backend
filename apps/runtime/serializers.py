@@ -84,7 +84,7 @@ class GeneratedAppSerializer(serializers.ModelSerializer):
     class Meta:
         model = GeneratedApp
         fields = [
-            'id', 'project', 'project_tracking_id', 'version', 'status', 'status_display',
+            'id', 'name', 'project', 'project_tracking_id', 'version', 'status', 'status_display',
             'deployment_target', 'deployment_target_display', 'api_base_url',
             'admin_url', 'created_at', 'updated_at', 'last_deployed_at',
             'last_deployment', 'config'

@@ -119,6 +119,9 @@ class Workflow(models.Model):
 class WorkflowStep(models.Model):
     """
     Représente une étape dans un workflow.
+    
+    ⚠️ DÉPRÉCIÉ: Ce modèle est conservé pour compatibilité avec les anciens workflows.
+    Utilisez le système Node/Edge (models Node et Edge) pour les nouveaux workflows.
     """
     ACTION_TYPES = [
         ('validate_data', 'Validation de données'),

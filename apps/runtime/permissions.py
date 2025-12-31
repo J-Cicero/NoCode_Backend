@@ -59,30 +59,49 @@ class IsProjectOwnerOrAdmin(BasePermission):
 
 
 class IsProjectMemberOrAdmin(BasePermission):
-    """Membre de l'organisation du projet OU admin app."""
-    
+    """Membre de l'organisation du projet OU admin app.
+
+    Supporte plusieurs objets runtime:
+    - GeneratedApp (project)
+    - DeploymentLog (app -> project)
+    - Project directement
+    """
+
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
             return False
-            
+
         # Admin app a tous les droits
-        if request.user.is_admin or request.user.is_superuser:
+        if getattr(request.user, 'is_admin', False) or request.user.is_superuser:
             return True
-            
-        # Vérifier si l'utilisateur est membre de l'organisation du projet
+
+        # Résoudre le project / organization
+        project = None
+        organization = None
+
         if hasattr(obj, 'project'):
-            return obj.project.organization.members.filter(
-                user=request.user, 
-                status='ACTIVE'
-            ).exists()
-        elif hasattr(obj, 'organization'):
-            return obj.organization.members.filter(
-                user=request.user, 
-                status='ACTIVE'
-            ).exists()
-        elif hasattr(obj, 'owner'):
-            return obj.owner == request.user
-            
+            project = obj.project
+        elif hasattr(obj, 'app') and hasattr(obj.app, 'project'):
+            project = obj.app.project
+        elif obj.__class__.__name__ == 'Project':
+            project = obj
+
+        if project is not None:
+            organization = getattr(project, 'organization', None)
+            # Projets perso: seul le créateur
+            if organization is None:
+                return getattr(project, 'created_by_id', None) == request.user.id
+
+        if organization is not None:
+            # Owner ou membre actif
+            if getattr(organization, 'owner_id', None) == request.user.id:
+                return True
+            return organization.members.filter(user=request.user, status='ACTIVE').exists()
+
+        # fallback
+        if hasattr(obj, 'owner_id'):
+            return obj.owner_id == request.user.id
+
         return False
 
 

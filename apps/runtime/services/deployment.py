@@ -22,6 +22,7 @@ class DeploymentTarget:
 
 
 class LocalDeployment(DeploymentTarget):
+    """Déploiement local simple (fichiers uniquement, sans Docker)."""
     
     def __init__(self):
         self.deployment_dir = os.path.join(settings.BASE_DIR, 'generated_apps')
@@ -66,6 +67,46 @@ class LocalDeployment(DeploymentTarget):
         return ["Logs non disponibles pour le déploiement local sans Docker"]
 
 
+class DockerDeployment(DeploymentTarget):
+    """Déploiement Docker avec conteneurs isolés."""
+    
+    def __init__(self):
+        pass
+    
+    def deploy(self, app):
+        """Déploie l'application dans un conteneur Docker."""
+        from .docker_deployment import DockerDeploymentService
+        
+        try:
+            service = DockerDeploymentService(app)
+            return service.deploy()
+        except Exception as e:
+            logger.error(f"Erreur lors du déploiement Docker: {e}")
+            return False
+    
+    def get_status(self, app):
+        """Récupère le statut du conteneur Docker."""
+        from .docker_deployment import DockerDeploymentService
+        
+        try:
+            service = DockerDeploymentService(app)
+            return service.get_status()
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération du statut: {e}")
+            return {"status": "error", "message": str(e)}
+    
+    def get_logs(self, app, lines=100):
+        """Récupère les logs du conteneur Docker."""
+        from .docker_deployment import DockerDeploymentService
+        
+        try:
+            service = DockerDeploymentService(app)
+            return service.get_logs(lines=lines)
+        except Exception as e:
+            logger.error(f"Erreur lors de la récupération des logs: {e}")
+            return [f"Erreur: {str(e)}"]
+
+
 class KubernetesDeployment(DeploymentTarget):
     """Déploiement sur Kubernetes (production)."""
     
@@ -88,21 +129,54 @@ class KubernetesDeployment(DeploymentTarget):
 
 
 class DeploymentManager:
-    """Gestionnaire principal des déploiements."""
-    
-    def __init__(self):
+    """Gestionnaire principal des déploiements.
+
+    API unique utilisée par:
+    - GeneratedApp.deploy()
+    - runtime.views (status/logs)
+    - runtime.tasks (deploy_app_task)
+    """
+
+    def __init__(self, app=None, deployment_strategy: DeploymentTarget | None = None):
+        self.app = app
         self.targets = {
             'local': LocalDeployment(),
+            'docker': DockerDeployment(),
+            'staging': DockerDeployment(),
+            'production': KubernetesDeployment(),
             'kubernetes': KubernetesDeployment(),
         }
-    
-    def deploy(self, app, target='local'):
-        """Déploie l'application sur la cible spécifiée."""
-        if target not in self.targets:
-            raise ValueError(f"Cible de déploiement non supportée: {target}")
-        
-        return self.targets[target].deploy(app)
-    
+        self.deployment_strategy = deployment_strategy
+
+    def _resolve_target(self, app, target: str | None = None) -> DeploymentTarget:
+        if self.deployment_strategy is not None:
+            return self.deployment_strategy
+
+        target_key = target or getattr(app, 'deployment_target', None) or 'local'
+        if target_key not in self.targets:
+            raise ValueError(f"Cible de déploiement non supportée: {target_key}")
+        return self.targets[target_key]
+
+    def deploy(self, app=None, target: str | None = None):
+        app = app or self.app
+        if app is None:
+            raise ValueError('Missing app for deployment')
+        strategy = self._resolve_target(app, target)
+        return strategy.deploy(app)
+
+    def get_status(self, app=None, target: str | None = None):
+        app = app or self.app
+        if app is None:
+            raise ValueError('Missing app for status')
+        strategy = self._resolve_target(app, target)
+        return strategy.get_status(app)
+
+    def get_logs(self, app=None, lines: int = 100, target: str | None = None):
+        app = app or self.app
+        if app is None:
+            raise ValueError('Missing app for logs')
+        strategy = self._resolve_target(app, target)
+        return strategy.get_logs(app, lines=lines)
+
     def get_deployment_target(self, target):
-        """Récupère une cible de déploiement spécifique."""
         return self.targets.get(target)

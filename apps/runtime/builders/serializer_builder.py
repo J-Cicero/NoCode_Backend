@@ -80,7 +80,6 @@ class SerializerBuilder:
         Récupère ou crée le modèle Django dynamique pour un DataSchema.
         Pour l'instant, retourne None car nous utiliserons une approche différente.
         """
-        # TODO: Implémenter la récupération des modèles dynamiques
         # Pour l'instant, nous utiliserons une approche basée sur les tables SQL directes
         return None
     

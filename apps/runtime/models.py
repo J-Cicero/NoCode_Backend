@@ -9,7 +9,17 @@ from apps.studio.models import Project
 import uuid
 import logging
 
+# Exposés ici pour permettre aux tests de patcher apps.runtime.models.AppGenerator/DeploymentManager
+from .services import AppGenerator, DeploymentManager  # noqa: F401
+
 logger = logging.getLogger(__name__)
+
+
+def _default_app_name(project):
+    try:
+        return project.name
+    except Exception:
+        return ''
 
 
 class GeneratedApp(models.Model):
@@ -19,12 +29,16 @@ class GeneratedApp(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Brouillon'),
         ('generated', 'Générée'),
+        ('deployment_pending', 'Déploiement en attente'),
+        ('deployment_failed', 'Échec du déploiement'),
         ('deployed', 'Déployée'),
         ('error', 'Erreur'),
         ('archived', 'Archivée'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255, blank=True, default='', verbose_name='Nom de l\'application')
+
     project = models.OneToOneField(
         Project,
         on_delete=models.CASCADE,
@@ -47,11 +61,13 @@ class GeneratedApp(models.Model):
     # Configuration du déploiement
     deployment_target = models.CharField(
         max_length=100,
-        default='local',
+        default='docker',
         choices=[
-            ('local', 'Local'),
-            ('staging', 'Environnement de test'),
-            ('production', 'Production')
+            ('local', 'Local (fichiers seulement)'),
+            ('docker', 'Docker (recommandé)'),
+            ('staging', 'Staging (Docker)'),
+            ('production', 'Production (Kubernetes)'),
+            ('kubernetes', 'Kubernetes')
         ],
         verbose_name='Environnement de déploiement'
     )
@@ -65,11 +81,11 @@ class GeneratedApp(models.Model):
         ordering = ['-created_at']
         
     def __str__(self):
-        return f"{self.project.name} ({self.get_status_display()}) v{self.version}"
+        display_name = self.name or self.project.name
+        return f"{display_name} ({self.get_status_display()}) v{self.version}"
     
     def generate_code(self):
         """Génère le code source de l'application."""
-        from .services.code_generator import AppGenerator
         try:
             generator = AppGenerator(self.project)
             generator.generate()
@@ -84,7 +100,6 @@ class GeneratedApp(models.Model):
     
     def deploy(self):
         """Déploie l'application sur l'environnement cible."""
-        from .services.deployment import DeploymentManager
         try:
             if self.status != 'generated':
                 if not self.generate_code():
@@ -129,6 +144,21 @@ class DeploymentLog(models.Model):
         related_name='deployment_logs',
         verbose_name='Application'
     )
+
+    # Compat / tracking
+    previous_deployment = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='retries',
+        verbose_name='Déploiement précédent'
+    )
+    environment = models.CharField(max_length=50, blank=True, default='', verbose_name='Environnement')
+    version = models.CharField(max_length=50, blank=True, default='', verbose_name='Version')
+    details = models.JSONField(default=dict, blank=True, verbose_name='Détails')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Mis à jour le')
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -136,6 +166,7 @@ class DeploymentLog(models.Model):
         verbose_name='Statut'
     )
     started_at = models.DateTimeField(auto_now_add=True, verbose_name='Début')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Créé le')
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name='Fin')
     log_output = models.TextField(blank=True, verbose_name='Sortie du journal')
     error_message = models.TextField(blank=True, verbose_name='Message d\'erreur')

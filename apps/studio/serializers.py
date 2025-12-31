@@ -139,9 +139,10 @@ class FieldSchemaSerializer(serializers.ModelSerializer):
 class ComponentInstanceSerializer(serializers.ModelSerializer):
     """Serializer de base pour ComponentInstance.
 
-    NOTE:
-    - Le modèle ComponentInstance n'a pas de champ `tracking_id`.
-    - Les champs attendus sont ceux définis dans apps/studio/models/component_instance.py.
+    Permet de reconstituer le front (layout riche):
+    - parent/children (arbre)
+    - slot (zone dans le parent)
+    - position (x/y/w/h/grid)
     """
 
     class Meta:
@@ -150,13 +151,16 @@ class ComponentInstanceSerializer(serializers.ModelSerializer):
             'id',
             'page',
             'component',
+            'parent',
+            'slot',
+            'position',
             'order',
             'config',
             'linked_field_schema',
             'is_auto_generated',
             'needs_sync',
             'created_at',
-            'updated_at'
+            'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
 

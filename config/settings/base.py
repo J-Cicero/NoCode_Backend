@@ -30,7 +30,7 @@ INSTALLED_APPS = [
     'apps.studio',
     'apps.runtime',
     # 'apps.insights',  # Temporairement désactivé
-    # 'apps.automation',  # Temporairement désactivé
+    'apps.automation',
 ]
 
 # Configuration CORS pour permettre les requêtes depuis les fichiers locaux
@@ -107,7 +107,37 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
         # 'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Réactivé pour Swagger
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'TITLE': 'NoCode Backend Platform API',
+    'DESCRIPTION': 'API complète pour créer des applications sans code',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'TAGS': [
+        {'name': '🔐 Authentification', 'description': 'Connexion, inscription, gestion des tokens JWT'},
+        {'name': '🏢 Organisations', 'description': 'Gestion multi-tenant des organisations'},
+        {'name': '👥 Utilisateurs', 'description': 'Profils et gestion des utilisateurs'},
+        {'name': '💳 Abonnements', 'description': 'Plans, facturation et paiements Stripe'},
+        {'name': '📁 Studio - Projets', 'description': 'Création et gestion de projets NoCode'},
+        {'name': '📊 Studio - Tables', 'description': 'Définition des modèles de données'},
+        {'name': '🎨 Studio - Pages', 'description': 'Interfaces utilisateur drag & drop'},
+        {'name': '🧩 Studio - Composants', 'description': 'Bibliothèque de composants visuels'},
+        {'name': '⚡ Automation - Workflows', 'description': 'Workflows d\'automatisation'},
+        {'name': '🔵 Automation - Nodes', 'description': 'Nœuds du graphe de workflow'},
+        {'name': '🔗 Automation - Edges', 'description': 'Connexions entre nodes'},
+        {'name': '🔌 Automation - Intégrations', 'description': 'Services externes'},
+        {'name': '📊 Automation - Exécutions', 'description': 'Historique des exécutions'},
+        {'name': '🚀 Runtime - Applications', 'description': 'Applications générées et déployées'},
+        {'name': '📊 Insights', 'description': 'Analytics et métriques'},
+    ],
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+        'filter': True,
+        'tryItOutEnabled': True,
+        'syntaxHighlight.theme': 'monokai',
+    },  # Réactivé pour Swagger
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
     'DATETIME_FORMAT': '%Y-%m-%dT%H:%M:%S%z',

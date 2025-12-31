@@ -4,7 +4,8 @@ Tests pour les modèles du module runtime.
 from unittest.mock import patch, MagicMock
 from django.test import TestCase
 from django.contrib.auth import get_user_model
-from apps.foundation.models import Organization, Project
+from apps.foundation.models import Organization
+from apps.studio.models import Project
 from ..models import GeneratedApp, DeploymentLog
 
 User = get_user_model()
@@ -14,12 +15,14 @@ class GeneratedAppModelTest(TestCase):
     
     def setUp(self):
         """Configuration initiale pour les tests."""
-        self.organization = Organization.objects.create(name="Test Org")
         self.user = User.objects.create_user(
             email="test@example.com",
             password="testpass123",
-            organization=self.organization
+            nom="Test",
+            prenom="User"
         )
+        self.organization = Organization.objects.create(name="Test Org", owner=self.user)
+        self.user.organization_memberships.create(organization=self.organization, role='OWNER', status='ACTIVE')
         self.project = Project.objects.create(
             name="Test Project",
             organization=self.organization,
@@ -49,17 +52,16 @@ class GeneratedAppModelTest(TestCase):
         )
 
         # Mock de AppGenerator.generate() pour simuler un échec
-        original_generate = app.generate_code
-        def mock_generate():
-            raise Exception("Erreur de génération")
-        app.generate_code = mock_generate
+        with patch('apps.runtime.models.AppGenerator') as mock_generator:
+            mock_instance = MagicMock()
+            mock_instance.generate.side_effect = Exception("Erreur de génération")
+            mock_generator.return_value = mock_instance
 
-        with self.assertRaises(Exception):
-            app.generate_code()
+            result = app.generate_code()
+            self.assertFalse(result)
+
+        app.refresh_from_db()
         self.assertEqual(app.status, "error")
-
-        # Restaurer la méthode originale
-        app.generate_code = original_generate
 
     def test_deploy_method_success(self):
         """Test de déploiement réussi."""
@@ -112,12 +114,14 @@ class DeploymentLogModelTest(TestCase):
 
     def setUp(self):
         """Configuration initiale pour les tests."""
-        self.organization = Organization.objects.create(name="Test Org")
         self.user = User.objects.create_user(
             email="deploy@example.com",
             password="testpass123",
-            organization=self.organization
+            nom="Deploy",
+            prenom="User"
         )
+        self.organization = Organization.objects.create(name="Test Org", owner=self.user)
+        self.user.organization_memberships.create(organization=self.organization, role='OWNER', status='ACTIVE')
         self.project = Project.objects.create(
             name="Test Project",
             organization=self.organization,

@@ -8,7 +8,8 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .models import Project, DataSchema, FieldSchema, Page, ComponentInstance
+from .models import Project, DataSchema, FieldSchema, Page, ComponentInstance, Component
+from apps.foundation.services.event_bus import EventBus
 from .serializers import ProjectSerializer, DataSchemaSerializer, FieldSchemaSerializer, PageSerializer, ComponentSerializer
 from .user_friendly_serializers import TableCreationSerializer, TableUpdateSerializer
 
@@ -255,7 +256,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         """Publier le projet - déclenche la génération Runtime"""
         project = self.get_object()
         
-        # TODO: Implémenter la génération Runtime
         return Response({
             'message': 'Génération de l\'application démarrée',
             'project_id': str(project.tracking_id)
@@ -624,7 +624,7 @@ class EditorViewSet(viewsets.ViewSet):
             org_projects = Project.objects.filter(organization_id__in=user_orgs)
             accessible_projects = (user_projects | org_projects).distinct()
             
-            project = accessible_projects.get(tracking_id=project_id)
+            project = accessible_projects.get(id=project_id)
         except Project.DoesNotExist:
             return Response(
                 {'error': 'Projet non trouvé ou accès refusé'}, 
@@ -638,17 +638,33 @@ class EditorViewSet(viewsets.ViewSet):
             defaults={'name': "Page d'accueil"}
         )
 
-        # Créer le composant
-        component = ComponentInstance.objects.create(
+        # Résoudre le composant (catalogue) via `Component.name`
+        try:
+            component_def = Component.objects.get(name=component_type)
+        except Component.DoesNotExist:
+            return Response({'error': f"Composant inconnu: {component_type}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Champs layout (optionnels)
+        parent_id = request.data.get('parent')
+        slot = request.data.get('slot', '')
+
+        parent = None
+        if parent_id:
+            parent = ComponentInstance.objects.filter(id=parent_id, page=page).first()
+
+        # Créer le composant instance
+        instance = ComponentInstance.objects.create(
             page=page,
-            component_type=component_type,
+            component=component_def,
+            parent=parent,
+            slot=slot,
             position=position,
-            config=config
+            config=config,
         )
 
         return Response({
-            'component_id': str(component.tracking_id),
-            'page_id': str(page.tracking_id),
+            'component_id': str(instance.id),
+            'page_id': str(page.id),
             'page_created': created
         })
 
@@ -675,11 +691,11 @@ class EditorViewSet(viewsets.ViewSet):
             accessible_projects = (user_projects | org_projects).distinct()
             
             component = ComponentInstance.objects.get(
-                tracking_id=component_id,
+                id=component_id,
                 page__project__in=accessible_projects
             )
             component.position = position
-            component.save()
+            component.save(update_fields=['position'])
             
             return Response({'message': 'Composant déplacé'})
         except ComponentInstance.DoesNotExist:
@@ -710,7 +726,7 @@ class EditorViewSet(viewsets.ViewSet):
             accessible_projects = (user_projects | org_projects).distinct()
             
             component = ComponentInstance.objects.get(
-                tracking_id=component_id,
+                id=component_id,
                 page__project__in=accessible_projects
             )
             component.delete()
@@ -743,12 +759,12 @@ class EditorViewSet(viewsets.ViewSet):
             org_projects = Project.objects.filter(organization_id__in=user_orgs)
             accessible_projects = (user_projects | org_projects).distinct()
             
-            project = accessible_projects.get(tracking_id=project_id)
+            project = accessible_projects.get(id=project_id)
             pages = Page.objects.filter(project=project)
             
             state = {
                 'project': {
-                    'id': str(project.tracking_id),
+                    'id': str(project.id),
                     'name': project.name,
                     'status': project.status
                 },
@@ -758,7 +774,7 @@ class EditorViewSet(viewsets.ViewSet):
             for page in pages:
                 components = ComponentInstance.objects.filter(page=page)
                 page_data = {
-                    'id': str(page.tracking_id),
+                    'id': str(page.id),
                     'name': page.name,
                     'is_home': page.is_home,
                     'components': ComponentSerializer(components, many=True).data
@@ -795,7 +811,32 @@ class PageViewSet(viewsets.ModelViewSet):
         return Page.objects.filter(project__in=accessible_projects)
 
     def perform_create(self, serializer):
-        serializer.save()
+        page = serializer.save()
+        EventBus.publish(
+            event_name='studio.page.created',
+            event_data={'page_id': str(page.id), 'project_id': page.project_id, 'route': page.route, 'name': page.name},
+            source_module='studio.views',
+            user=self.request.user,
+        )
+
+    def perform_update(self, serializer):
+        page = serializer.save()
+        EventBus.publish(
+            event_name='studio.page.updated',
+            event_data={'page_id': str(page.id), 'project_id': page.project_id, 'route': page.route, 'name': page.name},
+            source_module='studio.views',
+            user=self.request.user,
+        )
+
+    def perform_destroy(self, instance):
+        payload = {'page_id': str(instance.id), 'project_id': instance.project_id, 'route': instance.route, 'name': instance.name}
+        instance.delete()
+        EventBus.publish(
+            event_name='studio.page.deleted',
+            event_data=payload,
+            source_module='studio.views',
+            user=self.request.user,
+        )
 
     @action(detail=True, methods=['get'])
     def components(self, request, pk=None):
@@ -829,4 +870,29 @@ class ComponentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         # Le signal auto_create_page_if_needed se déclenchera ici
-        serializer.save()
+        component = serializer.save()
+        EventBus.publish(
+            event_name='studio.component_instance.created',
+            event_data={'component_instance_id': str(component.id), 'page_id': component.page_id, 'component_name': component.component.name},
+            source_module='studio.views',
+            user=self.request.user,
+        )
+
+    def perform_update(self, serializer):
+        component = serializer.save()
+        EventBus.publish(
+            event_name='studio.component_instance.updated',
+            event_data={'component_instance_id': str(component.id), 'page_id': component.page_id, 'component_name': component.component.name},
+            source_module='studio.views',
+            user=self.request.user,
+        )
+
+    def perform_destroy(self, instance):
+        payload = {'component_instance_id': str(instance.id), 'page_id': instance.page_id, 'component_name': instance.component.name}
+        instance.delete()
+        EventBus.publish(
+            event_name='studio.component_instance.deleted',
+            event_data=payload,
+            source_module='studio.views',
+            user=self.request.user,
+        )

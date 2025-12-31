@@ -57,6 +57,8 @@ class InsightsMiddleware:
             'session_id': session_id,
             'start_time': start_time,
             'user': request.user if request.user.is_authenticated else None,
+            'user_tracking_id': getattr(request.user, 'tracking_id', None) if request.user.is_authenticated else None,
+            'organization_tracking_id': getattr(getattr(request.user, 'organization', None), 'tracking_id', None) if request.user.is_authenticated else None,
             'ip_address': self._get_client_ip(request),
             'user_agent': request.META.get('HTTP_USER_AGENT', ''),
         }
@@ -135,6 +137,10 @@ class InsightsMiddleware:
             else:
                 category = 'frontend'
 
+            # Récupérer les tracking_ids si disponibles
+            user_tracking_id = getattr(request.user, 'tracking_id', None) if hasattr(request, 'user') and request.user.is_authenticated else None
+            org_tracking_id = getattr(getattr(request.user, 'organization', None), 'tracking_id', None) if hasattr(request, 'user') and request.user.is_authenticated else None
+            
             # Créer la métrique de performance
             PerformanceMetric.objects.create(
                 category=category,
@@ -146,6 +152,8 @@ class InsightsMiddleware:
                     'method': request.method,
                     'status_code': response.status_code,
                     'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+                    'user_tracking_id': str(user_tracking_id) if user_tracking_id else None,
+                    'organization_tracking_id': str(org_tracking_id) if org_tracking_id else None,
                 }
             )
 
@@ -175,7 +183,7 @@ class InsightsMiddleware:
             activity_type = self._determine_activity_type(path, method, response.status_code)
 
             if activity_type:
-                # Créer l'activité
+                # Créer l'activité avec tracking_ids
                 UserActivity.objects.create(
                     user=tracking_info['user'],
                     organization=tracking_info['user'].organization if hasattr(tracking_info['user'], 'organization') else None,
@@ -186,6 +194,8 @@ class InsightsMiddleware:
                         'method': method,
                         'status_code': response.status_code,
                         'response_time': (time.time() - tracking_info['start_time']) * 1000,
+                        'user_tracking_id': str(tracking_info['user_tracking_id']) if tracking_info.get('user_tracking_id') else None,
+                        'organization_tracking_id': str(tracking_info['organization_tracking_id']) if tracking_info.get('organization_tracking_id') else None,
                     },
                     ip_address=tracking_info['ip_address'],
                     user_agent=tracking_info['user_agent'],

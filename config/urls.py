@@ -20,7 +20,7 @@ urlpatterns = [
 
     path('api/v1/foundation/', include('apps.foundation.urls')),
     path('api/v1/studio/', include('apps.studio.urls')),
-    # path('api/v1/automation/', include('apps.automation.urls')),  # Temporairement désactivé
+    path('api/v1/automation/', include('apps.automation.urls')),
     path('api/v1/runtime/', include('apps.runtime.urls')),
     # path('api/v1/insights/', include('apps.insights.urls'))  # Temporairement désactivé
 ]

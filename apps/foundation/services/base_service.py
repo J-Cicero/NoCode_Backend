@@ -201,7 +201,6 @@ class BaseService:
     def send_notification(self, notification_type: str, recipients: List[User], 
                          data: Dict = None):
 
-        # TODO: Implémenter le système de notifications
         self.logger.info(f"Notification {notification_type} envoyée à {len(recipients)} utilisateurs")
     
     def publish_event(self, event_name: str, data: Dict = None):

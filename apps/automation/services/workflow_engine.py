@@ -3,7 +3,7 @@ Moteur d'exécution des workflows
 """
 import logging
 from typing import Dict, Any, Optional
-from ..models import Workflow, WorkflowExecution, WorkflowExecutionLog, WorkflowStep
+from ..models import Workflow, WorkflowExecution, WorkflowExecutionLog, WorkflowStep, Node, Edge, Integration
 from .action_executor import ActionExecutor
 from apps.foundation.services.event_bus import EventBus
 
@@ -53,22 +53,26 @@ class WorkflowEngine:
 
             self.execution.mark_as_started()
             
-            # Récupérer toutes les étapes ordonnées
-            steps = self.workflow.steps.all().order_by('order')
-            
-            if not steps.exists():
-                raise ValueError("Le workflow n'a aucune étape définie")
-            
-            self._log('INFO', f"Exécution de {steps.count()} étapes")
-            
-            # Exécuter chaque étape
-            for step in steps:
-                try:
-                    self._execute_step(step)
-                except Exception as step_error:
-                    self._handle_step_error(step, step_error)
-                    if step.on_error == 'stop':
-                        raise
+            # Si un graphe (Node/Edge) existe, on exécute en mode graphe.
+            if self.workflow.nodes.exists():
+                self._log('INFO', f"Exécution du workflow en mode graphe: {self.workflow.nodes.count()} nodes")
+                self._execute_graph()
+            else:
+                # Mode historique: steps séquentiels
+                steps = self.workflow.steps.all().order_by('order')
+
+                if not steps.exists():
+                    raise ValueError("Le workflow n'a aucune étape définie")
+
+                self._log('INFO', f"Exécution de {steps.count()} étapes")
+
+                for step in steps:
+                    try:
+                        self._execute_step(step)
+                    except Exception as step_error:
+                        self._handle_step_error(step, step_error)
+                        if step.on_error == 'stop':
+                            raise
             
             # Marquer comme terminé
             self.execution.mark_as_completed(output_data=self.context.get('output', {}))
@@ -78,14 +82,15 @@ class WorkflowEngine:
             
             # Publier un événement
             EventBus.publish(
-                event_type='automation.workflow.executed',
-                data={
+                event_name='automation.workflow.executed',
+                event_data={
                     'workflow_id': str(self.workflow.id),
                     'execution_id': str(self.execution.id),
                     'status': 'completed',
                     'duration': self.execution.duration,
                 },
-                source='workflow_engine'
+                source_module='workflow_engine',
+                user=triggered_by,
             )
             
             return self.execution
@@ -113,13 +118,14 @@ class WorkflowEngine:
             
             # Publier un événement d'échec
             EventBus.publish(
-                event_type='automation.workflow.failed',
-                data={
+                event_name='automation.workflow.failed',
+                event_data={
                     'workflow_id': str(self.workflow.id),
                     'execution_id': str(self.execution.id),
                     'error': error_message,
                 },
-                source='workflow_engine'
+                source_module='workflow_engine',
+                user=triggered_by,
             )
             
             raise
@@ -135,6 +141,119 @@ class WorkflowEngine:
         self.execution.context = self.context
         self.execution.save(update_fields=['context'])
     
+    def _execute_graph(self):
+        """Exécute un workflow représenté sous forme de graphe Node/Edge.
+
+        Convention de routage:
+        - Un node `condition` doit avoir un champ `config.condition` (même format que les conditions des steps).
+        - Les edges sortants d'un node condition doivent utiliser `source_port`:
+            - 'true' / 'yes' / 'on_true'
+            - 'false' / 'no' / 'on_false'
+        - Pour les autres nodes, on suit `source_port='output'` (défaut).
+
+        Limites:
+        - Protection anti-boucle via un compteur de visites par node.
+        """
+        nodes = {n.id: n for n in self.workflow.nodes.all()}
+        edges = list(self.workflow.edges.select_related('source_node', 'target_node').all())
+
+        outgoing: dict[str, list[Edge]] = {}
+        incoming_count: dict[str, int] = {str(nid): 0 for nid in nodes.keys()}
+
+        for e in edges:
+            sid = str(e.source_node_id)
+            tid = str(e.target_node_id)
+            outgoing.setdefault(sid, []).append(e)
+            incoming_count[tid] = incoming_count.get(tid, 0) + 1
+
+        start_nodes = [n for n in nodes.values() if n.node_type == 'trigger' or incoming_count.get(str(n.id), 0) == 0]
+        if not start_nodes:
+            raise ValueError("Graphe invalide: aucun node de départ (trigger ou sans incoming edge)")
+
+        queue: list[Node] = start_nodes[:]
+        visited_counts: dict[str, int] = {}
+        max_visits_per_node = 10
+
+        while queue:
+            node = queue.pop(0)
+            node_key = str(node.id)
+            visited_counts[node_key] = visited_counts.get(node_key, 0) + 1
+            if visited_counts[node_key] > max_visits_per_node:
+                raise ValueError(f"Boucle détectée: node {node.node_id} visité trop souvent")
+
+            self._execute_node(node)
+
+            next_edges = self._get_next_edges_for_node(node, outgoing.get(node_key, []))
+            for edge in next_edges:
+                queue.append(edge.target_node)
+
+        # Persister le contexte final
+        self.execution.context = self.context
+        self.execution.save(update_fields=['context'])
+
+    def _get_next_edges_for_node(self, node: Node, out_edges: list[Edge]) -> list[Edge]:
+        if not out_edges:
+            return []
+
+        if node.node_type == 'condition':
+            # le résultat conditionnel est stocké dans steps[node_id]['condition_result']
+            steps = self.context.get('steps') or {}
+            node_result = steps.get(node.node_id, {})
+            cond = bool(node_result.get('condition_result'))
+            wanted = {'true', 'yes', 'on_true'} if cond else {'false', 'no', 'on_false'}
+            filtered = [e for e in out_edges if (e.source_port or '').lower() in wanted]
+            # fallback: si rien ne matche, on tente label 'true/false'
+            if not filtered:
+                filtered = [e for e in out_edges if (e.label or '').lower() in wanted]
+            return filtered
+
+        # default: suivre les sorties standard
+        filtered = [e for e in out_edges if (e.source_port or 'output').lower() in {'output', 'out', ''}]
+        return filtered or out_edges
+
+    def _execute_node(self, node: Node):
+        """Exécute un node et stocke son résultat dans le contexte."""
+        self._log('INFO', f"Exécution du node: {node.label}", details={'node_type': node.node_type, 'node_id': node.node_id})
+
+        # Mettre à jour l'étape courante (on réutilise current_step_id)
+        self.execution.current_step_id = node.node_id
+        self.execution.save(update_fields=['current_step_id'])
+
+        if node.node_type == 'trigger':
+            # rien à exécuter, c'est juste un point d'entrée
+            self.context['steps'][node.node_id] = {'triggered': True}
+            return
+
+        if node.node_type == 'condition':
+            condition = (node.config or {}).get('condition', {})
+            # On s'appuie sur le même évaluateur que les steps
+            result = {
+                'condition_result': self._evaluate_condition(condition),
+            }
+            self.context['steps'][node.node_id] = result
+            return
+
+        # Node action: on mappe sur les action_type existants
+        action_type = (node.config or {}).get('action_type')
+        params = (node.config or {}).get('params', {})
+        integration_id = (node.config or {}).get('integration_id')
+
+        if not action_type:
+            raise ValueError(f"Node action sans action_type: {node.node_id}")
+
+        integration = None
+        if integration_id:
+            integration = Integration.objects.filter(id=integration_id).first()
+
+        params = self._prepare_params(params)
+        result = self.executor.execute_action(
+            action_type=action_type,
+            params=params,
+            integration=integration,
+            context=self.context,
+        )
+        self.context['steps'][node.node_id] = result
+
     def _execute_step(self, step: WorkflowStep):
 
         self._log(

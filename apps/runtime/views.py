@@ -12,6 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from .permissions import IsProjectMemberOrAdmin, CanAccessProjectData, CanManageProjectSchema
 from django.shortcuts import get_object_or_404
 from django.db import transaction, connection
+from django.db import models
 from drf_spectacular.utils import (
     extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample,
     OpenApiResponse, OpenApiTypes
@@ -26,6 +27,7 @@ from .serializers import (
     AppLogsSerializer
 )
 from .services import AppGenerator, DeploymentManager, KubernetesDeployment, LocalDeployment
+from .tasks import deploy_app_task
 from .builders.serializer_builder import SerializerBuilder
 from .builders.viewset_builder import ViewSetBuilder
 from apps.foundation.models import OrganizationMember
@@ -95,18 +97,15 @@ class GeneratedAppViewSet(viewsets.ModelViewSet):
         if user.is_superuser:
             return queryset
 
-        # Apps de projets perso créés par l’utilisateur
-        personal_qs = queryset.filter(project__organization__isnull=True, project__created_by=user)
+        # Apps accessibles:
+        # - projets perso créés par l’utilisateur
+        # - projets d'organisations où l’utilisateur est membre
+        org_ids = OrganizationMember.objects.filter(user=user, status='ACTIVE').values_list('organization_id', flat=True)
 
-        # Apps de projets des organisations où l’utilisateur est membre
-        org_ids = OrganizationMember.objects.filter(
-            user=user,
-            status='ACTIVE'
-        ).values_list('organization_id', flat=True)
-
-        org_qs = queryset.filter(project__organization_id__in=org_ids)
-
-        return personal_qs.union(org_qs)
+        return queryset.filter(
+            (models.Q(project__organization__isnull=True) & models.Q(project__created_by=user)) |
+            (models.Q(project__organization_id__in=org_ids))
+        ).distinct()
     
     def perform_create(self, serializer):
         """Crée une nouvelle application générée."
@@ -224,9 +223,13 @@ class GeneratedAppViewSet(viewsets.ModelViewSet):
             app.status = 'deployment_pending'
             app.save(update_fields=['status', 'updated_at'])
             
-            # Démarrer le déploiement de manière asynchrone
-            from .tasks import deploy_app_task
-            deploy_app_task.delay(deployment_log.id)
+            # Démarrer le déploiement
+            # - en tests/eager: exécution synchronement (pas besoin de broker)
+            from django.conf import settings
+            if getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+                deploy_app_task(deployment_log.id)
+            else:
+                deploy_app_task.delay(deployment_log.id)
             
             return Response(
                 {
@@ -311,16 +314,16 @@ class GeneratedAppViewSet(viewsets.ModelViewSet):
         try:
             manager = DeploymentManager(app)
             status_info = manager.get_status()
-            
+
             # Récupérer le dernier log de déploiement
-            last_deployment = app.deployments.order_by('-created_at').first()
+            last_deployment = app.deployment_logs.order_by('-started_at').first()
             
             return Response({
                 "app_id": str(app.id),
-                "name": app.name,
+                "name": app.name or app.project.name,
                 "status": app.status,
                 "deployment_status": status_info,
-                "last_deployed": last_deployment.created_at if last_deployment else None,
+                "last_deployed": last_deployment.completed_at if last_deployment else None,
                 "last_deployment_status": last_deployment.status if last_deployment else None,
                 "api_url": app.api_base_url,
                 "admin_url": app.admin_url,
@@ -393,7 +396,7 @@ class GeneratedAppViewSet(viewsets.ModelViewSet):
         
         try:
             # Récupérer les logs depuis la base de données
-            logs = DeploymentLog.objects.filter(app=app).order_by('-created_at')
+            logs = DeploymentLog.objects.filter(app=app).order_by('-started_at')
             
             # Sérialiser les logs
             log_serializer = DeploymentLogSerializer(logs, many=True)
@@ -487,18 +490,12 @@ class DeploymentLogViewSet(viewsets.ReadOnlyModelViewSet):
         if user.is_superuser:
             return queryset
 
-        # Journaux des apps de projets perso créés par l’utilisateur
-        personal_qs = queryset.filter(app__project__organization__isnull=True, app__project__created_by=user)
+        org_ids = OrganizationMember.objects.filter(user=user, status='ACTIVE').values_list('organization_id', flat=True)
 
-        # Journaux des apps des organisations où l’utilisateur est membre
-        org_ids = OrganizationMember.objects.filter(
-            user=user,
-            status='ACTIVE'
-        ).values_list('organization_id', flat=True)
-
-        org_qs = queryset.filter(app__project__organization_id__in=org_ids)
-
-        return personal_qs.union(org_qs)
+        return queryset.filter(
+            (models.Q(app__project__organization__isnull=True) & models.Q(app__project__created_by=user)) |
+            (models.Q(app__project__organization_id__in=org_ids))
+        ).distinct()
         
     @extend_schema(
         methods=['post'],
@@ -535,11 +532,15 @@ class DeploymentLogViewSet(viewsets.ReadOnlyModelViewSet):
         deployment_log = self.get_object()
         
         # Vérifier les permissions
-        if not request.user.is_superuser and deployment_log.app.project.organization != request.user.organization:
-            return Response(
-                {"detail": "Accès non autorisé."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        user = request.user
+        if not user.is_superuser:
+            if deployment_log.app.project.organization is None:
+                if deployment_log.app.project.created_by_id != user.id:
+                    return Response({"detail": "Accès non autorisé."}, status=status.HTTP_403_FORBIDDEN)
+            else:
+                org_ids = OrganizationMember.objects.filter(user=user, status='ACTIVE').values_list('organization_id', flat=True)
+                if deployment_log.app.project.organization_id not in org_ids:
+                    return Response({"detail": "Accès non autorisé."}, status=status.HTTP_403_FORBIDDEN)
             
         # Vérifier que le déploiement est en échec
         if deployment_log.status != 'failed':
@@ -564,8 +565,12 @@ class DeploymentLogViewSet(viewsets.ReadOnlyModelViewSet):
                 deployment_log.app.status = 'deployment_pending'
                 deployment_log.app.save(update_fields=['status', 'updated_at'])
                 
-                # Démarrer le déploiement de manière asynchrone
-                deploy_app_task.delay(new_deployment.id)
+                # Démarrer le déploiement
+                from django.conf import settings
+                if getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+                    deploy_app_task(new_deployment.id)
+                else:
+                    deploy_app_task.delay(new_deployment.id)
                 
                 serializer = self.get_serializer(new_deployment)
                 return Response(

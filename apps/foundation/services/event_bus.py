@@ -270,7 +270,16 @@ class EventBus:
         
         # Traitement synchrone
         if not async_processing:
-            cls._process_event_sync(event_name, event_data)
+            payload = {
+                # Nouveau format (recommandé)
+                'event_name': event_name,
+                'event_data': event_data,
+                'user_id': getattr(user, 'id', None),
+                'source_module': source_module,
+                # Compatibilité avec anciens handlers
+                'data': event_data,
+            }
+            cls._process_event_sync(event_name, payload)
         
         return event_obj
     

@@ -20,13 +20,19 @@ class ModelGenerator:
         
         # En-tête du fichier models.py
         models_code.append('"""\nModèles générés automatiquement pour l\'application {}\n"""'.format(self.app_name))
-        models_code.append('from django.db import models\n')
-        models_code.append('class BaseModel(models.Model):\n    """Modèle de base avec des champs communs."""\n    created_at = models.DateTimeField(auto_now_add=True)\n    updated_at = models.DateTimeField(auto_now=True)\n    is_active = models.BooleanField(default=True)\n    \n    class Meta:\n        abstract = True\n\n')
+        models_code.append('from django.db import models')
+        models_code.append('import uuid\n')
+        models_code.append('class BaseModel(models.Model):\n    """Modèle de base avec des champs communs."""\n    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)\n    created_at = models.DateTimeField(auto_now_add=True)\n    updated_at = models.DateTimeField(auto_now=True)\n    is_active = models.BooleanField(default=True)\n    \n    class Meta:\n        abstract = True\n\n')
         
-        # Génération des modèles pour chaque schéma
-        for schema in self.project.schemas.all():
-            model_code = self._generate_model_code(schema)
-            models_code.append(model_code)
+        # Génération des modèles pour chaque schéma (Table)
+        tables = self.project.schemas.all()
+        if not tables.exists():
+            # Si pas de tables, créer un modèle vide par défaut
+            models_code.append("# Aucune table définie dans le projet\n")
+        else:
+            for schema in tables:
+                model_code = self._generate_model_code(schema)
+                models_code.append(model_code)
         
         return '\n\n'.join(models_code)
     

@@ -392,6 +392,58 @@ class ActionExecutor:
         return True
     
     def _eval_condition(self, condition: Dict[str, Any], context: Dict[str, Any]) -> bool:
-        """Évalue une condition."""
-        # Implémentation simplifiée
-        return True
+        """Évalue une condition simple basée sur le contexte.
+
+        Format attendu (exemples):
+            {"field": "input.price", "operator": ">", "value": 100}
+            {"field": "steps.step_1.success", "operator": "==", "value": True}
+        """
+        if not condition:
+            return True
+
+        try:
+            field = condition.get('field')
+            operator = condition.get('operator', '==')
+            expected_value = condition.get('value')
+
+            actual_value = self._get_context_value(context or {}, field)
+
+            if operator == '==':
+                return actual_value == expected_value
+            if operator == '!=':
+                return actual_value != expected_value
+            if operator == '>':
+                return actual_value > expected_value
+            if operator == '<':
+                return actual_value < expected_value
+            if operator == '>=':
+                return actual_value >= expected_value
+            if operator == '<=':
+                return actual_value <= expected_value
+            if operator == 'in':
+                return actual_value in expected_value
+            if operator == 'not_in':
+                return actual_value not in expected_value
+            if operator == 'contains':
+                return expected_value in actual_value
+            if operator == 'exists':
+                return actual_value is not None
+
+            return True
+        except Exception as e:
+            logger.warning(f"Erreur lors de l'évaluation de la condition: {e}")
+            return False
+
+    @staticmethod
+    def _get_context_value(context: Dict[str, Any], path: str | None) -> Any:
+        """Récupère une valeur depuis un dict via un chemin pointé (ex: input.price)."""
+        if not path:
+            return None
+        value: Any = context
+        for part in str(path).split('.'):
+            if isinstance(value, dict):
+                value = value.get(part)
+            else:
+                return None
+        return value
+

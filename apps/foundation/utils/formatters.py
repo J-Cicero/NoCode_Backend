@@ -47,7 +47,6 @@ def format_siret(siret):
     if len(clean_siret) != 14:
         return siret  # Retourner tel quel si format invalide
     
-    # Format: XXX XXX XXX XXXXX
     return f"{clean_siret[:3]} {clean_siret[3:6]} {clean_siret[6:9]} {clean_siret[9:]}"
 
 

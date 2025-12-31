@@ -94,7 +94,6 @@ def generate_invoice_number(organization_id=None, date=None):
     year = date.year
     month = date.month
     
-    # Format: YYYY-MM-ORG-XXXXX
     org_part = f"{organization_id:04d}" if organization_id else "0000"
     timestamp_part = int(date.timestamp() * 1000) % 100000
     

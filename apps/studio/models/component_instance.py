@@ -7,7 +7,31 @@ from .attribute import Attribute
 class ComponentInstance(models.Model):
     page = models.ForeignKey(Page, on_delete=models.CASCADE, related_name='component_instances')
     component = models.ForeignKey(Component, on_delete=models.CASCADE, related_name='instances')
+
+    # Pour reconstruire un layout riche (arbre + slots + positions)
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='children',
+        help_text="Composant parent (pour layout imbriqué)",
+    )
+    slot = models.CharField(
+        max_length=100,
+        blank=True,
+        default='',
+        help_text="Slot/zone dans le parent (ex: header, content, left, right)",
+    )
+    position = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Position/layout libre: {x,y,w,h,breakpoints,...}",
+    )
+
+    # Ordre legacy (utile si layout plat)
     order = models.PositiveIntegerField(default=0)
+
     config = models.JSONField(default=dict)
     linked_field_schema = models.ForeignKey(Attribute, on_delete=models.SET_NULL, null=True, blank=True, related_name='component_instances')
     is_auto_generated = models.BooleanField(default=False)

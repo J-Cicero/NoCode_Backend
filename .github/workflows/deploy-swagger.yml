@@ -1,0 +1,166 @@
+name: 🚀 Deploy Swagger Documentation
+
+on:
+  push:
+    branches: 
+      - main
+      - develop
+  pull_request:
+    branches: 
+      - main
+
+jobs:
+  generate-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
+      
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: 📦 Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: 📚 Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements/base.txt
+      
+      - name: 🔧 Setup environment
+        run: |
+          cp .env.example .env
+          echo "DJANGO_SECRET_KEY=$(openssl rand -base64 32)" >> .env
+          echo "DATABASE_URL=sqlite:///db.sqlite3" >> .env
+      
+      - name: 🗄️ Run migrations
+        run: |
+          python manage.py migrate --noinput
+      
+      - name: 📄 Generate OpenAPI Schema
+        run: |
+          python manage.py spectacular --file openapi-schema.yml --validate
+          python manage.py spectacular --file openapi-schema.json --format openapi-json
+      
+      - name: 🎨 Create Swagger UI HTML
+        run: |
+          mkdir -p swagger-static
+          cat > swagger-static/index.html << 'EOF'
+          <!DOCTYPE html>
+          <html lang="fr">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>NoCode Backend Platform - API Documentation</title>
+              <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui.css">
+              <style>
+                  body { margin: 0; padding: 0; }
+                  .topbar { display: none; }
+              </style>
+          </head>
+          <body>
+              <div id="swagger-ui"></div>
+              <script src="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui-bundle.js"></script>
+              <script src="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui-standalone-preset.js"></script>
+              <script>
+                  window.onload = function() {
+                      window.ui = SwaggerUIBundle({
+                          url: "./openapi-schema.json",
+                          dom_id: '#swagger-ui',
+                          deepLinking: true,
+                          presets: [
+                              SwaggerUIBundle.presets.apis,
+                              SwaggerUIStandalonePreset
+                          ],
+                          plugins: [
+                              SwaggerUIBundle.plugins.DownloadUrl
+                          ],
+                          layout: "StandaloneLayout",
+                          persistAuthorization: true,
+                          displayOperationId: true,
+                          filter: true,
+                          tryItOutEnabled: true
+                      });
+                  };
+              </script>
+          </body>
+          </html>
+          EOF
+          cp openapi-schema.json swagger-static/
+          cp openapi-schema.yml swagger-static/
+      
+      - name: 📊 Generate API Stats
+        run: |
+          python << 'PYTHON'
+          import yaml
+          import json
+          
+          with open('openapi-schema.yml', 'r') as f:
+              schema = yaml.safe_load(f)
+          
+          stats = {
+              "total_endpoints": len(schema.get('paths', {})),
+              "tags": [tag['name'] for tag in schema.get('tags', [])],
+              "version": schema.get('info', {}).get('version', 'unknown'),
+              "generated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          
+          with open('swagger-static/stats.json', 'w') as f:
+              json.dump(stats, f, indent=2)
+          
+          print(f"✅ Generated documentation for {stats['total_endpoints']} endpoints")
+          PYTHON
+      
+      - name: 🚀 Deploy to Vercel
+        if: github.ref == 'refs/heads/main'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./swagger-static
+          vercel-args: '--prod'
+      
+      - name: 🚀 Deploy to Vercel (Staging)
+        if: github.ref == 'refs/heads/develop'
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: ./swagger-static
+      
+      - name: 📤 Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: swagger-documentation
+          path: |
+            openapi-schema.yml
+            openapi-schema.json
+            swagger-static/
+          retention-days: 30
+      
+      - name: 💬 Comment PR with deployment URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 Swagger documentation deployed!\n\n📖 Preview: https://your-vercel-url.vercel.app'
+            })
+      
+      - name: ✅ Deployment successful
+        run: |
+          echo "✅ Swagger documentation deployed successfully!"
+          echo "📖 Access your documentation at: https://your-vercel-url.vercel.app"

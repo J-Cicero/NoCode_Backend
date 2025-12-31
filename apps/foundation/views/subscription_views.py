@@ -287,7 +287,6 @@ class PaymentMethodViewSet(viewsets.ViewSet):
     def list(self, request):
         """Liste les moyens de paiement de l'utilisateur."""
         try:
-            # TODO: Implémenter l'intégration avec la banque digitale
             return Response({
                 'message': 'Intégration banque digitale à implémenter',
                 'payment_methods': []
@@ -303,7 +302,6 @@ class PaymentMethodViewSet(viewsets.ViewSet):
     def create(self, request):
         """Ajoute un nouveau moyen de paiement."""
         try:
-            # TODO: Implémenter l'intégration avec la banque digitale
             return Response({
                 'message': 'Intégration banque digitale à implémenter'
             }, status=status.HTTP_501_NOT_IMPLEMENTED)
